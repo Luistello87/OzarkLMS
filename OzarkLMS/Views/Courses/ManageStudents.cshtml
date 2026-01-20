@@ -1,0 +1,82 @@
+@model OzarkLMS.ViewModels.CourseStudentsViewModel
+
+<div class="p-8 max-w-[1200px] mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-[#004B87]">Manage Students</h1>
+            <p class="text-slate-500">For @Model.Course.Name (@Model.Course.Code)</p>
+        </div>
+        <a asp-action="Index" class="text-slate-500 hover:text-slate-700 font-bold flex items-center">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Back to Courses
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Enrolled Students -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 flex items-center">
+                    <i data-lucide="users" class="w-5 h-5 mr-2 text-[#004B87]"></i> Enrolled Students
+                    <span class="ml-2 bg-blue-100 text-[#004B87] text-xs px-2 py-0.5 rounded-full">@Model.EnrolledStudents.Count</span>
+                </h3>
+            </div>
+            <div class="divide-y divide-gray-50">
+                @if (!Model.EnrolledStudents.Any())
+                {
+                    <div class="p-8 text-center text-slate-400 text-sm">No students enrolled yet.</div>
+                }
+                @foreach (var student in Model.EnrolledStudents)
+                {
+                    <div class="p-4 flex justify-between items-center group hover:bg-red-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 text-[#004B87] flex items-center justify-center font-bold text-xs mr-3">
+                                @student.Username.Substring(0, 1).ToUpper()
+                            </div>
+                            <span class="font-bold text-slate-700">@student.Username</span>
+                        </div>
+                        <form asp-action="RemoveStudent" method="post">
+                            <input type="hidden" name="courseId" value="@Model.Course.Id" />
+                            <input type="hidden" name="studentId" value="@student.Id" />
+                            <button type="submit" class="text-slate-400 hover:text-red-600 p-2 rounded-full hover:bg-white transition-all opacity-0 group-hover:opacity-100">
+                                <i data-lucide="user-minus" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Available Students -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 flex items-center">
+                    <i data-lucide="user-plus" class="w-5 h-5 mr-2 text-green-600"></i> Available Students
+                </h3>
+            </div>
+             <div class="divide-y divide-gray-50">
+                @if (!Model.AvailableStudents.Any())
+                {
+                    <div class="p-8 text-center text-slate-400 text-sm">No students available to enroll.</div>
+                }
+                @foreach (var student in Model.AvailableStudents)
+                {
+                    <div class="p-4 flex justify-between items-center group hover:bg-green-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 text-slate-500 flex items-center justify-center font-bold text-xs mr-3">
+                                @student.Username.Substring(0, 1).ToUpper()
+                            </div>
+                            <span class="font-medium text-slate-600">@student.Username</span>
+                        </div>
+                        <form asp-action="AddStudent" method="post">
+                            <input type="hidden" name="courseId" value="@Model.Course.Id" />
+                            <input type="hidden" name="studentId" value="@student.Id" />
+                            <button type="submit" class="text-green-600 hover:text-green-800 p-1 px-3 rounded text-xs font-bold border border-green-200 hover:bg-white transition-all">
+                                Enroll
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

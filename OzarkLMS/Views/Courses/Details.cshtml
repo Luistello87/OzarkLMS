@@ -1,0 +1,169 @@
+@model OzarkLMS.Models.Course
+
+@{
+    var activeTab = Context.Request.Query["tab"].ToString();
+    if (string.IsNullOrEmpty(activeTab)) activeTab = "home";
+}
+
+<div class="flex flex-col h-full bg-[#FAFBFC]">
+    <!-- Course Header -->
+    <div class="bg-white border-b border-gray-200 px-8 py-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                 <div class="w-12 h-12 rounded-lg bg-[#004B87] text-white flex items-center justify-center text-2xl mr-4 shadow-sm">
+                    @Model.Icon
+                 </div>
+                 <div>
+                     <h1 class="text-2xl font-bold text-slate-800 tracking-tight leading-none">@Model.Name</h1>
+                     <div class="flex items-center text-sm text-slate-500 mt-1">
+                         <span class="font-semibold text-[#DA291C]">@Model.Code</span>
+                         <span class="mx-2 text-gray-300">•</span>
+                         <span>@Model.Term</span>
+                     </div>
+                 </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                 @if(Model.Enrollments != null) // Ensure populated or handle null
+                 {
+                    // View logic for enrolled students could go here
+                 }
+                 
+                 <!-- Hardcoded check for Instructor Role (simulated) -->
+                 <!-- In real app, check User.IsInRole("instructor") -->
+                 <a asp-action="ManageStudents" asp-route-id="@Model.Id" class="bg-white border border-[#004B87] text-[#004B87] px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors flex items-center shadow-sm">
+                     <i data-lucide="users" class="w-4 h-4 mr-2"></i> Students
+                 </a>
+
+                 <a asp-action="Index" class="text-sm font-medium text-slate-500 hover:text-[#004B87] transition-colors flex items-center">
+                     <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back
+                 </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row flex-1 px-8 pb-8 max-w-[1400px] w-full mx-auto">
+        <!-- Sidebar Navigation -->
+        <nav class="w-full md:w-64 flex-shrink-0 md:mr-8 mb-6 md:mb-0">
+            <ul class="space-y-1">
+                <li>
+                    <a href="?tab=home" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "home" ? "bg-[#004B87] text-white shadow-md" : "text-slate-600 hover:bg-white hover:shadow-sm")">
+                        <i data-lucide="home" class="w-4 h-4 mr-3"></i> Home
+                    </a>
+                </li>
+                <li>
+                    <a href="?tab=assignments" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "assignments" ? "bg-[#004B87] text-white shadow-md" : "text-slate-600 hover:bg-white hover:shadow-sm")">
+                        <i data-lucide="file-text" class="w-4 h-4 mr-3"></i> Assignments
+                    </a>
+                </li>
+                <li>
+                    <a href="?tab=grades" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "grades" ? "bg-[#004B87] text-white shadow-md" : "text-slate-600 hover:bg-white hover:shadow-sm")">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 mr-3"></i> Grades
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 min-h-[500px] p-8">
+            
+            @if(activeTab == "home")
+            {
+                <div class="space-y-8">
+   <div class="pb-4 border-b border-gray-100 flex justify-between items-end">
+                        <h2 class="text-xl font-bold text-slate-800">Course Content</h2>
+                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        {
+                            <a asp-controller="Assignments" asp-action="Create" asp-route-courseId="@Model.Id" class="text-xs bg-blue-50 text-[#004B87] px-3 py-1 rounded-full font-bold hover:bg-blue-100 transition-colors">
+                                + Add Content
+                            </a>
+                        }
+                    </div>
+
+                    @if(!Model.Modules.Any())
+                    {
+                        <div class="text-center py-20 border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/50">
+                            <p class="text-slate-400 mb-4 font-medium">This course has no modules yet.</p>
+                        </div>
+                    }
+
+                    @foreach(var module in Model.Modules)
+                    {
+                        <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+                                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">@module.Title</h3>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                            </div>
+                            <div class="divide-y divide-gray-100 bg-white">
+                                @foreach(var item in module.Items)
+                                {
+                                    <div class="px-5 py-3 flex items-center hover:bg-blue-50/50 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-[#004B87]">
+                                        <div class="text-slate-300 mr-4 group-hover:text-[#DA291C] transition-colors">
+                                            <i data-lucide="@(item.Type == "quiz" ? "help-circle" : "file-text")" class="w-4 h-4"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-slate-700 group-hover:text-[#004B87]">@item.Title</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (activeTab == "assignments")
+            {
+                 <div class="space-y-6">
+                     <div class="pb-4 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-slate-800">Assignments & Quizzes</h2>
+                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        {
+                            <a asp-controller="Assignments" asp-action="Create" asp-route-courseId="@Model.Id" class="bg-[#004B87] text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#003d6e] flex items-center">
+                                <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Add Assignment/Quiz
+                            </a>
+                        }
+                     </div>
+                     <div class="space-y-4">
+                        @foreach(var item in Model.Assignments)
+                        {
+                            <div class="p-5 border border-gray-200 rounded-xl hover:shadow-md transition-all bg-white group hover:border-blue-200">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="p-3 rounded-lg mr-5 shadow-sm @(item.Type == "quiz" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-[#004B87]")">
+                                            <i data-lucide="@(item.Type == "quiz" ? "help-circle" : "file-text")" class="w-5 h-5"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 text-base group-hover:text-[#004B87] transition-colors">@item.Title</h4>
+                                            <div class="flex items-center mt-1 text-xs text-slate-500 font-medium space-x-3">
+                                                <span class="flex items-center"><i data-lucide="calendar" class="w-3 h-3 mr-1"></i> Due: @item.DueDate.ToShortDateString()</span>
+                                                <span class="bg-gray-100 px-2 py-0.5 rounded text-gray-600">Attempts: @item.MaxAttempts</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                                        {
+                                            <a asp-controller="Assignments" asp-action="Submissions" asp-route-id="@item.Id" class="bg-white border border-[#004B87] text-[#004B87] px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-all shadow-sm flex items-center">
+                                                <i data-lucide="check-square" class="w-4 h-4 mr-2"></i> Grade
+                                            </a>
+                                        }
+                                        <a asp-controller="Assignments" asp-action="Take" asp-route-id="@item.Id" class="bg-white border border-gray-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#DA291C] hover:text-white hover:border-[#DA291C] transition-all shadow-sm">
+                                            Start
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                     </div>
+                 </div>
+            }
+            else
+            {
+                 <div class="py-12 text-center">
+                     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                         <i data-lucide="bar-chart-2" class="w-8 h-8"></i>
+                     </div>
+                     <h2 class="text-xl font-bold text-slate-800">Grades</h2>
+                     <p class="text-slate-400 mt-2">Gradebook functionality coming soon.</p>
+                 </div>
+            }
+        </main>
+    </div>
+</div>

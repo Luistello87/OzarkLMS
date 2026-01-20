@@ -1,0 +1,52 @@
+@model OzarkLMS.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = null; // No default layout for auth pages
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In - OZARK LMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-[#FAFBFC] h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 bg-[#DA291C] rounded-lg flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-md">O</div>
+            <h1 class="text-2xl font-bold text-[#004B87]">Welcome Back</h1>
+            <p class="text-slate-400 text-sm mt-1">Sign in to access your portal</p>
+        </div>
+
+        <form asp-action="Login" method="post" class="space-y-5">
+            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm font-medium text-center"></div>
+            
+            <div>
+                <label asp-for="Username" class="block text-sm font-bold text-slate-700 mb-1">Username</label>
+                <input asp-for="Username" class="w-full rounded-lg border-gray-300 px-4 py-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all placeholder-slate-300" placeholder="Enter your username" />
+                <span asp-validation-for="Username" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <label asp-for="Password" class="block text-sm font-bold text-slate-700 mb-1">Password</label>
+                <input asp-for="Password" class="w-full rounded-lg border-gray-300 px-4 py-3 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all placeholder-slate-300" placeholder="••••••••" />
+                <span asp-validation-for="Password" class="text-red-500 text-xs"></span>
+            </div>
+
+            <button type="submit" class="w-full bg-[#004B87] text-white py-3 rounded-xl font-bold hover:bg-[#003d6e] transition-colors shadow-lg hover:shadow-xl transform active:scale-95 duration-200">
+                Sign In
+            </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-gray-100 text-center text-sm text-slate-500">
+            Don't have an account? 
+            <a asp-action="Register" class="font-bold text-[#DA291C] hover:underline">Sign Up</a>
+        </div>
+    </div>
+</body>
+</html>

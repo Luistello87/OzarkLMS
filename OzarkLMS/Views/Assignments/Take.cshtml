@@ -1,0 +1,106 @@
+@model OzarkLMS.Models.Assignment
+
+@{
+    ViewData["Title"] = Model.Type == "quiz" ? "Take Quiz" : "Submit Assignment";
+    bool isQuiz = Model.Type == "quiz";
+}
+
+<div class="p-8 max-w-[800px] mx-auto">
+    <div class="mb-6">
+        <a asp-controller="Courses" asp-action="Details" asp-route-id="@Model.CourseId" asp-route-tab="assignments" class="text-sm font-medium text-slate-500 hover:text-[#004B87] transition-colors flex items-center mb-4">
+             <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Course
+        </a>
+        <h1 class="text-2xl font-bold text-[#004B87]">@Model.Title</h1>
+        <div class="flex items-center space-x-4 mt-2 text-sm text-slate-500">
+             <span>Due: @Model.DueDate.ToShortDateString()</span>
+             <span>•</span>
+             <span>@Model.MaxAttempts Attempts</span>
+        </div>
+        
+        @if(!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="mt-6 bg-blue-50 p-6 rounded-xl border border-blue-100 text-slate-700">
+                <h3 class="font-bold text-[#004B87] mb-2 text-sm uppercase">Instructions</h3>
+                <p class="whitespace-pre-wrap">@Model.Description</p>
+                
+                @if(!string.IsNullOrEmpty(Model.AttachmentUrl))
+                {
+                    <div class="mt-4 pt-4 border-t border-blue-200">
+                        <a href="@Model.AttachmentUrl" target="_blank" class="inline-flex items-center text-[#004B87] font-bold hover:underline">
+                            <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download Attached Document
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (isQuiz)
+    {
+        <form asp-action="SubmitQuiz" method="post" class="space-y-8">
+            <input type="hidden" name="assignmentId" value="@Model.Id" />
+            
+            @foreach (var (question, index) in Model.Questions.Select((q, i) => (q, i)))
+            {
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-start mb-4">
+                        <span class="bg-gray-100 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm mr-4 flex-shrink-0">@(index + 1)</span>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">@question.Text</h3>
+                            <p class="text-xs text-slate-400 mt-1">@question.Points Points</p>
+                        </div>
+                    </div>
+                    
+                    <div class="ml-12 space-y-3">
+                        @foreach (var option in question.Options)
+                        {
+                            <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg border border-transparent hover:bg-gray-50 hover:border-gray-200 transition-all">
+                                <input type="radio" name="answers[@question.Id]" value="@option.Id" class="w-5 h-5 text-[#004B87] focus:ring-[#004B87]" required />
+                                <span class="text-slate-700">@option.Text</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <div class="pt-6 border-t border-gray-100 flex justify-end">
+                <button type="submit" class="bg-[#004B87] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#003d6e] shadow-lg shadow-blue-900/20 text-lg">
+                    Submit Quiz
+                </button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <form asp-action="SubmitAssignment" method="post" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <input type="hidden" name="assignmentId" value="@Model.Id" />
+            
+            @if (Model.SubmissionType == "Text" || Model.SubmissionType == "Both")
+            {
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">My Submission</label>
+                    <textarea name="content" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#004B87] focus:ring-[#004B87] min-h-[200px]" placeholder="Type your answer here..."></textarea>
+                </div>
+            }
+
+            @if (Model.SubmissionType == "File" || Model.SubmissionType == "Both")
+            {
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Upload File</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50 hover:bg-white hover:border-[#004B87] transition-all cursor-pointer relative">
+                        <input type="file" name="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        <i data-lucide="upload-cloud" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+                        <p class="text-slate-500 font-medium">Click to upload or drag and drop</p>
+                        <p class="text-xs text-slate-400 mt-1">PDF, DOCX, JPG, PNG (Max 10MB)</p>
+                    </div>
+                </div>
+            }
+
+            <div class="pt-4 flex justify-end">
+                <button type="submit" class="bg-[#004B87] text-white px-6 py-2 rounded-lg font-bold hover:bg-[#003d6e] shadow-lg">
+                    Submit Assignment
+                </button>
+            </div>
+        </form>
+    }
+</div>

@@ -1,0 +1,103 @@
+@model OzarkLMS.ViewModels.AdminDashboardViewModel
+
+<div class="p-8 max-w-[1400px] mx-auto">
+    <h1 class="text-3xl font-bold text-[#004B87] mb-8">Admin Dashboard</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="text-slate-500 font-medium text-sm">Total Students</h3>
+            <p class="text-3xl font-bold text-slate-800 mt-2">@ViewBag.StudentCount</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="text-slate-500 font-medium text-sm">Instructors</h3>
+            <p class="text-3xl font-bold text-slate-800 mt-2">@ViewBag.InstructorCount</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="text-slate-500 font-medium text-sm">Active Courses</h3>
+            <p class="text-3xl font-bold text-slate-800 mt-2">@ViewBag.CourseCount</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mb-8 flex space-x-4">
+        <a asp-action="CreateUser" class="bg-[#004B87] text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center hover:bg-[#003d6e] transition-colors shadow-sm">
+             <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> Add Student
+        </a>
+        <button onclick="document.getElementById('add-instructor-form').classList.toggle('hidden')" class="bg-white border border-gray-200 text-slate-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center hover:bg-gray-50 transition-colors shadow-sm">
+             <i data-lucide="briefcase" class="w-4 h-4 mr-2"></i> Add Professor
+        </button>
+    </div>
+
+    <!-- Admin Add Instructor Form -->
+    <div id="add-instructor-form" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 shadow-inner max-w-2xl">
+        <h3 class="text-sm font-bold text-blue-800 uppercase mb-4">Enroll New Professor</h3>
+        <form asp-action="CreateInstructor" method="post" class="flex gap-4">
+            <input type="text" name="username" placeholder="Username" class="flex-1 rounded-lg border-blue-200 text-sm focus:ring-[#004B87] focus:border-[#004B87] px-4 py-2" required />
+            <input type="password" name="password" placeholder="Password" class="flex-1 rounded-lg border-blue-200 text-sm focus:ring-[#004B87] focus:border-[#004B87] px-4 py-2" required />
+            <button type="submit" class="bg-[#004B87] text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-[#003d6e] shadow-md">Create</button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Faculty Directory -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+             <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-slate-800">Faculty Directory</h2>
+            </div>
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-slate-500 font-medium border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4">Name</th>
+                        <th class="px-6 py-4">Role</th>
+                        <th class="px-6 py-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach (var instructor in Model.Instructors)
+                    {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 font-medium text-slate-800 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-blue-100 text-[#004B87] flex items-center justify-center font-bold mr-3">
+                                @instructor.Username.Substring(0,1).ToUpper()
+                            </span>
+                            @instructor.Username
+                        </td>
+                        <td class="px-6 py-4"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-bold uppercase">Instructor</span></td>
+                        <td class="px-6 py-4">
+                            <button class="text-slate-400 hover:text-[#004B87] transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Student Directory -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-slate-800">Student Directory</h2>
+            </div>
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-slate-500 font-medium border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4">Username</th>
+                        <th class="px-6 py-4">Role</th>
+                        <th class="px-6 py-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach (var student in Model.Students)
+                    {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 font-medium text-slate-800">@student.Username</td>
+                        <td class="px-6 py-4"><span class="bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs font-bold uppercase">@student.Role</span></td>
+                        <td class="px-6 py-4">
+                            <button class="text-slate-400 hover:text-[#004B87] transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
