@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OzarkLMS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d579a855a057e323b353deaa4aea81bf8a480c7f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3c5be9b4ff0abb0c5ac07514061e751197164927")]
 [assembly: System.Reflection.AssemblyProductAttribute("OzarkLMS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OzarkLMS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

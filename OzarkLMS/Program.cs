@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using OzarkLMS.Data;
+using OzarkLMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<ISelfTestService, SelfTestService>();
 
 builder.Services.AddDbContext<OzarkLMS.Data.AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -43,6 +45,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Enable static files for uploads
 app.UseRouting();
 
 app.UseAuthentication();

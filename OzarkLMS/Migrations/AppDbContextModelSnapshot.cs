@@ -46,6 +46,9 @@ namespace OzarkLMS.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
                     b.Property<string>("SubmissionType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -280,6 +283,9 @@ namespace OzarkLMS.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentUrl")
+                        .HasColumnType("text");
 
                     b.Property<int>("ModuleId")
                         .HasColumnType("integer");

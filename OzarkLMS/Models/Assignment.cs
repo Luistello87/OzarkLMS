@@ -23,6 +23,8 @@ namespace OzarkLMS.Models
         
         public string? AttachmentUrl { get; set; } // Instructor uploaded file
 
+        public int Points { get; set; } = 100;
+
         public string MaxAttempts { get; set; } = "Unlimited";
         
         public List<Question> Questions { get; set; } = new List<Question>();

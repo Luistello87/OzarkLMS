@@ -18,7 +18,37 @@ namespace OzarkLMS.Controllers
 
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Courses.Include(c => c.Instructor).ToListAsync());
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            if (userRole == "admin")
+            {
+                return View(await _context.Courses.Include(c => c.Instructor).ToListAsync());
+            }
+            else if (userRole == "instructor" && userIdClaim != null)
+            {
+                var userId = int.Parse(userIdClaim.Value);
+                return View(await _context.Courses
+                    .Include(c => c.Instructor)
+                    .Where(c => c.InstructorId == userId)
+                    .ToListAsync());
+            }
+            else if (userIdClaim != null)
+            {
+                // Student: Show enrolled courses
+                var userId = int.Parse(userIdClaim.Value);
+                var enrolledCourseIds = await _context.Enrollments
+                    .Where(e => e.StudentId == userId)
+                    .Select(e => e.CourseId)
+                    .ToListAsync();
+
+                return View(await _context.Courses
+                    .Include(c => c.Instructor)
+                    .Where(c => enrolledCourseIds.Contains(c.Id))
+                    .ToListAsync());
+            }
+
+            return View(new List<Course>());
         }
 
         public async Task<IActionResult> Details(int? id)
@@ -29,9 +59,66 @@ namespace OzarkLMS.Controllers
                 .Include(c => c.Modules)
                     .ThenInclude(m => m.Items)
                 .Include(c => c.Assignments)
+                .Include(c => c.Enrollments)
+                    .ThenInclude(e => e.Student)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (course == null) return NotFound();
+
+            // Grading Logic
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            if (userIdClaim != null)
+            {
+                 int userId = int.Parse(userIdClaim.Value);
+                 
+                 if (userRole == "student")
+                 {
+                     // Get Student's Submissions
+                     var submissions = await _context.Submissions
+                         .Include(s => s.Assignment)
+                         .Where(s => s.StudentId == userId && s.Assignment.CourseId == id)
+                         .ToListAsync();
+                     
+                     ViewBag.StudentSubmissions = submissions;
+                     
+                     // Calculate Grade: Average of Percentages
+                     // Formula: Sum(Score / MaxPoints) / Count
+                     
+                     if (submissions.Any()) {
+                          double sumPercentages = 0;
+                          int count = 0;
+                          foreach(var sub in submissions)
+                          {
+                              // Calculate percentage for this assignment
+                              // Default to 100 max points if 0 to avoid division by zero
+                              int maxPoints = sub.Assignment.Points > 0 ? sub.Assignment.Points : 100;
+                              
+                              if (sub.Score.HasValue)
+                              {
+                                  double percentage = (double)sub.Score.Value / maxPoints * 100;
+                                  sumPercentages += percentage;
+                                  count++;
+                              }
+                          }
+                          ViewBag.CurrentGrade = count > 0 ? Math.Round(sumPercentages / count, 1) : 0;
+                     } else {
+                         ViewBag.CurrentGrade = 0;
+                     }
+                 }
+                 else if (userRole == "admin" || userRole == "instructor")
+                 {
+                     // Gradebook View: Get all submissions for this course
+                     var allSubmissions = await _context.Submissions
+                         .Include(s => s.Assignment)
+                         .Include(s => s.Student)
+                         .Where(s => s.Assignment.CourseId == id)
+                         .ToListAsync();
+                     
+                     ViewBag.AllSubmissions = allSubmissions;
+                 }
+            }
 
             return View(course);
         }

@@ -20,6 +20,7 @@ namespace OzarkLMS.Models
         public int Id { get; set; }
         public int ModuleId { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string? ContentUrl { get; set; } // Path to uploaded file (pdf/docx)
         public string Type { get; set; } = "page"; // page, file, quiz, assignment
     }
 }

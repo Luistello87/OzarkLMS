@@ -50,7 +50,7 @@ namespace OzarkLMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "admin, instructor")]
-        public async Task<IActionResult> Create([Bind("CourseId,Title,DueDate,Type,MaxAttempts,Description,SubmissionType")] Assignment assignment, IFormFile? attachment)
+        public async Task<IActionResult> Create([Bind("CourseId,Title,DueDate,Type,MaxAttempts,Description,SubmissionType,Points")] Assignment assignment, IFormFile? attachment)
         {
             if (ModelState.IsValid)
             {
@@ -174,7 +174,12 @@ namespace OzarkLMS.Controllers
              _context.Submissions.Add(submission);
              await _context.SaveChangesAsync();
              
-             return RedirectToAction("Details", "Courses", new { id = (await _context.Assignments.FindAsync(assignmentId)).CourseId, tab = "grades" });
+             var assignment = await _context.Assignments.FindAsync(assignmentId);
+             if (assignment != null)
+             {
+                 return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "grades" });
+             }
+             return RedirectToAction("Index", "Courses");
         }
 
         [HttpPost]
@@ -215,7 +220,12 @@ namespace OzarkLMS.Controllers
              _context.Submissions.Add(submission);
              await _context.SaveChangesAsync();
 
-             return RedirectToAction("Details", "Courses", new { id = (await _context.Assignments.FindAsync(assignmentId)).CourseId, tab = "assignments" });
+             var assignment = await _context.Assignments.FindAsync(assignmentId);
+             if (assignment != null)
+             {
+                 return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "assignments" });
+             }
+             return RedirectToAction("Index", "Courses");
         }
 
         // GET: Assignments/Submissions/5

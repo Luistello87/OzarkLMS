@@ -79,31 +79,55 @@
                         }
                     </div>
 
-                    @if(!Model.Modules.Any())
+                    @if(Model.Modules.Any())
                     {
-                        <div class="text-center py-20 border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/50">
+                        foreach(var module in Model.Modules)
+                        {
+                            <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm mb-4">
+                                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+                                    <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">@module.Title</h3>
+                                    <div class="flex items-center space-x-2">
+                                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                                        {
+                                            <a asp-controller="Modules" asp-action="AddItem" asp-route-moduleId="@module.Id" class="text-xs text-[#004B87] font-bold hover:underline">+ Add Item</a>
+                                        }
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                </div>
+                                <div class="divide-y divide-gray-100 bg-white">
+                                    @foreach(var item in module.Items)
+                                    {
+                                        <div class="px-5 py-3 flex items-center hover:bg-blue-50/50 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-[#004B87]">
+                                            <div class="text-slate-300 mr-4 group-hover:text-[#DA291C] transition-colors">
+                                                <i data-lucide="@(item.Type == "file" ? "file" : (item.Type == "quiz" ? "help-circle" : "file-text"))" class="w-4 h-4"></i>
+                                            </div>
+                                            @if(!string.IsNullOrEmpty(item.ContentUrl))
+                                            {
+                                                <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 group-hover:text-[#004B87] hover:underline">@item.Title</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-sm font-medium text-slate-700 group-hover:text-[#004B87]">@item.Title</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                         <div class="text-center py-20 border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/50">
                             <p class="text-slate-400 mb-4 font-medium">This course has no modules yet.</p>
                         </div>
                     }
-
-                    @foreach(var module in Model.Modules)
+                    
+                    @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                     {
-                        <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-                                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">@module.Title</h3>
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-                            </div>
-                            <div class="divide-y divide-gray-100 bg-white">
-                                @foreach(var item in module.Items)
-                                {
-                                    <div class="px-5 py-3 flex items-center hover:bg-blue-50/50 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-[#004B87]">
-                                        <div class="text-slate-300 mr-4 group-hover:text-[#DA291C] transition-colors">
-                                            <i data-lucide="@(item.Type == "quiz" ? "help-circle" : "file-text")" class="w-4 h-4"></i>
-                                        </div>
-                                        <span class="text-sm font-medium text-slate-700 group-hover:text-[#004B87]">@item.Title</span>
-                                    </div>
-                                }
-                            </div>
+                        <div class="mt-6 text-center">
+                            <a asp-controller="Modules" asp-action="Create" asp-route-courseId="@Model.Id" class="bg-white border border-gray-200 text-slate-500 px-4 py-2 rounded-lg font-bold text-sm hover:border-[#004B87] hover:text-[#004B87] transition-all">
+                                + Create New Module
+                            </a>
                         </div>
                     }
                 </div>
@@ -156,13 +180,88 @@
             }
             else
             {
-                 <div class="py-12 text-center">
-                     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                         <i data-lucide="bar-chart-2" class="w-8 h-8"></i>
+                 @if (User.IsInRole("student"))
+                 {
+                     <div class="py-6">
+                         <h2 class="text-xl font-bold text-slate-800 mb-4">Your Grades</h2>
+                         
+                         <div class="bg-white border rounded-xl overflow-hidden shadow-sm mb-6">
+                             <div class="px-6 py-4 bg-gray-50 border-b flex justify-between items-center">
+                                 <span class="font-bold text-slate-600">Current Average</span>
+                                 <span class="font-bold text-2xl text-[#004B87]">@(ViewBag.CurrentGrade ?? 0)%</span>
+                             </div>
+                         </div>
+                         
+                         <div class="space-y-3">
+                             @if(ViewBag.StudentSubmissions != null)
+                             {
+                                 foreach(var sub in ViewBag.StudentSubmissions as List<OzarkLMS.Models.Submission>)
+                                 {
+                                     <div class="p-4 border rounded-lg flex justify-between items-center bg-white hover:bg-blue-50 transition-colors">
+                                         <div>
+                                             <div class="font-bold text-slate-700">@sub.Assignment.Title</div>
+                                             <div class="text-xs text-slate-500">Submitted: @sub.SubmittedAt.ToShortDateString()</div>
+                                         </div>
+                                         <div class="font-bold @(sub.Score >= 60 ? "text-green-600" : "text-red-500")">
+                                             @sub.Score / 100
+                                         </div>
+                                     </div>
+                                 }
+                             }
+                         </div>
                      </div>
-                     <h2 class="text-xl font-bold text-slate-800">Grades</h2>
-                     <p class="text-slate-400 mt-2">Gradebook functionality coming soon.</p>
-                 </div>
+                 }
+                 else
+                 {
+                     <div class="py-6">
+                         <h2 class="text-xl font-bold text-slate-800 mb-4">Class Gradebook</h2>
+                         <div class="overflow-x-auto">
+                             <table class="w-full text-left text-sm border-collapse">
+                                 <thead>
+                                     <tr class="bg-gray-100 text-slate-600 border-b">
+                                         <th class="p-3">Student</th>
+                                         @foreach(var assign in Model.Assignments)
+                                         {
+                                             <th class="p-3">@assign.Title</th>
+                                         }
+                                         <th class="p-3">Average</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     @foreach(var student in Model.Enrollments.Select(e => e.Student))
+                                     {
+                                         var submissions = (ViewBag.AllSubmissions as List<OzarkLMS.Models.Submission>)?.Where(s => s.StudentId == student.Id).ToList();
+                                         double sum = 0;
+                                         int count = 0;
+                                         
+                                         <tr class="border-b hover:bg-gray-50">
+                                             <td class="p-3 font-medium">@student.Username</td>
+                                             @foreach(var assign in Model.Assignments)
+                                             {
+                                                 var sub = submissions?.FirstOrDefault(s => s.AssignmentId == assign.Id);
+                                                 <td class="p-3">
+                                                     @if(sub != null && sub.Score.HasValue)
+                                                     {
+                                                         sum += sub.Score.Value;
+                                                         count++;
+                                                         <span class="px-2 py-1 rounded bg-green-100 text-green-700">@sub.Score</span>
+                                                     }
+                                                     else
+                                                     {
+                                                         <span class="text-gray-300">-</span>
+                                                     }
+                                                 </td>
+                                             }
+                                             <td class="p-3 font-bold text-[#004B87]">
+                                                 @(count > 0 ? Math.Round(sum / count, 1) : 0)%
+                                             </td>
+                                         </tr>
+                                     }
+                                 </tbody>
+                             </table>
+                         </div>
+                     </div>
+                 }
             }
         </main>
     </div>

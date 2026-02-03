@@ -120,5 +120,10 @@ namespace OzarkLMS.Controllers
         {
             return View();
         }
+
+        public IActionResult LoginRedirect()
+        {
+             return RedirectToAction("Login", "Account");
+        }
     }
 }
