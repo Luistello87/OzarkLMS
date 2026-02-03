@@ -17,113 +17,113 @@ build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = OzarkLMS
 build_property.RootNamespace = OzarkLMS
-build_property.ProjectDir = C:\Users\luist\Desktop\COMP2154\OzarkLMS\OzarkLMS\
+build_property.ProjectDir = /Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\luist\Desktop\COMP2154\OzarkLMS\OzarkLMS
+build_property.MSBuildProjectDirectory = /Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Account/Login.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Account/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWNjb3VudC9Mb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Account/Register.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Account/Register.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWNjb3VudC9SZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Admin/CreateUser.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ3JlYXRlVXNlci5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Admin/CreateUser.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vQ3JlYXRlVXNlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Admin/Dashboard.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cRGFzaGJvYXJkLmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Admin/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWRtaW4vRGFzaGJvYXJkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Assignments/Create.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzaWdubWVudHNcQ3JlYXRlLmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Assignments/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXNzaWdubWVudHMvQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Assignments/Edit.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzaWdubWVudHNcRWRpdC5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Assignments/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXNzaWdubWVudHMvRWRpdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Assignments/Submissions.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzaWdubWVudHNcU3VibWlzc2lvbnMuY3NodG1s
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Assignments/Submissions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXNzaWdubWVudHMvU3VibWlzc2lvbnMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Assignments/Take.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzaWdubWVudHNcVGFrZS5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Assignments/Take.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXNzaWdubWVudHMvVGFrZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Calendar/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FsZW5kYXJcSW5kZXguY3NodG1s
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Calendar/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ2FsZW5kYXIvSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Collaboration/Details.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29sbGFib3JhdGlvblxEZXRhaWxzLmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Collaboration/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ29sbGFib3JhdGlvbi9EZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Collaboration/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29sbGFib3JhdGlvblxJbmRleC5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Collaboration/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ29sbGFib3JhdGlvbi9JbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Courses/Create.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlc1xDcmVhdGUuY3NodG1s
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Courses/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ291cnNlcy9DcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Courses/Details.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlc1xEZXRhaWxzLmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Courses/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ291cnNlcy9EZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Courses/Edit.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlc1xFZGl0LmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Courses/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ291cnNlcy9FZGl0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Courses/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlc1xJbmRleC5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Courses/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ291cnNlcy9JbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Courses/ManageStudents.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ291cnNlc1xNYW5hZ2VTdHVkZW50cy5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Courses/ManageStudents.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ291cnNlcy9NYW5hZ2VTdHVkZW50cy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Home/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9JbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Home/Privacy.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Home/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9Qcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Notification/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTm90aWZpY2F0aW9uXEluZGV4LmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Notification/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTm90aWZpY2F0aW9uL0luZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Notification/Send.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTm90aWZpY2F0aW9uXFNlbmQuY3NodG1s
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Notification/Send.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTm90aWZpY2F0aW9uL1NlbmQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Shared/Error.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL0Vycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Shared/_ValidationScriptsPartial.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/_ViewImports.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/_ViewStart.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/luist/Desktop/COMP2154/OzarkLMS/OzarkLMS/Views/Shared/_Layout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
-build_metadata.AdditionalFiles.CssScope = b-iswtzdtutu
+[/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-y6t8rl33t3

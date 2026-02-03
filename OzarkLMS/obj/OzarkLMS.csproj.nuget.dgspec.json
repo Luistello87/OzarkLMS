@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\luist\\Desktop\\COMP2154\\OzarkLMS\\OzarkLMS\\OzarkLMS.csproj": {}
+    "/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/OzarkLMS.csproj": {}
   },
   "projects": {
-    "C:\\Users\\luist\\Desktop\\COMP2154\\OzarkLMS\\OzarkLMS\\OzarkLMS.csproj": {
+    "/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/OzarkLMS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\luist\\Desktop\\COMP2154\\OzarkLMS\\OzarkLMS\\OzarkLMS.csproj",
+        "projectUniqueName": "/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/OzarkLMS.csproj",
         "projectName": "OzarkLMS",
-        "projectPath": "C:\\Users\\luist\\Desktop\\COMP2154\\OzarkLMS\\OzarkLMS\\OzarkLMS.csproj",
-        "packagesPath": "C:\\Users\\luist\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\luist\\Desktop\\COMP2154\\OzarkLMS\\OzarkLMS\\obj\\",
+        "projectPath": "/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/OzarkLMS.csproj",
+        "packagesPath": "/Users/gonzacontaldo/.nuget/packages/",
+        "outputPath": "/Users/gonzacontaldo/Documents/Canada/College/Sem4/System Development Project/OzarkLMS/OzarkLMS/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\luist\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/gonzacontaldo/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -86,7 +80,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
