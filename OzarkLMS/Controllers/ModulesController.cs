@@ -20,6 +20,16 @@ namespace OzarkLMS.Controllers
         public IActionResult Create(int? courseId)
         {
             if (courseId == null) return NotFound();
+            
+            // Security Check
+            if (User.IsInRole("instructor"))
+            {
+                var course = _context.Courses.Find(courseId);
+                if (course == null) return NotFound();
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (course.InstructorId != userId) return Forbid();
+            }
+
             ViewBag.CourseId = courseId;
             return View();
         }
@@ -31,6 +41,14 @@ namespace OzarkLMS.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (User.IsInRole("instructor"))
+                {
+                    var course = await _context.Courses.FindAsync(module.CourseId);
+                    if (course == null) return NotFound();
+                    var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                    if (course.InstructorId != userId) return Forbid();
+                }
+
                 _context.Add(module);
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Details", "Courses", new { id = module.CourseId });
@@ -43,8 +61,14 @@ namespace OzarkLMS.Controllers
         public async Task<IActionResult> AddItem(int? moduleId)
         {
             if (moduleId == null) return NotFound();
-            var module = await _context.Modules.FindAsync(moduleId);
+            var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
             if (module == null) return NotFound();
+            
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (module.Course.InstructorId != userId) return Forbid();
+            }
             
             ViewBag.Module = module;
             return View();
@@ -55,8 +79,14 @@ namespace OzarkLMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddItem(int moduleId, string title, string type, IFormFile? file)
         {
-            var module = await _context.Modules.FindAsync(moduleId);
+            var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
             if (module == null) return NotFound();
+
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (module.Course.InstructorId != userId) return Forbid();
+            }
 
             string? contentUrl = null;
 

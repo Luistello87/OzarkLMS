@@ -38,15 +38,15 @@
         .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="bg-gray-50 text-slate-800 font-sans flex h-screen overflow-hidden">
+<body class="bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex h-screen overflow-hidden transition-colors duration-300">
     
     <!-- Sidebar -->
-    <div class="fixed left-0 top-0 h-full w-64 bg-[#004B87] flex flex-col z-50 shadow-xl text-white transition-all duration-300">
+    <div class="fixed left-0 top-0 h-full w-64 bg-[#004B87] dark:bg-blue-900 flex flex-col z-50 shadow-xl text-white transition-all duration-300 border-r border-transparent dark:border-blue-800">
         <!-- Logo Area -->
-        <div class="h-20 flex items-center px-6 border-b border-white/10 bg-[#003d6e]">
+        <div class="h-20 flex items-center px-6 border-b border-white/10 dark:border-blue-800 bg-[#003d6e] dark:bg-blue-950">
              <div class="w-8 h-8 bg-[#DA291C] rounded flex items-center justify-center text-white font-bold text-xl mr-3 shadow-md">O</div>
              <div>
-                 <h1 class="font-bold text-lg tracking-wide leading-tight">OZARK</h1>
+                 <h1 class="font-bold text-lg tracking-wide leading-tight text-white">OZARK</h1>
                  <p class="text-[10px] text-blue-200 uppercase tracking-wider">Learning System</p>
              </div>
         </div>
@@ -78,7 +78,7 @@
              </a>
         </nav>
 
-        <div class="p-4 border-t border-white/10">
+        <div class="p-4 border-t border-white/10 dark:border-blue-800">
             <form asp-controller="Account" asp-action="Logout" method="post">
                 <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-blue-200 hover:text-white transition-colors">
                     <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Sign Out
@@ -90,21 +90,21 @@
     <!-- Main Content -->
     <div class="flex-1 flex flex-col h-full overflow-hidden ml-64 bg-[#F4F5F7] dark:bg-slate-900 relative transition-colors duration-300">
         <!-- Top Header -->
-        <header class="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-8 sticky top-0 z-40 transition-colors duration-300">
-            <div class="flex items-center text-slate-500 dark:text-slate-300">
+        <header class="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-8 sticky top-0 z-40 transition-colors duration-300 shadow-sm">
+            <div class="flex items-center text-slate-500 dark:text-slate-400">
                 <span class="text-sm">Welcome back, <span class="font-bold text-[#DA291C] dark:text-red-400">@User.Identity?.Name</span></span>
             </div>
             <div class="flex items-center space-x-4">
-                <button onclick="toggleDarkMode()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
-                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
-                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                <button onclick="toggleDarkMode()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#004B87] dark:focus:ring-slate-500">
+                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block text-indigo-400"></i>
+                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden text-amber-500"></i>
                 </button>
-                <a asp-controller="Notification" asp-action="Index" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 relative transition-colors">
+                <a asp-controller="Notification" asp-action="Index" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 relative transition-colors">
                     <i data-lucide="bell" class="w-5 h-5"></i>
                     <!-- Check for unread logic could go here, keeping static red dot for demo -->
-                    <span class="absolute top-1 right-2 w-2 h-2 bg-[#DA291C] rounded-full border border-white dark:border-slate-800"></span>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-[#DA291C] rounded-full border border-white dark:border-slate-800"></span>
                 </a>
-                <div class="w-8 h-8 rounded-full bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                <div class="w-9 h-9 rounded-full bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm ring-2 ring-white dark:ring-slate-700">
                     @(User.Identity?.Name?.Substring(0,1) ?? "U")
                 </div>
             </div>

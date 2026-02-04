@@ -32,7 +32,30 @@ namespace OzarkLMS.Controllers
             var stickyNotes = await _context.StickyNotes.Where(n => n.UserId == user.Id).ToListAsync();
             var announcements = await _context.DashboardAnnouncements.OrderByDescending(a => a.Date).ToListAsync();
 
-            var courses = await _context.Courses.Include(c => c.Instructor).ToListAsync();
+            List<Course> courses;
+            if (User.IsInRole("admin"))
+            {
+                courses = await _context.Courses.Include(c => c.Instructor).ToListAsync();
+            }
+            else if (User.IsInRole("instructor"))
+            {
+                courses = await _context.Courses
+                    .Include(c => c.Instructor)
+                    .Where(c => c.InstructorId == user.Id)
+                    .ToListAsync();
+            }
+            else // Student
+            {
+                var enrolledCourseIds = await _context.Enrollments
+                    .Where(e => e.StudentId == user.Id)
+                    .Select(e => e.CourseId)
+                    .ToListAsync();
+
+                courses = await _context.Courses
+                    .Include(c => c.Instructor)
+                    .Where(c => enrolledCourseIds.Contains(c.Id))
+                    .ToListAsync();
+            }
             // Fetch all assignments from all courses for the todo list
             var upcomingAssignments = await _context.Assignments.ToListAsync(); // Needs filtering if we had filtering logic
 

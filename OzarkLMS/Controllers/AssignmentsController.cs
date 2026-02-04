@@ -25,6 +25,12 @@ namespace OzarkLMS.Controllers
             var course = await _context.Courses.FindAsync(courseId);
             if (course == null) return NotFound();
 
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (course.InstructorId != userId) return Forbid();
+            }
+
             ViewBag.Course = course;
             return View(new Assignment { CourseId = course.Id });
         }
@@ -36,10 +42,16 @@ namespace OzarkLMS.Controllers
             if (id == null) return NotFound();
 
             var assignment = await _context.Assignments
-                .Include(a => a.Questions)
-                .ThenInclude(q => q.Options)
                 .Include(a => a.Course)
                 .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (assignment == null) return NotFound();
+
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (assignment.Course.InstructorId != userId) return Forbid();
+            }
 
             if (assignment == null) return NotFound();
 
@@ -56,6 +68,16 @@ namespace OzarkLMS.Controllers
             {
                 // Ensure Date is UTC for Postgres
                 assignment.DueDate = DateTime.SpecifyKind(assignment.DueDate, DateTimeKind.Utc);
+                
+                // Security Check
+                if (User.IsInRole("instructor"))
+                {
+                     var courseCheck = await _context.Courses.FindAsync(assignment.CourseId);
+                     if(courseCheck == null) return NotFound();
+                     
+                     var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                     if (courseCheck.InstructorId != userId) return Forbid();
+                }
                 
                 // Handle Attachment
                 if (attachment != null && attachment.Length > 0)

@@ -127,7 +127,10 @@ namespace OzarkLMS.Controllers
         [Authorize(Roles = "admin, instructor")]
         public async Task<IActionResult> Create()
         {
-            ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            if (User.IsInRole("admin"))
+            {
+                ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            }
             return View();
         }
 
@@ -137,13 +140,24 @@ namespace OzarkLMS.Controllers
         [Authorize(Roles = "admin, instructor")]
         public async Task<IActionResult> Create([Bind("Id,Name,Code,Term,Color,Icon,InstructorId")] Course course)
         {
+            // If instructor, force assign to self
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                course.InstructorId = userId;
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(course);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            
+            if (User.IsInRole("admin"))
+            {
+                ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            }
             return View(course);
         }
         // GET: Courses/Edit/5
@@ -155,7 +169,17 @@ namespace OzarkLMS.Controllers
             var course = await _context.Courses.FindAsync(id);
             if (course == null) return NotFound();
 
-            ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            // Security Check: Instructors can only edit their own courses
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (course.InstructorId != userId) return Forbid();
+            }
+
+            if (User.IsInRole("admin"))
+            {
+                ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            }
             return View(course);
         }
 
@@ -166,6 +190,19 @@ namespace OzarkLMS.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Term,Color,Icon,InstructorId")] Course course)
         {
             if (id != course.Id) return NotFound();
+
+            // Security Check: Instructors can only edit their own courses
+            if (User.IsInRole("instructor"))
+            {
+                var originalCourse = await _context.Courses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+                if (originalCourse == null) return NotFound();
+                
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (originalCourse.InstructorId != userId) return Forbid();
+
+                // Prevent Instructor from changing the InstructorId
+                course.InstructorId = userId; 
+            }
 
             if (ModelState.IsValid)
             {
@@ -181,7 +218,11 @@ namespace OzarkLMS.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            
+            if (User.IsInRole("admin"))
+            {
+                ViewBag.Instructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+            }
             return View(course);
         }
 
@@ -197,6 +238,13 @@ namespace OzarkLMS.Controllers
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (course == null) return NotFound();
+
+            // Security Check
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (course.InstructorId != userId) return Forbid();
+            }
 
             var enrolledStudentIds = course.Enrollments.Select(e => e.StudentId).ToList();
             

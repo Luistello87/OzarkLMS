@@ -13,6 +13,7 @@ namespace OzarkLMS.Models
         public string Title { get; set; } = string.Empty;
 
         public List<ModuleItem> Items { get; set; } = new List<ModuleItem>();
+        public Course Course { get; set; } = null!; // Navigation property
     }
 
     public class ModuleItem

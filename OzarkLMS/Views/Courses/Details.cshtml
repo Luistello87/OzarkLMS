@@ -5,19 +5,19 @@
     if (string.IsNullOrEmpty(activeTab)) activeTab = "home";
 }
 
-<div class="flex flex-col h-full bg-[#FAFBFC]">
+<div class="flex flex-col h-full bg-[#FAFBFC] dark:bg-slate-900 transition-colors duration-300">
     <!-- Course Header -->
-    <div class="bg-white border-b border-gray-200 px-8 py-6 mb-6">
+    <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-6 mb-6 transition-colors">
         <div class="flex items-center justify-between">
             <div class="flex items-center">
-                 <div class="w-12 h-12 rounded-lg bg-[#004B87] text-white flex items-center justify-center text-2xl mr-4 shadow-sm">
+                 <div class="w-12 h-12 rounded-lg bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center text-2xl mr-4 shadow-sm">
                     @Model.Icon
                  </div>
                  <div>
-                     <h1 class="text-2xl font-bold text-slate-800 tracking-tight leading-none">@Model.Name</h1>
-                     <div class="flex items-center text-sm text-slate-500 mt-1">
-                         <span class="font-semibold text-[#DA291C]">@Model.Code</span>
-                         <span class="mx-2 text-gray-300">•</span>
+                     <h1 class="text-2xl font-bold text-slate-800 dark:text-white tracking-tight leading-none">@Model.Name</h1>
+                     <div class="flex items-center text-sm text-slate-500 dark:text-slate-400 mt-1">
+                         <span class="font-semibold text-[#DA291C] dark:text-red-400">@Model.Code</span>
+                         <span class="mx-2 text-gray-300 dark:text-slate-600">•</span>
                          <span>@Model.Term</span>
                      </div>
                  </div>
@@ -28,13 +28,11 @@
                     // View logic for enrolled students could go here
                  }
                  
-                 <!-- Hardcoded check for Instructor Role (simulated) -->
-                 <!-- In real app, check User.IsInRole("instructor") -->
-                 <a asp-action="ManageStudents" asp-route-id="@Model.Id" class="bg-white border border-[#004B87] text-[#004B87] px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors flex items-center shadow-sm">
+                 <a asp-action="ManageStudents" asp-route-id="@Model.Id" class="bg-white dark:bg-slate-700 border border-[#004B87] dark:border-blue-500 text-[#004B87] dark:text-blue-300 px-4 py-2 rounded-lg font-medium text-sm hover:bg-blue-50 dark:hover:bg-slate-600 transition-colors flex items-center shadow-sm">
                      <i data-lucide="users" class="w-4 h-4 mr-2"></i> Students
                  </a>
 
-                 <a asp-action="Index" class="text-sm font-medium text-slate-500 hover:text-[#004B87] transition-colors flex items-center">
+                 <a asp-action="Index" class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-[#004B87] dark:hover:text-blue-400 transition-colors flex items-center">
                      <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back
                  </a>
             </div>
@@ -46,17 +44,17 @@
         <nav class="w-full md:w-64 flex-shrink-0 md:mr-8 mb-6 md:mb-0">
             <ul class="space-y-1">
                 <li>
-                    <a href="?tab=home" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "home" ? "bg-[#004B87] text-white shadow-md" : "text-slate-600 hover:bg-white hover:shadow-sm")">
+                    <a href="?tab=home" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "home" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm")">
                         <i data-lucide="home" class="w-4 h-4 mr-3"></i> Home
                     </a>
                 </li>
                 <li>
-                    <a href="?tab=assignments" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "assignments" ? "bg-[#004B87] text-white shadow-md" : "text-slate-600 hover:bg-white hover:shadow-sm")">
+                    <a href="?tab=assignments" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "assignments" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm")">
                         <i data-lucide="file-text" class="w-4 h-4 mr-3"></i> Assignments
                     </a>
                 </li>
                 <li>
-                    <a href="?tab=grades" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "grades" ? "bg-[#004B87] text-white shadow-md" : "text-slate-600 hover:bg-white hover:shadow-sm")">
+                    <a href="?tab=grades" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "grades" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm")">
                         <i data-lucide="bar-chart-2" class="w-4 h-4 mr-3"></i> Grades
                     </a>
                 </li>
@@ -64,16 +62,16 @@
         </nav>
 
         <!-- Main Content Area -->
-        <main class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 min-h-[500px] p-8">
+        <main class="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 min-h-[500px] p-8 transition-colors">
             
             @if(activeTab == "home")
             {
                 <div class="space-y-8">
-   <div class="pb-4 border-b border-gray-100 flex justify-between items-end">
-                        <h2 class="text-xl font-bold text-slate-800">Course Content</h2>
+   <div class="pb-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-end">
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-white">Course Content</h2>
                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                         {
-                            <a asp-controller="Assignments" asp-action="Create" asp-route-courseId="@Model.Id" class="text-xs bg-blue-50 text-[#004B87] px-3 py-1 rounded-full font-bold hover:bg-blue-100 transition-colors">
+                            <a asp-controller="Assignments" asp-action="Create" asp-route-courseId="@Model.Id" class="text-xs bg-blue-50 dark:bg-blue-900/30 text-[#004B87] dark:text-blue-300 px-3 py-1 rounded-full font-bold hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
                                 + Add Content
                             </a>
                         }
@@ -83,31 +81,31 @@
                     {
                         foreach(var module in Model.Modules)
                         {
-                            <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm mb-4">
-                                <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-                                    <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">@module.Title</h3>
+                            <div class="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm mb-4">
+                                <div class="bg-gray-50 dark:bg-slate-750 px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                                    <h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide">@module.Title</h3>
                                     <div class="flex items-center space-x-2">
                                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                                         {
-                                            <a asp-controller="Modules" asp-action="AddItem" asp-route-moduleId="@module.Id" class="text-xs text-[#004B87] font-bold hover:underline">+ Add Item</a>
+                                            <a asp-controller="Modules" asp-action="AddItem" asp-route-moduleId="@module.Id" class="text-xs text-[#004B87] dark:text-blue-400 font-bold hover:underline">+ Add Item</a>
                                         }
                                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                                     </div>
                                 </div>
-                                <div class="divide-y divide-gray-100 bg-white">
+                                <div class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
                                     @foreach(var item in module.Items)
                                     {
-                                        <div class="px-5 py-3 flex items-center hover:bg-blue-50/50 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-[#004B87]">
-                                            <div class="text-slate-300 mr-4 group-hover:text-[#DA291C] transition-colors">
+                                        <div class="px-5 py-3 flex items-center hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-[#004B87] dark:hover:border-blue-500">
+                                            <div class="text-slate-300 dark:text-slate-500 mr-4 group-hover:text-[#DA291C] dark:group-hover:text-red-400 transition-colors">
                                                 <i data-lucide="@(item.Type == "file" ? "file" : (item.Type == "quiz" ? "help-circle" : "file-text"))" class="w-4 h-4"></i>
                                             </div>
                                             @if(!string.IsNullOrEmpty(item.ContentUrl))
                                             {
-                                                <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 group-hover:text-[#004B87] hover:underline">@item.Title</a>
+                                                <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300 hover:underline">@item.Title</a>
                                             }
                                             else
                                             {
-                                                <span class="text-sm font-medium text-slate-700 group-hover:text-[#004B87]">@item.Title</span>
+                                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300">@item.Title</span>
                                             }
                                         </div>
                                     }
@@ -117,15 +115,15 @@
                     }
                     else
                     {
-                         <div class="text-center py-20 border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/50">
-                            <p class="text-slate-400 mb-4 font-medium">This course has no modules yet.</p>
+                         <div class="text-center py-20 border-2 border-dashed border-gray-100 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-800/30">
+                            <p class="text-slate-400 dark:text-slate-500 mb-4 font-medium">This course has no modules yet.</p>
                         </div>
                     }
                     
                     @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                     {
                         <div class="mt-6 text-center">
-                            <a asp-controller="Modules" asp-action="Create" asp-route-courseId="@Model.Id" class="bg-white border border-gray-200 text-slate-500 px-4 py-2 rounded-lg font-bold text-sm hover:border-[#004B87] hover:text-[#004B87] transition-all">
+                            <a asp-controller="Modules" asp-action="Create" asp-route-courseId="@Model.Id" class="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 px-4 py-2 rounded-lg font-bold text-sm hover:border-[#004B87] dark:hover:border-blue-400 hover:text-[#004B87] dark:hover:text-blue-400 transition-all">
                                 + Create New Module
                             </a>
                         </div>
@@ -135,11 +133,11 @@
             else if (activeTab == "assignments")
             {
                  <div class="space-y-6">
-                     <div class="pb-4 border-b border-gray-100 flex justify-between items-center">
-                        <h2 class="text-xl font-bold text-slate-800">Assignments & Quizzes</h2>
+                     <div class="pb-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-white">Assignments & Quizzes</h2>
                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                         {
-                            <a asp-controller="Assignments" asp-action="Create" asp-route-courseId="@Model.Id" class="bg-[#004B87] text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#003d6e] flex items-center">
+                            <a asp-controller="Assignments" asp-action="Create" asp-route-courseId="@Model.Id" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#003d6e] dark:hover:bg-blue-700 flex items-center">
                                 <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Add Assignment/Quiz
                             </a>
                         }
@@ -147,28 +145,28 @@
                      <div class="space-y-4">
                         @foreach(var item in Model.Assignments)
                         {
-                            <div class="p-5 border border-gray-200 rounded-xl hover:shadow-md transition-all bg-white group hover:border-blue-200">
+                            <div class="p-5 border border-gray-200 dark:border-slate-700 rounded-xl hover:shadow-md transition-all bg-white dark:bg-slate-750 group hover:border-blue-200 dark:hover:border-blue-600">
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center">
-                                        <div class="p-3 rounded-lg mr-5 shadow-sm @(item.Type == "quiz" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-[#004B87]")">
+                                        <div class="p-3 rounded-lg mr-5 shadow-sm @(item.Type == "quiz" ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300" : "bg-blue-100 text-[#004B87] dark:bg-blue-900/30 dark:text-blue-300")">
                                             <i data-lucide="@(item.Type == "quiz" ? "help-circle" : "file-text")" class="w-5 h-5"></i>
                                         </div>
                                         <div>
-                                            <h4 class="font-bold text-slate-800 text-base group-hover:text-[#004B87] transition-colors">@item.Title</h4>
-                                            <div class="flex items-center mt-1 text-xs text-slate-500 font-medium space-x-3">
+                                            <h4 class="font-bold text-slate-800 dark:text-slate-200 text-base group-hover:text-[#004B87] dark:group-hover:text-blue-400 transition-colors">@item.Title</h4>
+                                            <div class="flex items-center mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium space-x-3">
                                                 <span class="flex items-center"><i data-lucide="calendar" class="w-3 h-3 mr-1"></i> Due: @item.DueDate.ToShortDateString()</span>
-                                                <span class="bg-gray-100 px-2 py-0.5 rounded text-gray-600">Attempts: @item.MaxAttempts</span>
+                                                <span class="bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded text-gray-600 dark:text-slate-300">Attempts: @item.MaxAttempts</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="flex space-x-2">
                                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                                         {
-                                            <a asp-controller="Assignments" asp-action="Submissions" asp-route-id="@item.Id" class="bg-white border border-[#004B87] text-[#004B87] px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-all shadow-sm flex items-center">
+                                            <a asp-controller="Assignments" asp-action="Submissions" asp-route-id="@item.Id" class="bg-white dark:bg-slate-700 border border-[#004B87] dark:border-blue-500 text-[#004B87] dark:text-blue-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 dark:hover:bg-slate-600 transition-all shadow-sm flex items-center">
                                                 <i data-lucide="check-square" class="w-4 h-4 mr-2"></i> Grade
                                             </a>
                                         }
-                                        <a asp-controller="Assignments" asp-action="Take" asp-route-id="@item.Id" class="bg-white border border-gray-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#DA291C] hover:text-white hover:border-[#DA291C] transition-all shadow-sm">
+                                        <a asp-controller="Assignments" asp-action="Take" asp-route-id="@item.Id" class="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#DA291C] dark:hover:bg-red-700 hover:text-white hover:border-[#DA291C] dark:hover:border-red-700 transition-all shadow-sm">
                                             Start
                                         </a>
                                     </div>
@@ -183,12 +181,12 @@
                  @if (User.IsInRole("student"))
                  {
                      <div class="py-6">
-                         <h2 class="text-xl font-bold text-slate-800 mb-4">Your Grades</h2>
+                         <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-4">Your Grades</h2>
                          
-                         <div class="bg-white border rounded-xl overflow-hidden shadow-sm mb-6">
-                             <div class="px-6 py-4 bg-gray-50 border-b flex justify-between items-center">
-                                 <span class="font-bold text-slate-600">Current Average</span>
-                                 <span class="font-bold text-2xl text-[#004B87]">@(ViewBag.CurrentGrade ?? 0)%</span>
+                         <div class="bg-white dark:bg-slate-750 border dark:border-slate-700 rounded-xl overflow-hidden shadow-sm mb-6">
+                             <div class="px-6 py-4 bg-gray-50 dark:bg-slate-800 border-b dark:border-slate-700 flex justify-between items-center">
+                                 <span class="font-bold text-slate-600 dark:text-slate-300">Current Average</span>
+                                 <span class="font-bold text-2xl text-[#004B87] dark:text-blue-400">@(ViewBag.CurrentGrade ?? 0)%</span>
                              </div>
                          </div>
                          
@@ -197,12 +195,12 @@
                              {
                                  foreach(var sub in ViewBag.StudentSubmissions as List<OzarkLMS.Models.Submission>)
                                  {
-                                     <div class="p-4 border rounded-lg flex justify-between items-center bg-white hover:bg-blue-50 transition-colors">
+                                     <div class="p-4 border dark:border-slate-700 rounded-lg flex justify-between items-center bg-white dark:bg-slate-750 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                          <div>
-                                             <div class="font-bold text-slate-700">@sub.Assignment.Title</div>
-                                             <div class="text-xs text-slate-500">Submitted: @sub.SubmittedAt.ToShortDateString()</div>
+                                             <div class="font-bold text-slate-700 dark:text-slate-200">@sub.Assignment.Title</div>
+                                             <div class="text-xs text-slate-500 dark:text-slate-400">Submitted: @sub.SubmittedAt.ToShortDateString()</div>
                                          </div>
-                                         <div class="font-bold @(sub.Score >= 60 ? "text-green-600" : "text-red-500")">
+                                         <div class="font-bold @(sub.Score >= 60 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400")">
                                              @sub.Score / 100
                                          </div>
                                      </div>
@@ -214,11 +212,11 @@
                  else
                  {
                      <div class="py-6">
-                         <h2 class="text-xl font-bold text-slate-800 mb-4">Class Gradebook</h2>
+                         <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-4">Class Gradebook</h2>
                          <div class="overflow-x-auto">
                              <table class="w-full text-left text-sm border-collapse">
                                  <thead>
-                                     <tr class="bg-gray-100 text-slate-600 border-b">
+                                     <tr class="bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-b dark:border-slate-600">
                                          <th class="p-3">Student</th>
                                          @foreach(var assign in Model.Assignments)
                                          {
@@ -234,8 +232,8 @@
                                          double sum = 0;
                                          int count = 0;
                                          
-                                         <tr class="border-b hover:bg-gray-50">
-                                             <td class="p-3 font-medium">@student.Username</td>
+                                         <tr class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-750">
+                                             <td class="p-3 font-medium text-slate-700 dark:text-slate-300">@student.Username</td>
                                              @foreach(var assign in Model.Assignments)
                                              {
                                                  var sub = submissions?.FirstOrDefault(s => s.AssignmentId == assign.Id);
@@ -244,15 +242,15 @@
                                                      {
                                                          sum += sub.Score.Value;
                                                          count++;
-                                                         <span class="px-2 py-1 rounded bg-green-100 text-green-700">@sub.Score</span>
+                                                         <span class="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">@sub.Score</span>
                                                      }
                                                      else
                                                      {
-                                                         <span class="text-gray-300">-</span>
+                                                         <span class="text-gray-300 dark:text-slate-600">-</span>
                                                      }
                                                  </td>
                                              }
-                                             <td class="p-3 font-bold text-[#004B87]">
+                                             <td class="p-3 font-bold text-[#004B87] dark:text-blue-400">
                                                  @(count > 0 ? Math.Round(sum / count, 1) : 0)%
                                              </td>
                                          </tr>

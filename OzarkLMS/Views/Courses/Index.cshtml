@@ -5,7 +5,7 @@
         <h1 class="text-4xl font-extrabold text-[#2D3B45] dark:text-white mb-8 tracking-tight">All Courses</h1>
         @if(User.IsInRole("admin") || User.IsInRole("instructor"))
         {
-            <a asp-action="Create" class="bg-[#2D3B45] text-white px-6 py-3 rounded-full flex items-center shadow-lg hover:bg-[#1f2930] transition-colors">
+            <a asp-action="Create" class="bg-[#2D3B45] dark:bg-slate-700 text-white px-6 py-3 rounded-full flex items-center shadow-lg hover:bg-[#1f2930] dark:hover:bg-slate-600 transition-colors">
                 <i data-lucide="plus" class="w-5 h-5 mr-2"></i> New Course
             </a>
         }
@@ -14,8 +14,8 @@
     <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex-1 flex flex-col min-h-0">
         @if (!Model.Any())
         {
-            <div class="p-20 text-center text-slate-400 flex flex-col items-center">
-                <i data-lucide="book" class="w-12 h-12 mb-4 text-slate-300"></i>
+            <div class="p-20 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center">
+                <i data-lucide="book" class="w-12 h-12 mb-4 text-slate-300 dark:text-slate-600"></i>
                 <p class="text-lg">No courses available.</p>
             </div>
         }
@@ -30,18 +30,18 @@
                                 @course.Icon
                             </div>
                             <div>
-                                <h3 class="font-bold text-[#2D3B45] dark:text-white text-lg group-hover:text-[#BF2604] transition-colors">@course.Name</h3>
+                                <h3 class="font-bold text-[#2D3B45] dark:text-white text-lg group-hover:text-[#BF2604] dark:group-hover:text-red-400 transition-colors">@course.Name</h3>
                                 <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">@course.Code • @course.Term</p>
                             </div>
                         </a>
                         <div class="flex items-center space-x-2">
                              @if(User.IsInRole("admin") || User.IsInRole("instructor"))
                              {
-                                 <a asp-action="ManageStudents" asp-route-id="@course.Id" class="text-xs font-bold text-[#004B87] bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-[#004B87] hover:text-white transition-colors z-10 relative">
+                                 <a asp-action="ManageStudents" asp-route-id="@course.Id" class="text-xs font-bold text-[#004B87] dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg hover:bg-[#004B87] dark:hover:bg-blue-800 hover:text-white transition-colors z-10 relative">
                                      Manage Students
                                  </a>
                              }
-                             <div class="text-slate-300 group-hover:text-slate-500 transition-colors">
+                             <div class="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors">
                                 <i data-lucide="chevron-right"></i>
                              </div>
                         </div>
