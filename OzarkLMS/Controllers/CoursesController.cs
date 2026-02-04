@@ -73,41 +73,34 @@ namespace OzarkLMS.Controllers
             {
                  int userId = int.Parse(userIdClaim.Value);
                  
-                 if (userRole == "student")
-                 {
-                     // Get Student's Submissions
-                     var submissions = await _context.Submissions
-                         .Include(s => s.Assignment)
-                         .Where(s => s.StudentId == userId && s.Assignment.CourseId == id)
-                         .ToListAsync();
-                     
-                     ViewBag.StudentSubmissions = submissions;
-                     
-                     // Calculate Grade: Average of Percentages
-                     // Formula: Sum(Score / MaxPoints) / Count
-                     
-                     if (submissions.Any()) {
-                          double sumPercentages = 0;
-                          int count = 0;
-                          foreach(var sub in submissions)
+                 // Always Get Current User's Submissions (for "Your Grades" section)
+                 var submissions = await _context.Submissions
+                     .Include(s => s.Assignment)
+                     .Where(s => s.StudentId == userId && s.Assignment.CourseId == id)
+                     .ToListAsync();
+                 
+                 ViewBag.StudentSubmissions = submissions;
+                 
+                 // Calculate Grade: Average of Percentages
+                 if (submissions.Any()) {
+                      double sumPercentages = 0;
+                      int count = 0;
+                      foreach(var sub in submissions)
+                      {
+                          int maxPoints = sub.Assignment.Points > 0 ? sub.Assignment.Points : 100;
+                          if (sub.Score.HasValue)
                           {
-                              // Calculate percentage for this assignment
-                              // Default to 100 max points if 0 to avoid division by zero
-                              int maxPoints = sub.Assignment.Points > 0 ? sub.Assignment.Points : 100;
-                              
-                              if (sub.Score.HasValue)
-                              {
-                                  double percentage = (double)sub.Score.Value / maxPoints * 100;
-                                  sumPercentages += percentage;
-                                  count++;
-                              }
+                              double percentage = (double)sub.Score.Value / maxPoints * 100;
+                              sumPercentages += percentage;
+                              count++;
                           }
-                          ViewBag.CurrentGrade = count > 0 ? Math.Round(sumPercentages / count, 1) : 0;
-                     } else {
-                         ViewBag.CurrentGrade = 0;
-                     }
+                      }
+                      ViewBag.CurrentGrade = count > 0 ? Math.Round(sumPercentages / count, 1) : 0;
+                 } else {
+                     ViewBag.CurrentGrade = 0;
                  }
-                 else if (userRole == "admin" || userRole == "instructor")
+
+                 if (userRole == "admin" || userRole == "instructor")
                  {
                      // Gradebook View: Get all submissions for this course
                      var allSubmissions = await _context.Submissions

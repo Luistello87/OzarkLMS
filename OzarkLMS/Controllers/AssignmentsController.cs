@@ -43,6 +43,8 @@ namespace OzarkLMS.Controllers
 
             var assignment = await _context.Assignments
                 .Include(a => a.Course)
+                .Include(a => a.Questions)
+                .ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (assignment == null) return NotFound();
@@ -127,6 +129,19 @@ namespace OzarkLMS.Controllers
         [Authorize(Roles = "admin, instructor")]
         public async Task<IActionResult> AddOption([FromForm] int questionId, [FromForm] int assignmentId, [FromForm] string text, [FromForm] bool isCorrect)
         {
+            // Enforce Single Correct Option Logic
+            if (isCorrect)
+            {
+                var existingOptions = await _context.QuestionOptions
+                    .Where(o => o.QuestionId == questionId && o.IsCorrect)
+                    .ToListAsync();
+                
+                foreach (var opt in existingOptions)
+                {
+                    opt.IsCorrect = false;
+                }
+            }
+
             var option = new QuestionOption { QuestionId = questionId, Text = text, IsCorrect = isCorrect };
             _context.QuestionOptions.Add(option);
             await _context.SaveChangesAsync();
@@ -162,12 +177,16 @@ namespace OzarkLMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize] // Ensure user is logged in
         public async Task<IActionResult> SubmitQuiz(int assignmentId, Dictionary<int, int> answers)
         {
              var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
              if (userIdClaim == null) return Unauthorized();
              var userId = int.Parse(userIdClaim.Value);
              
+             // Null check answers just in case
+             if (answers == null) answers = new Dictionary<int, int>();
+
              // Simple Auto-Grading Logic
              int score = 0;
              var questions = await _context.Questions.Include(q => q.Options).Where(q => q.AssignmentId == assignmentId).ToListAsync();
