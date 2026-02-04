@@ -35,12 +35,16 @@ namespace OzarkLMS.Controllers
             List<Course> courses;
             if (User.IsInRole("admin"))
             {
-                courses = await _context.Courses.Include(c => c.Instructor).ToListAsync();
+                courses = await _context.Courses
+                    .Include(c => c.Instructor)
+                    .Include(c => c.Assignments)
+                    .ToListAsync();
             }
             else if (User.IsInRole("instructor"))
             {
                 courses = await _context.Courses
                     .Include(c => c.Instructor)
+                    .Include(c => c.Assignments)
                     .Where(c => c.InstructorId == user.Id)
                     .ToListAsync();
             }
@@ -53,6 +57,7 @@ namespace OzarkLMS.Controllers
 
                 courses = await _context.Courses
                     .Include(c => c.Instructor)
+                    .Include(c => c.Assignments)
                     .Where(c => enrolledCourseIds.Contains(c.Id))
                     .ToListAsync();
             }
