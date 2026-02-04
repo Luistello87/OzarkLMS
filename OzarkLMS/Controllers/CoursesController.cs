@@ -289,5 +289,26 @@ namespace OzarkLMS.Controllers
             }
             return RedirectToAction(nameof(ManageStudents), new { id = courseId });
         }
+
+        // POST: Courses/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin, instructor")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var course = await _context.Courses.FindAsync(id);
+            if (course == null) return NotFound();
+
+            // RBAC: Instructors can only delete their own courses
+            if (User.IsInRole("instructor"))
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if (course.InstructorId != userId) return Forbid();
+            }
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
