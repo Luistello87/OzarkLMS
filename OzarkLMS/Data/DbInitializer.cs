@@ -23,6 +23,13 @@ namespace OzarkLMS.Data
             context.Users.AddRange(users);
             context.SaveChanges();
 
+            // Ensure Admin exists
+            if (!context.Users.Any(u => u.Role == "admin"))
+            {
+                context.Users.Add(new User { Username = "admin", Password = "password", Role = "admin" });
+                context.SaveChanges();
+            }
+
             var courses = new Course[]
             {
                 new Course{Name="Intro to Psychology", Code="PSY 101", Term="Fall 2024", Color="bg-blue-500", Icon="🧠"},

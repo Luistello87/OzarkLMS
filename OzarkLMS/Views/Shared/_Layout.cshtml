@@ -99,9 +99,15 @@
                 @{
                     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                     var hasUnread = false;
+                    string? userProfilePic = null;
+
                     if(currentUserId != null) {
                          var uid = int.Parse(currentUserId);
                          hasUnread = _context.Notifications.Any(n => n.RecipientId == uid && !n.IsRead);
+                         
+                         // Fetch profile pic
+                         var currentUser = _context.Users.Find(uid);
+                         if(currentUser != null) userProfilePic = currentUser.ProfilePictureUrl;
                     }
                 }
                 
@@ -115,8 +121,15 @@
 
                 <!-- User Dropdown -->
                 <div class="relative group" id="user-menu-container">
-                    <button onclick="document.getElementById('user-dropdown').classList.toggle('hidden')" class="w-9 h-9 rounded-full bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm ring-2 ring-white dark:ring-slate-700 hover:ring-4 transition-all focus:outline-none">
-                        @(User.Identity?.Name?.Substring(0,1) ?? "U")
+                    <button onclick="document.getElementById('user-dropdown').classList.toggle('hidden')" class="w-9 h-9 rounded-full bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm ring-2 ring-white dark:ring-slate-700 hover:ring-4 transition-all focus:outline-none overflow-hidden p-0">
+                        @if(!string.IsNullOrEmpty(userProfilePic))
+                        {
+                            <img src="@userProfilePic" alt="User" class="w-full h-full object-cover" />
+                        }
+                        else
+                        {
+                            @(User.Identity?.Name?.Substring(0,1) ?? "U")
+                        }
                     </button>
                     
                     <!-- Dropdown Menu -->

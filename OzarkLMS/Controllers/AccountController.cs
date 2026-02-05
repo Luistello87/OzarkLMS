@@ -142,7 +142,50 @@ namespace OzarkLMS.Controllers
                 TaughtCourses = await _context.Courses.Where(c => c.InstructorId == userId).ToListAsync()
             };
 
+            // If Admin, load lists and clear course lists (per requirement to replace them)
+            if (user.Role == "admin")
+            {
+                viewModel.AllInstructors = await _context.Users.Where(u => u.Role == "instructor").ToListAsync();
+                viewModel.AllStudents = await _context.Users.Where(u => u.Role == "student").ToListAsync();
+                
+                // Requirement: "Instead of showing Enrolled Courses display..."
+                viewModel.EnrolledCourses.Clear(); 
+            }
+
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfilePicture(IFormFile? file, string? imageUrl)
+        {
+             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+             if (userIdClaim == null) return RedirectToAction("Login");
+             var userId = int.Parse(userIdClaim.Value);
+
+             var user = await _context.Users.FindAsync(userId);
+             if (user == null) return NotFound();
+
+             if (file != null && file.Length > 0)
+             {
+                  var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                  if(!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+
+                  var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+                  var filePath = Path.Combine(uploads, fileName);
+                  using (var stream = new FileStream(filePath, FileMode.Create))
+                  {
+                      await file.CopyToAsync(stream);
+                  }
+                  user.ProfilePictureUrl = "/uploads/" + fileName;
+             }
+             else if (!string.IsNullOrEmpty(imageUrl))
+             {
+                 user.ProfilePictureUrl = imageUrl;
+             }
+
+             await _context.SaveChangesAsync();
+             return RedirectToAction(nameof(Profile));
         }
 
         public IActionResult AccessDenied()
