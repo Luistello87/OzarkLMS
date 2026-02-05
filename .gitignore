@@ -16,3 +16,6 @@ artifacts/
 *.user
 *.suo
 *.userprefs
+
+# Uploads
+OzarkLMS/wwwroot/uploads/

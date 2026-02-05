@@ -87,12 +87,15 @@ namespace OzarkLMS.Controllers
                       int count = 0;
                       foreach(var sub in submissions)
                       {
-                          int maxPoints = sub.Assignment.Points > 0 ? sub.Assignment.Points : 100;
-                          if (sub.Score.HasValue)
+                          if(sub.Assignment != null)
                           {
-                              double percentage = (double)sub.Score.Value / maxPoints * 100;
-                              sumPercentages += percentage;
-                              count++;
+                              int maxPoints = sub.Assignment.Points > 0 ? sub.Assignment.Points : 100;
+                              if (sub.Score.HasValue)
+                              {
+                                  double percentage = (double)sub.Score.Value / maxPoints * 100;
+                                  sumPercentages += percentage;
+                                  count++;
+                              }
                           }
                       }
                       ViewBag.CurrentGrade = count > 0 ? Math.Round(sumPercentages / count, 1) : 0;

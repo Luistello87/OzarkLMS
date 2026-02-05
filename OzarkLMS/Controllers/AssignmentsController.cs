@@ -180,6 +180,15 @@ namespace OzarkLMS.Controllers
 
             if (assignment == null) return NotFound();
 
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim != null)
+            {
+                 var userId = int.Parse(userIdClaim.Value);
+                 var existingSubmission = await _context.Submissions
+                     .FirstOrDefaultAsync(s => s.AssignmentId == id && s.StudentId == userId);
+                 ViewBag.ExistingSubmission = existingSubmission;
+            }
+
             return View(assignment);
         }
 
@@ -272,7 +281,8 @@ namespace OzarkLMS.Controllers
              var assignment = await _context.Assignments.FindAsync(assignmentId);
              if (assignment != null)
              {
-                 return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "assignments" });
+                 TempData["ShowSubmissionBanner"] = true;
+                 return RedirectToAction("Take", new { id = assignmentId });
              }
              return RedirectToAction("Index", "Courses");
         }

@@ -270,15 +270,15 @@
                                  {
                                      <div class="p-4 border dark:border-slate-700 rounded-lg flex justify-between items-center bg-white dark:bg-slate-750 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                                          <div>
-                                             <div class="font-bold text-slate-700 dark:text-slate-200">@sub.Assignment.Title</div>
+                                             <div class="font-bold text-slate-700 dark:text-slate-200">@(sub.Assignment?.Title ?? "Unknown Assignment")</div>
                                              <div class="text-xs text-slate-500 dark:text-slate-400">Submitted: @sub.SubmittedAt.ToShortDateString()</div>
                                          </div>
-                                         <div class="font-bold @(sub.Score >= (sub.Assignment.Points * 0.6) ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400")">
-                                             @{
-                                                 var percentage = sub.Assignment.Points > 0 ? Math.Round((double)sub.Score / sub.Assignment.Points * 100, 1) : 0;
-                                             }
-                                             @percentage% <span class="text-xs text-slate-400 font-normal">(@sub.Score/@sub.Assignment.Points)</span>
-                                         </div>
+                                          <div class="font-bold @(sub.Assignment != null && sub.Score.HasValue && sub.Score >= (sub.Assignment.Points * 0.6) ? "text-green-600 dark:text-green-400" : (sub.Score.HasValue ? "text-red-500 dark:text-red-400" : "text-slate-500"))">
+                                              @{
+                                                  var percentage = (sub.Assignment != null && sub.Assignment.Points > 0 && sub.Score.HasValue) ? Math.Round((double)sub.Score.Value / sub.Assignment.Points * 100, 1) : 0;
+                                              }
+                                              @percentage% <span class="text-xs text-slate-400 font-normal">(@(sub.Score?.ToString() ?? "-")/@(sub.Assignment?.Points ?? 100))</span>
+                                          </div>
                                      </div>
                                  }
                              }
