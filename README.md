@@ -1,5 +1,5 @@
 # OzarkLMS
-🚀 A Modern Learning Management System built with ASP.NET Core MVC.
+A Modern Learning Management System built with ASP.NET Core MVC.
 
 ## Prerequisites
 Before running the application, ensure you have the following installed:
