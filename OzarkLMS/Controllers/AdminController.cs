@@ -85,5 +85,34 @@ namespace OzarkLMS.Controllers
              await _context.SaveChangesAsync();
              return RedirectToAction(nameof(Dashboard));
         }
+        // POST: Admin/DeleteUser/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return RedirectToAction(nameof(Dashboard));
+
+            // 1. Remove Enrollments (Cascade Delete)
+            var enrollments = _context.Enrollments.Where(e => e.StudentId == id);
+            _context.Enrollments.RemoveRange(enrollments);
+
+            // 2. Remove Submissions (Cascade Delete)
+            var submissions = _context.Submissions.Where(s => s.StudentId == id);
+            _context.Submissions.RemoveRange(submissions);
+
+            // 3. Unassign Courses (if Instructor)
+            var courses = _context.Courses.Where(c => c.InstructorId == id);
+            foreach (var course in courses)
+            {
+                course.InstructorId = null;
+            }
+
+            // 4. Remove User
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Dashboard));
+        }
     }
 }

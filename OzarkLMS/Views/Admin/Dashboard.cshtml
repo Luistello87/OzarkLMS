@@ -65,6 +65,9 @@
                         <td class="px-6 py-4"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-bold uppercase">Instructor</span></td>
                         <td class="px-6 py-4">
                             <button class="text-slate-400 hover:text-[#004B87] transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="confirmDelete(@instructor.Id, '@instructor.Username')" class="text-slate-400 hover:text-red-600 transition-colors ml-2" title="Delete User">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                         </td>
                     </tr>
                     }
@@ -93,6 +96,9 @@
                         <td class="px-6 py-4"><span class="bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs font-bold uppercase">@student.Role</span></td>
                         <td class="px-6 py-4">
                             <button class="text-slate-400 hover:text-[#004B87] transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="confirmDelete(@student.Id, '@student.Username')" class="text-slate-400 hover:text-red-600 transition-colors ml-2" title="Delete User">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                         </td>
                     </tr>
                     }
@@ -101,3 +107,44 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
+    <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i data-lucide="alert-triangle" class="h-6 w-6 text-red-600"></i>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Confirm Deletion</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">
+                    Are you sure you want to delete user <span id="delete-username" class="font-bold"></span>? 
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <form id="delete-form" asp-action="DeleteUser" method="post">
+                    <input type="hidden" name="id" id="delete-user-id" />
+                    <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-24 hover:bg-red-700 shadow-sm">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(id, username) {
+        document.getElementById('delete-user-id').value = id;
+        document.getElementById('delete-username').textContent = username;
+        document.getElementById('delete-modal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-modal').classList.add('hidden');
+    }
+</script>

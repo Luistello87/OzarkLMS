@@ -95,17 +95,32 @@
                                 <div class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
                                     @foreach(var item in module.Items)
                                     {
-                                        <div class="px-5 py-3 flex items-center hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-[#004B87] dark:hover:border-blue-500">
-                                            <div class="text-slate-300 dark:text-slate-500 mr-4 group-hover:text-[#DA291C] dark:group-hover:text-red-400 transition-colors">
-                                                <i data-lucide="@(item.Type == "file" ? "file" : (item.Type == "quiz" ? "help-circle" : "file-text"))" class="w-4 h-4"></i>
-                                            </div>
-                                            @if(!string.IsNullOrEmpty(item.ContentUrl))
+                                        <div class="px-5 py-3 border-l-4 border-transparent hover:border-[#004B87] dark:hover:border-blue-500 transition-colors bg-white dark:bg-slate-800">
+                                            @if(item.DisplayMode == "embed" && !string.IsNullOrEmpty(item.ContentUrl))
                                             {
-                                                <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300 hover:underline">@item.Title</a>
+                                                <div class="mb-2 flex items-center text-[#004B87] dark:text-blue-300 font-bold">
+                                                    <i data-lucide="file" class="w-4 h-4 mr-2"></i> @item.Title
+                                                </div>
+                                                <div class="w-full aspect-video rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-900">
+                                                    <!-- Simple embed fallback for PDF/Images. For production, consider a PDF viewer lib -->
+                                                    <iframe src="@item.ContentUrl" class="w-full h-full"></iframe>
+                                                </div>
                                             }
                                             else
                                             {
-                                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300">@item.Title</span>
+                                                <div class="flex items-center hover:bg-blue-50/50 dark:hover:bg-slate-700/50 -mx-5 px-5 py-2 transition-colors group cursor-pointer">
+                                                    <div class="text-slate-300 dark:text-slate-500 mr-4 group-hover:text-[#DA291C] dark:group-hover:text-red-400 transition-colors">
+                                                        <i data-lucide="@(item.Type == "file" ? "file" : (item.Type == "quiz" ? "help-circle" : "file-text"))" class="w-4 h-4"></i>
+                                                    </div>
+                                                    @if(!string.IsNullOrEmpty(item.ContentUrl))
+                                                    {
+                                                        <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300 hover:underline">@item.Title</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300">@item.Title</span>
+                                                    }
+                                                </div>
                                             }
                                         </div>
                                     }

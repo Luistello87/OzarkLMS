@@ -37,8 +37,11 @@ namespace OzarkLMS.Controllers
         // POST: Modules/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("CourseId,Title")] Module module)
+        public async Task<IActionResult> Create([Bind("CourseId,Title")] Module module, IFormFile? file, string? displayMode)
         {
+            ModelState.Remove("Course");
+            ModelState.Remove("Items");
+
             if (ModelState.IsValid)
             {
                 if (User.IsInRole("instructor"))
@@ -50,7 +53,14 @@ namespace OzarkLMS.Controllers
                 }
 
                 _context.Add(module);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Save to get Module Id
+
+                // Handle optional initial file upload
+                if (file != null && file.Length > 0)
+                {
+                    await AddFileItem(module.Id, file, file.FileName, "file", displayMode ?? "link");
+                }
+
                 return RedirectToAction("Details", "Courses", new { id = module.CourseId });
             }
             ViewBag.CourseId = module.CourseId;
@@ -77,7 +87,7 @@ namespace OzarkLMS.Controllers
         // POST: Modules/AddItem
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddItem(int moduleId, string title, string type, IFormFile? file)
+        public async Task<IActionResult> AddItem(int moduleId, string title, string type, IFormFile? file, string? displayMode)
         {
             var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
             if (module == null) return NotFound();
@@ -88,34 +98,81 @@ namespace OzarkLMS.Controllers
                 if (module.Course.InstructorId != userId) return Forbid();
             }
 
-            string? contentUrl = null;
-
             if (type == "file" && file != null && file.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-                if(!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-
-                var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(uploads, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                await AddFileItem(moduleId, file, title, type, displayMode ?? "link");
+            }
+            else
+            {
+                // Handle non-file items (like pages or links)
+                var item = new ModuleItem
                 {
-                    await file.CopyToAsync(stream);
-                }
-                contentUrl = "/uploads/" + fileName;
+                    ModuleId = moduleId,
+                    Title = title,
+                    Type = type,
+                    DisplayMode = displayMode ?? "link"
+                };
+                _context.ModuleItems.Add(item);
+                await _context.SaveChangesAsync();
             }
 
-            var item = new ModuleItem
-            {
-                ModuleId = moduleId,
-                Title = title,
-                Type = type,
-                ContentUrl = contentUrl
-            };
-
-            _context.ModuleItems.Add(item);
-            await _context.SaveChangesAsync();
-
             return RedirectToAction("Details", "Courses", new { id = module.CourseId });
+        }
+
+        private async Task AddFileItem(int moduleId, IFormFile file, string title, string type, string displayMode)
+        {
+             var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+             if(!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+
+             var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+             var filePath = Path.Combine(uploads, fileName);
+             using (var stream = new FileStream(filePath, FileMode.Create))
+             {
+                 await file.CopyToAsync(stream);
+             }
+             var contentUrl = "/uploads/" + fileName;
+
+             var item = new ModuleItem
+             {
+                 ModuleId = moduleId,
+                 Title = title,
+                 Type = type,
+                 ContentUrl = contentUrl,
+                 DisplayMode = displayMode
+             };
+
+             _context.ModuleItems.Add(item);
+             await _context.SaveChangesAsync();
+
+             // Notify Enrolled Students
+             var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
+             if (module != null)
+             {
+                 await NotifyStudents(module.CourseId, $"New Content: {title}", $"New content has been added to {module.Course.Name}: {title}");
+             }
+        }
+
+        private async Task NotifyStudents(int courseId, string title, string message)
+        {
+            var enrollments = await _context.Enrollments
+                .Where(e => e.CourseId == courseId)
+                .Select(e => e.StudentId)
+                .ToListAsync();
+
+            var senderId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            var notifications = enrollments.Select(studentId => new Notification
+            {
+                RecipientId = studentId,
+                SenderId = senderId,
+                Title = title,
+                Message = message,
+                SentDate = DateTime.UtcNow,
+                IsRead = false
+            });
+
+            _context.Notifications.AddRange(notifications);
+            await _context.SaveChangesAsync();
         }
     }
 }

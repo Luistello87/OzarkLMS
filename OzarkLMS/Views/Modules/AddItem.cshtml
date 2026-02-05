@@ -25,9 +25,25 @@
                 </select>
             </div>
 
-            <div id="fileUpload" class="hidden">
-                <label class="block text-sm font-bold text-slate-700 mb-2">Upload File</label>
-                <input type="file" name="file" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#004B87] hover:file:bg-blue-100"/>
+            <div id="fileUpload" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Upload File</label>
+                    <input type="file" name="file" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#004B87] hover:file:bg-blue-100"/>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Display Mode</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="displayMode" value="link" checked class="text-[#004B87] focus:ring-[#004B87]" />
+                            <span class="ml-2 text-sm text-slate-700">List View (Download/Link)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="displayMode" value="embed" class="text-[#004B87] focus:ring-[#004B87]" />
+                            <span class="ml-2 text-sm text-slate-700">Direct View (Embed)</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div class="flex justify-end pt-6 border-t border-gray-100">
