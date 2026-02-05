@@ -16,9 +16,9 @@ namespace OzarkLMS.Controllers
             _context = context;
         }
 
-        // GET: Assignments/Create?courseId=5
+        // GET: Assignments/Create?courseId=5&type=quiz
         [Authorize(Roles = "admin, instructor")]
-        public async Task<IActionResult> Create(int? courseId)
+        public async Task<IActionResult> Create(int? courseId, string? type)
         {
             if (courseId == null) return NotFound();
 
@@ -27,12 +27,15 @@ namespace OzarkLMS.Controllers
 
             if (User.IsInRole("instructor"))
             {
-                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null) return Forbid();
+                var userId = int.Parse(userIdClaim.Value);
+
                 if (course.InstructorId != userId) return Forbid();
             }
 
             ViewBag.Course = course;
-            return View(new Assignment { CourseId = course.Id });
+            return View(new Assignment { CourseId = course.Id, Type = type ?? "assignment" });
         }
 
         // GET: Assignments/Edit/5 (To add questions)
@@ -51,8 +54,10 @@ namespace OzarkLMS.Controllers
 
             if (User.IsInRole("instructor"))
             {
-                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if (assignment.Course.InstructorId != userId) return Forbid();
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null) return Forbid();
+                var userId = int.Parse(userIdClaim.Value);
+                if (assignment.Course != null && assignment.Course.InstructorId != userId) return Forbid();
             }
 
             if (assignment == null) return NotFound();
@@ -77,7 +82,10 @@ namespace OzarkLMS.Controllers
                      var courseCheck = await _context.Courses.FindAsync(assignment.CourseId);
                      if(courseCheck == null) return NotFound();
                      
-                     var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                     var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                     if (userIdClaim == null) return Forbid();
+                     var userId = int.Parse(userIdClaim.Value);
+                     
                      if (courseCheck.InstructorId != userId) return Forbid();
                 }
                 
@@ -104,8 +112,8 @@ namespace OzarkLMS.Controllers
                 {
                      return RedirectToAction(nameof(Edit), new { id = assignment.Id });
                 }
-
-                return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "assignments" });
+                
+                return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = assignment.Type == "quiz" ? "quizzes" : "assignments" });
             }
             
             var course = await _context.Courses.FindAsync(assignment.CourseId);
@@ -218,7 +226,7 @@ namespace OzarkLMS.Controllers
              var assignment = await _context.Assignments.FindAsync(assignmentId);
              if (assignment != null)
              {
-                 return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "grades" });
+                 return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "quizzes" });
              }
              return RedirectToAction("Index", "Courses");
         }

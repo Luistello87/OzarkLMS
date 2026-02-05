@@ -116,6 +116,35 @@ namespace OzarkLMS.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            if (!User.Identity!.IsAuthenticated)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+
+            var userId = int.Parse(userIdClaim.Value);
+            var user = await _context.Users
+                .Include(u => u.Enrollments)
+                    .ThenInclude(e => e.Course)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return NotFound();
+
+            var viewModel = new UserProfileViewModel
+            {
+                User = user,
+                EnrolledCourses = user.Enrollments.Select(e => e.Course).ToList(),
+                TaughtCourses = await _context.Courses.Where(c => c.InstructorId == userId).ToListAsync()
+            };
+
+            return View(viewModel);
+        }
+
         public IActionResult AccessDenied()
         {
             return View();
