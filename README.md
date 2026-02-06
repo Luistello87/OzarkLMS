@@ -6,7 +6,7 @@
 ## 1. Cover Information
 
 1.  **Project title:** OzarkLMS
-2.  **Team name, if any:** OzarkLMS
+2.  **Team name:** OzarkLMS
 3.  **Team members:**
     *   Tello, Luis
     *   Contaldo, Gonzalo
