@@ -36,7 +36,7 @@ namespace OzarkLMS.Controllers
             {
                 var isMember = await _context.ChatGroupMembers
                     .AnyAsync(m => m.ChatGroupId == defaultChat.Id && m.UserId == userId);
-                
+
                 if (!isMember)
                 {
                     _context.ChatGroupMembers.Add(new ChatGroupMember
@@ -60,7 +60,7 @@ namespace OzarkLMS.Controllers
                 .OrderByDescending(g => g.IsDefault) // Default first
                 .ThenByDescending(g => g.LastActivityDate) // Then by last activity
                 .ToListAsync();
-            
+
             // Admins can see all groups? The requirement says "Admin accounts have visibility into all group chats"
             // But usually "Index" shows "My Chats". If Admin wants to manage, maybe a standard list?
             // "Each user’s profile must automatically display a list of all group chats they are currently a member of"
@@ -69,7 +69,7 @@ namespace OzarkLMS.Controllers
             // If Admin needs to see others, they might need a special Admin View. 
             // However, requirement 2: "Admin accounts have visibility into all group chats".
             // Let's append ALL other chats if User is Admin, distinct.
-            
+
             var privateChats = await _context.PrivateChats
                 .Include(c => c.User1)
                 .Include(c => c.User2)
@@ -85,11 +85,11 @@ namespace OzarkLMS.Controllers
                     .OrderByDescending(g => g.IsDefault)
                     .ThenByDescending(g => g.LastActivityDate)
                     .ToListAsync();
-                
+
                 ViewBag.PrivateChats = privateChats;
                 return View(allGroups);
             }
-            
+
             ViewBag.PrivateChats = privateChats;
             return View(myGroups);
         }
@@ -106,14 +106,14 @@ namespace OzarkLMS.Controllers
 
             if (photo != null && photo.Length > 0)
             {
-                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
-                 {
-                     await photo.CopyToAsync(stream);
-                 }
-                 photoUrl = "/uploads/" + fileName;
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
+                {
+                    await photo.CopyToAsync(stream);
+                }
+                photoUrl = "/uploads/" + fileName;
             }
 
             var group = new ChatGroup
@@ -139,7 +139,7 @@ namespace OzarkLMS.Controllers
             });
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Details), new { id = group.Id }); 
+            return RedirectToAction(nameof(Details), new { id = group.Id });
         }
 
         // GET: /Collaboration/Details/5
@@ -173,7 +173,7 @@ namespace OzarkLMS.Controllers
                     }
                     else
                     {
-                         return Forbid();
+                        return Forbid();
                     }
                 }
             }
@@ -189,10 +189,10 @@ namespace OzarkLMS.Controllers
             if (string.IsNullOrWhiteSpace(message) && file == null) return RedirectToAction(nameof(Details), new { id = groupId });
 
             var userId = GetCurrentUserId();
-             // Validate membership/access again
+            // Validate membership/access again
             var group = await _context.ChatGroups.FindAsync(groupId);
             if (group == null) return NotFound();
-            
+
             var isMember = await _context.ChatGroupMembers.AnyAsync(m => m.ChatGroupId == groupId && m.UserId == userId);
             if (!isMember && !User.IsInRole("admin")) return Forbid();
 
@@ -232,10 +232,30 @@ namespace OzarkLMS.Controllers
             };
 
             _context.ChatMessages.Add(chatMessage);
-            
+
             // Update LastActivityDate
             group.LastActivityDate = DateTime.UtcNow;
-            
+
+            await _context.SaveChangesAsync();
+
+            // Notify Group Members (excluding sender)
+            var otherMembers = await _context.ChatGroupMembers
+                .Where(m => m.ChatGroupId == groupId && m.UserId != userId)
+                .Select(m => m.UserId)
+                .ToListAsync();
+
+            var notifications = otherMembers.Select(memberId => new Notification
+            {
+                RecipientId = memberId,
+                SenderId = userId,
+                Title = $"New Message in {group.Name}",
+                Message = message?.Length > 50 ? message.Substring(0, 47) + "..." : (string.IsNullOrWhiteSpace(message) ? "Sent an attachment" : message),
+                SentDate = DateTime.UtcNow,
+                IsRead = false,
+                ActionUrl = $"/Collaboration/Details/{groupId}"
+            });
+
+            _context.Notifications.AddRange(notifications);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = groupId });
@@ -250,14 +270,14 @@ namespace OzarkLMS.Controllers
             var message = await _context.ChatMessages.Include(m => m.Group).FirstOrDefaultAsync(m => m.Id == messageId);
 
             if (message == null) return NotFound();
-            
+
             // Only sender can edit
             if (message.SenderId != userId) return Forbid();
 
             // Perform Edit
             message.Message = newContent;
             message.LastEditedDate = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = message.GroupId });
@@ -281,8 +301,8 @@ namespace OzarkLMS.Controllers
             // Soft Delete
             message.IsDeleted = true;
             // Clear content for compliance/safety (optional but good practice for soft delete if we want to hide it completely)
-            message.Message = ""; 
-            message.AttachmentUrl = null; 
+            message.Message = "";
+            message.AttachmentUrl = null;
 
             await _context.SaveChangesAsync();
 
@@ -296,13 +316,13 @@ namespace OzarkLMS.Controllers
         {
             var userId = GetCurrentUserId();
             var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == targetUsername);
-            
+
             if (targetUser == null) return RedirectToAction(nameof(Index));
             if (targetUser.Id == userId) return RedirectToAction(nameof(Index)); // Cannot chat with self
 
             // Check for existing chat
             var existingChat = await _context.PrivateChats
-                .FirstOrDefaultAsync(c => (c.User1Id == userId && c.User2Id == targetUser.Id) || 
+                .FirstOrDefaultAsync(c => (c.User1Id == userId && c.User2Id == targetUser.Id) ||
                                           (c.User1Id == targetUser.Id && c.User2Id == userId));
 
             if (existingChat != null)
@@ -323,7 +343,7 @@ namespace OzarkLMS.Controllers
 
             return RedirectToAction(nameof(PrivateDetails), new { id = newChat.Id });
         }
-        
+
         // GET: /Collaboration/PrivateDetails/5
         public async Task<IActionResult> PrivateDetails(int id)
         {
@@ -334,15 +354,15 @@ namespace OzarkLMS.Controllers
                 .Include(c => c.Messages)
                     .ThenInclude(m => m.Sender)
                 .FirstOrDefaultAsync(c => c.Id == id);
-                
+
             if (chat == null) return NotFound();
-            
+
             // Security Check
             if (chat.User1Id != userId && chat.User2Id != userId && !User.IsInRole("admin"))
             {
                 return Forbid();
             }
-            
+
             return View(chat);
         }
 
@@ -356,7 +376,7 @@ namespace OzarkLMS.Controllers
             var userId = GetCurrentUserId();
             var chat = await _context.PrivateChats.FindAsync(chatId);
             if (chat == null) return NotFound();
-            
+
             if (chat.User1Id != userId && chat.User2Id != userId && !User.IsInRole("admin")) return Forbid();
 
             string? attachmentUrl = null;
@@ -398,6 +418,23 @@ namespace OzarkLMS.Controllers
             chat.LastActivityDate = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            // Notify Recipient
+            var recipientId = chat.User1Id == userId ? chat.User2Id : chat.User1Id;
+            var sender = await _context.Users.FindAsync(userId);
+            var senderName = sender?.Username ?? "Someone";
+
+            _context.Notifications.Add(new Notification
+            {
+                RecipientId = recipientId,
+                SenderId = userId,
+                Title = $"Private Message from {senderName}",
+                Message = message?.Length > 50 ? message.Substring(0, 47) + "..." : (string.IsNullOrWhiteSpace(message) ? "Sent an attachment" : message),
+                SentDate = DateTime.UtcNow,
+                IsRead = false,
+                ActionUrl = $"/Collaboration/PrivateDetails/{chatId}"
+            });
+            await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(PrivateDetails), new { id = chatId });
         }
 
@@ -406,20 +443,20 @@ namespace OzarkLMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeletePrivateMessage(int messageId)
         {
-             var userId = GetCurrentUserId();
-             var message = await _context.PrivateMessages.Include(m => m.Chat).FirstOrDefaultAsync(m => m.Id == messageId);
-             
-             if (message == null) return NotFound();
-             if (message.SenderId != userId && !User.IsInRole("admin")) return Forbid();
-             
-             message.IsDeleted = true;
-             message.Message = "";
-             message.AttachmentUrl = null; 
-             
-             await _context.SaveChangesAsync();
-             return RedirectToAction(nameof(PrivateDetails), new { id = message.Chat.Id });
+            var userId = GetCurrentUserId();
+            var message = await _context.PrivateMessages.Include(m => m.Chat).FirstOrDefaultAsync(m => m.Id == messageId);
+
+            if (message == null) return NotFound();
+            if (message.SenderId != userId && !User.IsInRole("admin")) return Forbid();
+
+            message.IsDeleted = true;
+            message.Message = "";
+            message.AttachmentUrl = null;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(PrivateDetails), new { id = message.Chat.Id });
         }
-        
+
         // POST: /Collaboration/EditPrivateMessage
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -427,13 +464,13 @@ namespace OzarkLMS.Controllers
         {
             var userId = GetCurrentUserId();
             var message = await _context.PrivateMessages.Include(m => m.Chat).FirstOrDefaultAsync(m => m.Id == messageId);
-            
+
             if (message == null) return NotFound();
             if (message.SenderId != userId) return Forbid();
-            
+
             message.Message = newContent;
             message.LastEditedDate = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(PrivateDetails), new { id = message.Chat.Id });
         }
@@ -444,13 +481,13 @@ namespace OzarkLMS.Controllers
         {
             var userId = GetCurrentUserId();
             var member = await _context.ChatGroupMembers.FirstOrDefaultAsync(m => m.ChatGroupId == groupId && m.UserId == userId);
-            
+
             if (member != null)
             {
                 member.ViewMode = viewMode;
                 await _context.SaveChangesAsync();
             }
-            
+
             return RedirectToAction(nameof(Details), new { id = groupId });
         }
 
@@ -458,33 +495,33 @@ namespace OzarkLMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateGroupPhoto(int groupId, IFormFile? photo, string? photoUrl)
         {
-             var group = await _context.ChatGroups.FindAsync(groupId);
-             if (group == null) return NotFound();
+            var group = await _context.ChatGroups.FindAsync(groupId);
+            if (group == null) return NotFound();
 
-             var currentUserId = GetCurrentUserId();
-             bool isOwner = group.OwnerId == currentUserId;
-             bool isAdmin = User.IsInRole("admin");
+            var currentUserId = GetCurrentUserId();
+            bool isOwner = group.OwnerId == currentUserId;
+            bool isAdmin = User.IsInRole("admin");
 
-             if (!isOwner && !isAdmin) return Forbid();
+            if (!isOwner && !isAdmin) return Forbid();
 
-             if (photo != null && photo.Length > 0)
-             {
-                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
-                 {
-                     await photo.CopyToAsync(stream);
-                 }
-                 group.GroupPhotoUrl = "/uploads/" + fileName;
-             }
-             else if (!string.IsNullOrEmpty(photoUrl))
-             {
-                 group.GroupPhotoUrl = photoUrl;
-             }
+            if (photo != null && photo.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
+                {
+                    await photo.CopyToAsync(stream);
+                }
+                group.GroupPhotoUrl = "/uploads/" + fileName;
+            }
+            else if (!string.IsNullOrEmpty(photoUrl))
+            {
+                group.GroupPhotoUrl = photoUrl;
+            }
 
-             await _context.SaveChangesAsync();
-             return RedirectToAction(nameof(Details), new { id = groupId });
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Details), new { id = groupId });
         }
 
         // POST: /Collaboration/AddMember
@@ -499,14 +536,14 @@ namespace OzarkLMS.Controllers
             if (group == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            
+
             // Check permissions: Creator/Owner can add members.
             // Requirement 2: "The creator can add or remove members" (We interpreted Creator as Owner here)
             // Also Admin? It says "Only admin accounts can manage or remove [the default chat]". 
             // For custom chats, Owner can manage.
             bool isOwner = group.OwnerId == currentUserId;
             bool isAdmin = User.IsInRole("admin");
-            
+
             if (group.IsDefault)
             {
                 // Only Admin can manage Default Chat
@@ -525,7 +562,7 @@ namespace OzarkLMS.Controllers
                     ChatGroupId = groupId,
                     UserId = targetUser.Id
                 });
-                
+
                 // Notification
                 var senderName = User.Identity!.Name;
                 _context.Notifications.Add(new Notification
@@ -538,47 +575,47 @@ namespace OzarkLMS.Controllers
 
                 await _context.SaveChangesAsync();
             }
-            
+
             return RedirectToAction(nameof(Details), new { id = groupId });
         }
-        
+
         // POST: /Collaboration/RemoveMember
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveMember(int groupId, int memberId)
         {
-             var group = await _context.ChatGroups.Include(g => g.Members).FirstOrDefaultAsync(g => g.Id == groupId);
-             if (group == null) return NotFound();
+            var group = await _context.ChatGroups.Include(g => g.Members).FirstOrDefaultAsync(g => g.Id == groupId);
+            if (group == null) return NotFound();
 
-             var currentUserId = GetCurrentUserId();
-             bool isOwner = group.OwnerId == currentUserId;
-             bool isAdmin = User.IsInRole("admin");
+            var currentUserId = GetCurrentUserId();
+            bool isOwner = group.OwnerId == currentUserId;
+            bool isAdmin = User.IsInRole("admin");
 
-             if (group.IsDefault)
-             {
-                 if (!isAdmin) return Forbid();
-             }
-             else
-             {
-                 if (!isOwner && !isAdmin) return Forbid();
-             }
+            if (group.IsDefault)
+            {
+                if (!isAdmin) return Forbid();
+            }
+            else
+            {
+                if (!isOwner && !isAdmin) return Forbid();
+            }
 
-             // Cannot remove Owner (Owner must leave or transfer ownership first, or delete group)
-             if (memberId == group.OwnerId)
-             {
-                 // Maybe show error "Owner cannot be removed"?
-                  return RedirectToAction(nameof(Details), new { id = groupId });
-             }
+            // Cannot remove Owner (Owner must leave or transfer ownership first, or delete group)
+            if (memberId == group.OwnerId)
+            {
+                // Maybe show error "Owner cannot be removed"?
+                return RedirectToAction(nameof(Details), new { id = groupId });
+            }
 
-             var member = group.Members.FirstOrDefault(m => m.UserId == memberId);
-             if (member != null)
-             {
-                 _context.ChatGroupMembers.Remove(member);
-                 // Notification?
-                 await _context.SaveChangesAsync();
-             }
+            var member = group.Members.FirstOrDefault(m => m.UserId == memberId);
+            if (member != null)
+            {
+                _context.ChatGroupMembers.Remove(member);
+                // Notification?
+                await _context.SaveChangesAsync();
+            }
 
-             return RedirectToAction(nameof(Details), new { id = groupId });
+            return RedirectToAction(nameof(Details), new { id = groupId });
         }
 
         // POST: /Collaboration/LeaveGroup
@@ -589,7 +626,7 @@ namespace OzarkLMS.Controllers
             var userId = GetCurrentUserId();
             var group = await _context.ChatGroups.Include(g => g.Members).FirstOrDefaultAsync(g => g.Id == groupId);
             if (group == null) return NotFound();
-            
+
             // Requirement 1: "Cannot be deleted or left" (for Default Chat)
             if (group.IsDefault)
             {
@@ -611,12 +648,12 @@ namespace OzarkLMS.Controllers
                 // Tracking should handle it, but let's look at the in-memory list which now excludes the removed one (if using EF correctly)
                 // Actually `membership` was removed from context, but `group.Members` list might still have it depending on tracking.
                 // Safest to query DB for remaining members
-                
+
                 var remainingMembers = await _context.ChatGroupMembers
                     .Where(m => m.ChatGroupId == groupId && m.UserId != userId)
                     .OrderBy(m => m.JoinedDate) // "based on join order"
                     .ToListAsync();
-                
+
                 if (remainingMembers.Any())
                 {
                     // Transfer to earliest added member
@@ -650,17 +687,17 @@ namespace OzarkLMS.Controllers
 
             // Requirement 3: "A group chat can be deleted only by The account that created it [Owner], or An admin account"
             // Also Requirement 1: Default chat "Cannot be deleted" (except maybe by Admin? "Only admin accounts can manage or remove it")
-            
+
             if (group.IsDefault)
             {
-                 // Requirement: Remove the ability for admin accounts to delete default chats
-                 return BadRequest("The default organization chat cannot be deleted.");
+                // Requirement: Remove the ability for admin accounts to delete default chats
+                return BadRequest("The default organization chat cannot be deleted.");
             }
             else
             {
                 if (!isOwner && !isAdmin) return Forbid();
             }
-            
+
             _context.ChatGroups.Remove(group);
             await _context.SaveChangesAsync();
 
@@ -674,11 +711,11 @@ namespace OzarkLMS.Controllers
 
             var users = await _context.Users
                 .Where(u => u.Username.ToLower().Contains(query.ToLower()))
-                .Select(u => new 
-                { 
-                    id = u.Id, 
-                    username = u.Username, 
-                    profilePictureUrl = u.ProfilePictureUrl 
+                .Select(u => new
+                {
+                    id = u.Id,
+                    username = u.Username,
+                    profilePictureUrl = u.ProfilePictureUrl
                 })
                 .Take(10)
                 .ToListAsync();
@@ -697,24 +734,24 @@ namespace OzarkLMS.Controllers
             // Search Users (exclude self)
             var users = await _context.Users
                 .Where(u => u.Id != userId && u.Username.ToLower().Contains(query.ToLower()))
-                .Select(u => new 
-                { 
+                .Select(u => new
+                {
                     type = "user",
-                    id = u.Id, 
-                    name = u.Username, 
-                    photo = u.ProfilePictureUrl 
+                    id = u.Id,
+                    name = u.Username,
+                    photo = u.ProfilePictureUrl
                 })
                 .Take(5)
                 .ToListAsync();
-            
+
             var groups = await _context.ChatGroups
                 .Where(g => g.Name.ToLower().Contains(query.ToLower()))
-                .Select(g => new 
-                { 
+                .Select(g => new
+                {
                     type = "group",
-                    id = g.Id, 
-                    name = g.Name, 
-                    photo = g.GroupPhotoUrl 
+                    id = g.Id,
+                    name = g.Name,
+                    photo = g.GroupPhotoUrl
                 })
                 .Take(5)
                 .ToListAsync();

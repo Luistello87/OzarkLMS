@@ -8,15 +8,15 @@
         <h1 class="text-3xl font-bold text-[#004B87]">Send Notification</h1>
     </div>
 
-    <form asp-action="Create" method="post" class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 space-y-6">
+    <form asp-action="Create" method="post" class="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 space-y-6">
         <div>
-            <label asp-for="Title" class="block text-sm font-bold text-slate-700 mb-1">Subject</label>
-            <input name="title" class="w-full rounded-lg border-gray-300 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all" required placeholder="Important Announcement!" />
+            <label asp-for="Title" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Subject</label>
+            <input name="title" class="w-full rounded-lg border-gray-300 dark:border-slate-700 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all dark:bg-slate-800 dark:text-white" required placeholder="Important Announcement!" />
         </div>
 
         <div>
-            <label class="block text-sm font-bold text-slate-700 mb-1">Recipient (Optional)</label>
-            <select name="recipientId" class="w-full rounded-lg border-gray-300 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Recipient (Optional)</label>
+            <select name="recipientId" class="w-full rounded-lg border-gray-300 dark:border-slate-700 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all dark:bg-slate-800 dark:text-white">
                 <option value="">Broadcast to All Students</option>
                 @foreach(var student in ViewBag.Students)
                 {
@@ -27,8 +27,14 @@
         </div>
 
         <div>
-            <label asp-for="Message" class="block text-sm font-bold text-slate-700 mb-1">Message</label>
-            <textarea name="message" rows="4" class="w-full rounded-lg border-gray-300 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all" required placeholder="Enter message details..."></textarea>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Action URL (Optional)</label>
+            <input name="actionUrl" class="w-full rounded-lg border-gray-300 dark:border-slate-700 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all dark:bg-slate-800 dark:text-white" placeholder="e.g. /Courses/Details/1" />
+            <p class="text-xs text-slate-400 mt-1">Relative path to redirect user when clicked.</p>
+        </div>
+
+        <div>
+            <label asp-for="Message" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Message</label>
+            <textarea name="message" rows="4" class="w-full rounded-lg border-gray-300 dark:border-slate-700 px-4 py-2 focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all dark:bg-slate-800 dark:text-white" required placeholder="Enter message details..."></textarea>
         </div>
 
         <button type="submit" class="w-full bg-[#004B87] text-white py-2.5 rounded-lg font-bold shadow-sm hover:bg-[#003d6e] transition-colors flex items-center justify-center">

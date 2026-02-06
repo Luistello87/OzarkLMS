@@ -16,6 +16,7 @@ namespace OzarkLMS.Models
         public string Role { get; set; } = "student"; // student, instructor, admin
 
         public string? ProfilePictureUrl { get; set; }
+        public int TreeProgress { get; set; } = 0; // 0 to 7
 
         public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
         public List<ChatGroupMember> ChatGroups { get; set; } = new List<ChatGroupMember>();

@@ -44,20 +44,41 @@ namespace OzarkLMS.Controllers
         [HttpPost]
         [Authorize(Roles = "admin, instructor")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string title, string message, int? recipientId)
+        public async Task<IActionResult> Create(string title, string message, int? recipientId, string? actionUrl)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
             var senderId = userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
 
-            var notification = new Notification
+            if (recipientId != null)
             {
-                Title = title,
-                Message = message,
-                SenderId = senderId,
-                RecipientId = recipientId // If null, logic for broadcast could be improved, but basic support here
-            };
+                // Direct Message
+                var notification = new Notification
+                {
+                    Title = title,
+                    Message = message,
+                    SenderId = senderId,
+                    RecipientId = recipientId,
+                    ActionUrl = actionUrl,
+                    SentDate = DateTime.UtcNow
+                };
+                _context.Notifications.Add(notification);
+            }
+            else
+            {
+                // Broadcast to All Students
+                var students = await _context.Users.Where(u => u.Role == "student").Select(u => u.Id).ToListAsync();
+                var notifications = students.Select(studentId => new Notification
+                {
+                    Title = title,
+                    Message = message,
+                    SenderId = senderId,
+                    RecipientId = studentId, // Assign to specific student
+                    ActionUrl = actionUrl,
+                    SentDate = DateTime.UtcNow
+                });
+                _context.Notifications.AddRange(notifications);
+            }
 
-            _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
@@ -70,6 +91,40 @@ namespace OzarkLMS.Controllers
             if (notification != null)
             {
                 notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification != null)
+            {
+                // Ensure only recipient can delete their own
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim != null && (notification.RecipientId == int.Parse(userIdClaim) || notification.RecipientId == null))
+                {
+                    _context.Notifications.Remove(notification);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ClearAll()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim != null)
+            {
+                var userId = int.Parse(userIdClaim);
+                var notifications = await _context.Notifications
+                    .Where(n => n.RecipientId == userId)
+                    .ToListAsync();
+
+                _context.Notifications.RemoveRange(notifications);
                 await _context.SaveChangesAsync();
             }
             return Ok();
