@@ -3,6 +3,25 @@
 @{
     ViewData["Title"] = Model.Type == "quiz" ? "Take Quiz" : "Submit Assignment";
     bool isQuiz = Model.Type == "quiz";
+    var existingSubmission = ViewBag.ExistingSubmission as OzarkLMS.Models.Submission;
+}
+
+@if (TempData["ShowSubmissionBanner"] != null)
+{
+    <div id="submission-banner" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-full shadow-2xl z-50 flex items-center animate-bounce">
+        <i data-lucide="check-circle" class="w-6 h-6 mr-3"></i>
+        <span class="font-bold text-lg">Assignment Submitted Successfully!</span>
+    </div>
+    <script>
+        setTimeout(function() {
+            var banner = document.getElementById('submission-banner');
+            if(banner) {
+                banner.style.transition = "opacity 0.5s";
+                banner.style.opacity = "0";
+                setTimeout(() => banner.remove(), 500);
+            }
+        }, 3000);
+    </script>
 }
 
 <div class="p-8 max-w-[800px] mx-auto">
@@ -34,6 +53,46 @@
             </div>
         }
     </div>
+
+    @if (existingSubmission != null)
+    {
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-8 mb-8">
+            <h2 class="text-xl font-bold text-emerald-800 mb-4 flex items-center">
+                <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i> You have submitted this assignment
+            </h2>
+            <div class="space-y-2 text-emerald-900">
+                <p><strong>Submitted At:</strong> @existingSubmission.SubmittedAt.ToLocalTime()</p>
+                
+                @if(!string.IsNullOrEmpty(existingSubmission.Content))
+                {
+                    <div class="bg-white/50 p-4 rounded-lg mt-2">
+                        <strong class="block text-xs uppercase text-emerald-600 mb-1">Text Submission:</strong>
+                        <p>@existingSubmission.Content</p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(existingSubmission.AttachmentUrl))
+                {
+                    <div class="mt-4">
+                        <a href="@existingSubmission.AttachmentUrl" target="_blank" class="inline-flex items-center bg-white border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg font-bold hover:bg-emerald-100 transition-colors shadow-sm">
+                            <i data-lucide="download" class="w-5 h-5 mr-2"></i> Download Submitted File
+                        </a>
+                    </div>
+                }
+                
+                @if (existingSubmission.Score.HasValue)
+                {
+                    <div class="mt-4 pt-4 border-t border-emerald-200">
+                        <p><strong>Score:</strong> <span class="bg-emerald-200 px-2 py-1 rounded text-emerald-800 font-bold">@existingSubmission.Score / @Model.Points</span></p>
+                        @if (!string.IsNullOrEmpty(existingSubmission.Feedback))
+                        {
+                            <p class="mt-2 text-sm"><strong class="text-emerald-700">Feedback:</strong> @existingSubmission.Feedback</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
 
     @if (isQuiz)
     {

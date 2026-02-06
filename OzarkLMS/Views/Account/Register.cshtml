@@ -13,63 +13,86 @@
     <title>Sign Up - OZARK LMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            750: '#2d3748',
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+        // Init Dark Mode
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
     <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
-<body class="bg-[#FAFBFC] h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+<body class="bg-[#FAFBFC] dark:bg-slate-900 h-screen flex items-center justify-center p-4 transition-colors duration-300">
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-slate-700">
         <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-[#004B87]">Create Account</h1>
-            <p class="text-slate-400 text-sm mt-1">Join Ozark Learning System</p>
+            <h1 class="text-2xl font-bold text-[#004B87] dark:text-white">Create Account</h1>
+            <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">Join Ozark Learning System</p>
         </div>
 
         <form asp-action="Register" method="post" class="space-y-4">
             <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm font-medium text-center"></div>
             
             <div>
-                <label asp-for="Username" class="block text-sm font-bold text-slate-700 mb-1">Username</label>
-                <input asp-for="Username" class="w-full rounded-lg border-gray-300 px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none transition-all" />
+                <label asp-for="Username" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Username</label>
+                <input asp-for="Username" class="w-full rounded-lg border-gray-300 dark:border-slate-600 px-4 py-2.5 bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 outline-none transition-all dark:text-white" />
                 <span asp-validation-for="Username" class="text-red-500 text-xs"></span>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                     <label asp-for="Password" class="block text-sm font-bold text-slate-700 mb-1">Password</label>
-                     <input asp-for="Password" class="w-full rounded-lg border-gray-300 px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none transition-all" />
+                     <label asp-for="Password" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                     <input asp-for="Password" class="w-full rounded-lg border-gray-300 dark:border-slate-600 px-4 py-2.5 bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 outline-none transition-all dark:text-white" />
                      <span asp-validation-for="Password" class="text-red-500 text-xs"></span>
                 </div>
                 <div>
-                     <label asp-for="ConfirmPassword" class="block text-sm font-bold text-slate-700 mb-1">Confirm</label>
-                     <input asp-for="ConfirmPassword" class="w-full rounded-lg border-gray-300 px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none transition-all" />
+                     <label asp-for="ConfirmPassword" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Confirm</label>
+                     <input asp-for="ConfirmPassword" class="w-full rounded-lg border-gray-300 dark:border-slate-600 px-4 py-2.5 bg-gray-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 outline-none transition-all dark:text-white" />
                      <span asp-validation-for="ConfirmPassword" class="text-red-500 text-xs"></span>
                 </div>
             </div>
 
             <div>
-                <label asp-for="Role" class="block text-sm font-bold text-slate-700 mb-1">I am a...</label>
+                <label asp-for="Role" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">I am a...</label>
                 <div class="grid grid-cols-3 gap-2">
                     <label class="cursor-pointer">
                         <input type="radio" asp-for="Role" value="student" class="peer sr-only" checked />
-                        <div class="rounded-lg border border-gray-200 p-2 text-center text-sm font-medium text-slate-600 peer-checked:bg-[#004B87] peer-checked:text-white peer-checked:border-[#004B87] transition-all hover:bg-gray-50">Student</div>
+                        <div class="rounded-lg border border-gray-200 dark:border-slate-600 p-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400 peer-checked:bg-[#004B87] dark:peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-[#004B87] dark:peer-checked:border-blue-600 transition-all hover:bg-gray-50 dark:hover:bg-slate-700">Student</div>
                     </label>
                     <label class="cursor-pointer">
                         <input type="radio" asp-for="Role" value="instructor" class="peer sr-only" />
-                        <div class="rounded-lg border border-gray-200 p-2 text-center text-sm font-medium text-slate-600 peer-checked:bg-[#004B87] peer-checked:text-white peer-checked:border-[#004B87] transition-all hover:bg-gray-50">Professor</div>
+                        <div class="rounded-lg border border-gray-200 dark:border-slate-600 p-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400 peer-checked:bg-[#004B87] dark:peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-[#004B87] dark:peer-checked:border-blue-600 transition-all hover:bg-gray-50 dark:hover:bg-slate-700">Professor</div>
                     </label>
                     <label class="cursor-pointer">
                         <input type="radio" asp-for="Role" value="admin" class="peer sr-only" />
-                        <div class="rounded-lg border border-gray-200 p-2 text-center text-sm font-medium text-slate-600 peer-checked:bg-[#004B87] peer-checked:text-white peer-checked:border-[#004B87] transition-all hover:bg-gray-50">Admin</div>
+                        <div class="rounded-lg border border-gray-200 dark:border-slate-600 p-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400 peer-checked:bg-[#004B87] dark:peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-[#004B87] dark:peer-checked:border-blue-600 transition-all hover:bg-gray-50 dark:hover:bg-slate-700">Admin</div>
                     </label>
                 </div>
             </div>
 
-            <button type="submit" class="w-full bg-[#DA291C] text-white py-3 rounded-xl font-bold hover:bg-[#b01e14] transition-colors shadow-lg mt-2">
+            <button type="submit" class="w-full bg-[#DA291C] dark:bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-[#b01e14] dark:hover:bg-red-700 transition-colors shadow-lg mt-2">
                 Create Account
             </button>
         </form>
 
-        <div class="mt-6 pt-6 border-t border-gray-100 text-center text-sm text-slate-500">
+        <div class="mt-6 pt-6 border-t border-gray-100 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400">
             Already have an account? 
-            <a asp-action="Login" class="font-bold text-[#004B87] hover:underline">Sign In</a>
+            <a asp-action="Login" class="font-bold text-[#004B87] dark:text-blue-400 hover:underline">Sign In</a>
         </div>
     </div>
 </body>

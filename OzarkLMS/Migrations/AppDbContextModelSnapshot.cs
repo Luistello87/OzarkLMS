@@ -46,6 +46,9 @@ namespace OzarkLMS.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
                     b.Property<string>("SubmissionType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -123,15 +126,57 @@ namespace OzarkLMS.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("GroupPhotoUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastActivityDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
 
                     b.ToTable("ChatGroups");
+                });
+
+            modelBuilder.Entity("OzarkLMS.Models.ChatGroupMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatGroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("JoinedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ViewMode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatGroupId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChatGroupMembers");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.ChatMessage", b =>
@@ -142,11 +187,26 @@ namespace OzarkLMS.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AttachmentContentType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttachmentOriginalName")
+                        .HasColumnType("text");
+
+                    b.Property<long>("AttachmentSize")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("AttachmentUrl")
                         .HasColumnType("text");
 
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastEditedDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -281,6 +341,13 @@ namespace OzarkLMS.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ContentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DisplayMode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("ModuleId")
                         .HasColumnType("integer");
 
@@ -334,6 +401,83 @@ namespace OzarkLMS.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("LastActivityDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UnfriendDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("User1Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("User2Id")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("User1Id");
+
+                    b.HasIndex("User2Id");
+
+                    b.ToTable("PrivateChats");
+                });
+
+            modelBuilder.Entity("OzarkLMS.Models.PrivateMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttachmentContentType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttachmentOriginalName")
+                        .HasColumnType("text");
+
+                    b.Property<long>("AttachmentSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AttachmentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastEditedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PrivateChatId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrivateChatId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("PrivateMessages");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
@@ -463,6 +607,9 @@ namespace OzarkLMS.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
@@ -515,6 +662,25 @@ namespace OzarkLMS.Migrations
                     b.Navigation("CreatedBy");
                 });
 
+            modelBuilder.Entity("OzarkLMS.Models.ChatGroupMember", b =>
+                {
+                    b.HasOne("OzarkLMS.Models.ChatGroup", "ChatGroup")
+                        .WithMany("Members")
+                        .HasForeignKey("ChatGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OzarkLMS.Models.User", "User")
+                        .WithMany("ChatGroups")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChatGroup");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OzarkLMS.Models.ChatMessage", b =>
                 {
                     b.HasOne("OzarkLMS.Models.ChatGroup", "Group")
@@ -564,11 +730,13 @@ namespace OzarkLMS.Migrations
 
             modelBuilder.Entity("OzarkLMS.Models.Module", b =>
                 {
-                    b.HasOne("OzarkLMS.Models.Course", null)
+                    b.HasOne("OzarkLMS.Models.Course", "Course")
                         .WithMany("Modules")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Course");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.ModuleItem", b =>
@@ -591,6 +759,44 @@ namespace OzarkLMS.Migrations
                         .HasForeignKey("SenderId");
 
                     b.Navigation("Recipient");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
+                {
+                    b.HasOne("OzarkLMS.Models.User", "User1")
+                        .WithMany()
+                        .HasForeignKey("User1Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OzarkLMS.Models.User", "User2")
+                        .WithMany()
+                        .HasForeignKey("User2Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User1");
+
+                    b.Navigation("User2");
+                });
+
+            modelBuilder.Entity("OzarkLMS.Models.PrivateMessage", b =>
+                {
+                    b.HasOne("OzarkLMS.Models.PrivateChat", "Chat")
+                        .WithMany("Messages")
+                        .HasForeignKey("PrivateChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OzarkLMS.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
 
                     b.Navigation("Sender");
                 });
@@ -654,6 +860,8 @@ namespace OzarkLMS.Migrations
 
             modelBuilder.Entity("OzarkLMS.Models.ChatGroup", b =>
                 {
+                    b.Navigation("Members");
+
                     b.Navigation("Messages");
                 });
 
@@ -671,6 +879,11 @@ namespace OzarkLMS.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
                 {
                     b.Navigation("Options");
@@ -678,6 +891,8 @@ namespace OzarkLMS.Migrations
 
             modelBuilder.Entity("OzarkLMS.Models.User", b =>
                 {
+                    b.Navigation("ChatGroups");
+
                     b.Navigation("Enrollments");
                 });
 #pragma warning restore 612, 618

@@ -16,17 +16,26 @@ namespace OzarkLMS.Controllers
             _context = context;
         }
 
-        // GET: Assignments/Create?courseId=5
+        // GET: Assignments/Create?courseId=5&type=quiz
         [Authorize(Roles = "admin, instructor")]
-        public async Task<IActionResult> Create(int? courseId)
+        public async Task<IActionResult> Create(int? courseId, string? type)
         {
             if (courseId == null) return NotFound();
 
             var course = await _context.Courses.FindAsync(courseId);
             if (course == null) return NotFound();
 
+            if (User.IsInRole("instructor"))
+            {
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null) return Forbid();
+                var userId = int.Parse(userIdClaim.Value);
+
+                if (course.InstructorId != userId) return Forbid();
+            }
+
             ViewBag.Course = course;
-            return View(new Assignment { CourseId = course.Id });
+            return View(new Assignment { CourseId = course.Id, Type = type ?? "assignment" });
         }
 
         // GET: Assignments/Edit/5 (To add questions)
@@ -36,10 +45,20 @@ namespace OzarkLMS.Controllers
             if (id == null) return NotFound();
 
             var assignment = await _context.Assignments
+                .Include(a => a.Course)
                 .Include(a => a.Questions)
                 .ThenInclude(q => q.Options)
-                .Include(a => a.Course)
                 .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (assignment == null) return NotFound();
+
+            if (User.IsInRole("instructor"))
+            {
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null) return Forbid();
+                var userId = int.Parse(userIdClaim.Value);
+                if (assignment.Course != null && assignment.Course.InstructorId != userId) return Forbid();
+            }
 
             if (assignment == null) return NotFound();
 
@@ -50,12 +69,25 @@ namespace OzarkLMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "admin, instructor")]
-        public async Task<IActionResult> Create([Bind("CourseId,Title,DueDate,Type,MaxAttempts,Description,SubmissionType")] Assignment assignment, IFormFile? attachment)
+        public async Task<IActionResult> Create([Bind("CourseId,Title,DueDate,Type,MaxAttempts,Description,SubmissionType,Points")] Assignment assignment, IFormFile? attachment)
         {
             if (ModelState.IsValid)
             {
                 // Ensure Date is UTC for Postgres
                 assignment.DueDate = DateTime.SpecifyKind(assignment.DueDate, DateTimeKind.Utc);
+                
+                // Security Check
+                if (User.IsInRole("instructor"))
+                {
+                     var courseCheck = await _context.Courses.FindAsync(assignment.CourseId);
+                     if(courseCheck == null) return NotFound();
+                     
+                     var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                     if (userIdClaim == null) return Forbid();
+                     var userId = int.Parse(userIdClaim.Value);
+                     
+                     if (courseCheck.InstructorId != userId) return Forbid();
+                }
                 
                 // Handle Attachment
                 if (attachment != null && attachment.Length > 0)
@@ -80,8 +112,8 @@ namespace OzarkLMS.Controllers
                 {
                      return RedirectToAction(nameof(Edit), new { id = assignment.Id });
                 }
-
-                return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "assignments" });
+                
+                return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = assignment.Type == "quiz" ? "quizzes" : "assignments" });
             }
             
             var course = await _context.Courses.FindAsync(assignment.CourseId);
@@ -105,6 +137,19 @@ namespace OzarkLMS.Controllers
         [Authorize(Roles = "admin, instructor")]
         public async Task<IActionResult> AddOption([FromForm] int questionId, [FromForm] int assignmentId, [FromForm] string text, [FromForm] bool isCorrect)
         {
+            // Enforce Single Correct Option Logic
+            if (isCorrect)
+            {
+                var existingOptions = await _context.QuestionOptions
+                    .Where(o => o.QuestionId == questionId && o.IsCorrect)
+                    .ToListAsync();
+                
+                foreach (var opt in existingOptions)
+                {
+                    opt.IsCorrect = false;
+                }
+            }
+
             var option = new QuestionOption { QuestionId = questionId, Text = text, IsCorrect = isCorrect };
             _context.QuestionOptions.Add(option);
             await _context.SaveChangesAsync();
@@ -135,17 +180,30 @@ namespace OzarkLMS.Controllers
 
             if (assignment == null) return NotFound();
 
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim != null)
+            {
+                 var userId = int.Parse(userIdClaim.Value);
+                 var existingSubmission = await _context.Submissions
+                     .FirstOrDefaultAsync(s => s.AssignmentId == id && s.StudentId == userId);
+                 ViewBag.ExistingSubmission = existingSubmission;
+            }
+
             return View(assignment);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize] // Ensure user is logged in
         public async Task<IActionResult> SubmitQuiz(int assignmentId, Dictionary<int, int> answers)
         {
              var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
              if (userIdClaim == null) return Unauthorized();
              var userId = int.Parse(userIdClaim.Value);
              
+             // Null check answers just in case
+             if (answers == null) answers = new Dictionary<int, int>();
+
              // Simple Auto-Grading Logic
              int score = 0;
              var questions = await _context.Questions.Include(q => q.Options).Where(q => q.AssignmentId == assignmentId).ToListAsync();
@@ -174,7 +232,12 @@ namespace OzarkLMS.Controllers
              _context.Submissions.Add(submission);
              await _context.SaveChangesAsync();
              
-             return RedirectToAction("Details", "Courses", new { id = (await _context.Assignments.FindAsync(assignmentId)).CourseId, tab = "grades" });
+             var assignment = await _context.Assignments.FindAsync(assignmentId);
+             if (assignment != null)
+             {
+                 return RedirectToAction("Details", "Courses", new { id = assignment.CourseId, tab = "quizzes" });
+             }
+             return RedirectToAction("Index", "Courses");
         }
 
         [HttpPost]
@@ -215,7 +278,13 @@ namespace OzarkLMS.Controllers
              _context.Submissions.Add(submission);
              await _context.SaveChangesAsync();
 
-             return RedirectToAction("Details", "Courses", new { id = (await _context.Assignments.FindAsync(assignmentId)).CourseId, tab = "assignments" });
+             var assignment = await _context.Assignments.FindAsync(assignmentId);
+             if (assignment != null)
+             {
+                 TempData["ShowSubmissionBanner"] = true;
+                 return RedirectToAction("Take", new { id = assignmentId });
+             }
+             return RedirectToAction("Index", "Courses");
         }
 
         // GET: Assignments/Submissions/5

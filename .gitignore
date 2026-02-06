@@ -1,0 +1,21 @@
+
+# .NET Core
+bin/
+obj/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio Code
+.vscode/
+
+# OS X
+.DS_Store
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Uploads
+OzarkLMS/wwwroot/uploads/

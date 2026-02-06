@@ -7,7 +7,7 @@ namespace OzarkLMS.Data
     {
         public static void Initialize(AppDbContext context)
         {
-            context.Database.EnsureCreated();
+            // context.Database.EnsureCreated();
 
             // Look for any users.
             if (context.Users.Any())
@@ -22,6 +22,13 @@ namespace OzarkLMS.Data
             };
             context.Users.AddRange(users);
             context.SaveChanges();
+
+            // Ensure Admin exists
+            if (!context.Users.Any(u => u.Role == "admin"))
+            {
+                context.Users.Add(new User { Username = "admin", Password = "password", Role = "admin" });
+                context.SaveChanges();
+            }
 
             var courses = new Course[]
             {
@@ -41,6 +48,24 @@ namespace OzarkLMS.Data
             };
             context.Assignments.AddRange(assignments);
             context.SaveChanges();
+            // Ensure Main Organization Chat exists
+            if (!context.ChatGroups.Any(g => g.IsDefault))
+            {
+                var admin = context.Users.FirstOrDefault(u => u.Role == "admin");
+                var adminId = admin?.Id ?? 1; // Fallback if no admin (shouldn't happen due to check above)
+
+                var defaultChat = new ChatGroup
+                {
+                    Name = "Main Organization Chat",
+                    Description = "Official organization-wide channel",
+                    CreatedById = adminId,
+                    OwnerId = adminId,
+                    IsDefault = true,
+                    CreatedDate = DateTime.UtcNow
+                };
+                context.ChatGroups.Add(defaultChat);
+                context.SaveChanges();
+            }
         }
     }
 }

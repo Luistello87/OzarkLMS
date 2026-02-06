@@ -4,23 +4,40 @@
 <div class="p-8 max-w-[1200px] mx-auto">
     <div class="flex items-center justify-between mb-8">
         <div>
-             <h1 class="text-3xl font-bold text-[#004B87]">Student Hub</h1>
-             <p class="text-slate-500 mt-1">Join a group and collaborate with your peers.</p>
+             <h1 class="text-3xl font-bold text-[#004B87] dark:text-white">Student Hub</h1>
+             <p class="text-slate-500 dark:text-slate-400 mt-1">Chat, collaborate, and connect.</p>
         </div>
         
-        <!-- Create Group Trigger (Modal could be used, simplified to inline form toggle or separate page) -->
-        <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="bg-[#004B87] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#003d6e] transition-colors shadow-sm flex items-center">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create Group
-        </button>
+        <div class="flex gap-2">
+            <!-- Global User Search for Private Chat -->
+             <div class="relative w-64 z-50">
+                <input id="globalUserSearch" class="w-full rounded-lg border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm px-4 py-2 outline-none focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 shadow-sm" placeholder="Find user to chat..." autocomplete="off" oninput="searchUsersGlobal(this.value)" />
+                <div id="globalSearchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto"></div>
+                <form id="startPrivateChatForm" asp-action="StartPrivateChat" method="post" class="hidden">
+                    <input type="hidden" name="targetUsername" id="privateChatTarget" />
+                </form>
+            </div>
+
+            <!-- Create Group Trigger -->
+            <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-[#003d6e] dark:hover:bg-blue-700 transition-colors shadow-sm flex items-center">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Group
+            </button>
+        </div>
     </div>
 
     <!-- Inline Create Form -->
     <div id="createGroupForm" class="hidden mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 class="font-bold text-lg mb-4 text-slate-800">Create New Group</h3>
-        <form asp-action="CreateGroup" method="post" class="space-y-4">
-            <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1">Group Name</label>
-                <input name="name" class="w-full rounded-lg border-gray-300 px-4 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none" required placeholder="e.g. Study Group 101" />
+        <form asp-action="CreateGroup" method="post" enctype="multipart/form-data" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Group Name</label>
+                    <input name="name" class="w-full rounded-lg border-gray-300 px-4 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none" required placeholder="e.g. Study Group 101" />
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Group Photo (Optional)</label>
+                    <input type="file" name="photo" class="w-full rounded-lg border border-gray-300 px-4 py-1.5 bg-gray-50 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-1">Description</label>
@@ -33,30 +50,186 @@
         </form>
     </div>
 
-    <!-- Groups Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach(var group in Model)
+    <!-- Groups List -->
+@using System.Security.Claims
+    <div class="space-y-3">
+        @{
+            var currentUserId = int.Parse(User.FindFirstValue("UserId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+            var privateChats = (ViewBag.PrivateChats as IEnumerable<OzarkLMS.Models.PrivateChat>) ?? new List<OzarkLMS.Models.PrivateChat>();
+            
+            // Unified List Item for sorting
+            var mixedList = new List<dynamic>();
+            foreach(var g in Model) 
+            {
+                mixedList.Add(new { 
+                    IsPrivate = false, 
+                    Id = g.Id,
+                    Name = g.Name, 
+                    Photo = g.GroupPhotoUrl, 
+                    IsDefault = g.IsDefault, 
+                    Date = g.LastActivityDate,
+                    MsgCount = g.Messages?.Count ?? 0,
+                    Members = g.Members
+                });
+            }
+            foreach(var p in privateChats) 
+            {
+                var otherUser = p.User1Id == currentUserId ? p.User2 : p.User1;
+                // Safety check if user is null (e.g. deleted)
+                var name = otherUser?.Username ?? "Unknown User";
+                var photo = otherUser?.ProfilePictureUrl;
+                
+                mixedList.Add(new { 
+                    IsPrivate = true, 
+                    Id = p.Id,
+                    Name = name, 
+                    Photo = photo, 
+                    IsDefault = false, 
+                    Date = p.LastActivityDate,
+                    MsgCount = p.Messages?.Count ?? 0,
+                    Members = (ICollection<OzarkLMS.Models.ChatGroupMember>)null
+                });
+            }
+            
+            var sortedList = mixedList.OrderByDescending(x => x.IsDefault).ThenByDescending(x => x.Date).ToList();
+        }
+
+        @foreach (var item in sortedList)
         {
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:border-blue-300 transition-all hover:shadow-md flex flex-col h-full">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-[#004B87] flex items-center justify-center">
-                        <i data-lucide="users" class="w-5 h-5"></i>
+            <!-- Different Link Actions based on Type -->
+            <a asp-action="@(item.IsPrivate ? "PrivateDetails" : "Details")" asp-route-id="@item.Id" class="block group relative">
+                <div class="flex items-center p-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-900 border border-transparent hover:border-gray-100 dark:hover:border-slate-800 transition-all duration-200">
+                    
+                    <!-- Avatar -->
+                    <div class="relative flex-shrink-0 mr-4">
+                        @if (!string.IsNullOrEmpty(item.Photo))
+                        {
+                            <img src="@item.Photo" class="w-12 h-12 rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform" />
+                        }
+                        else
+                        {
+                            <div class="w-12 h-12 rounded-xl @(item.IsDefault ? "bg-gradient-to-br from-[#004B87] to-[#003B6D] text-white" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-600 text-slate-500 dark:text-slate-300") flex items-center justify-center font-bold text-lg shadow-sm">
+                                @(item.Name?.Length > 0 ? item.Name.Substring(0, 1).ToUpper() : "?")
+                            </div>
+                        }
+                        
+                        @if (item.IsPrivate)
+                        {
+                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-slate-800" title="Private Chat"></div>
+                        }
                     </div>
-                    <span class="text-xs font-bold text-slate-400 bg-gray-100 px-2 py-1 rounded-full">@group.Messages.Count mssgs</span>
-                </div>
-                
-                <h3 class="font-bold text-lg text-slate-800 mb-2">@group.Name</h3>
-                <p class="text-slate-500 text-sm mb-6 flex-1 text-ellipsis overflow-hidden">@group.Description</p>
-                
-                <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-                    <div class="text-xs text-slate-400">
-                        By <span class="font-bold text-slate-600">@group.CreatedBy?.Username</span>
+
+                    <!-- Content -->
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 truncate pr-2 group-hover:text-[#004B87] dark:group-hover:text-blue-400 transition-colors">
+                                @item.Name
+                                @if (item.IsDefault)
+                                {
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 ml-1">Official</span>
+                                }
+                            </h3>
+                            <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                                @item.Date.ToLocalTime().ToString("MMM dd HH:mm")
+                            </span>
+                        </div>
+                        
+                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate opacity-80 group-hover:opacity-100 transition-opacity">
+                           @(item.IsPrivate ? "Private Conversation" :  $"{item.Members?.Count ?? 0} members")
+                        </p>
                     </div>
-                    <a asp-action="Details" asp-route-id="@group.Id" class="text-[#004B87] font-bold text-sm hover:underline flex items-center">
-                        Join Chat <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
-                    </a>
+                    
+                    <!-- Meta & Action -->
+                    <div class="flex flex-col items-end gap-2 flex-shrink-0">
+                        @if(item.MsgCount > 0)
+                        {
+                            <span class="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">@item.MsgCount <span class="hidden sm:inline">mssgs</span></span>
+                        }
+                         <div class="text-sm font-bold text-[#004B87] dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                            Open <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </a>
         }
     </div>
+
+    <script>
+    let globalSearchTimeout;
+    function searchUsersGlobal(query) {
+        clearTimeout(globalSearchTimeout);
+        const resultsContainer = document.getElementById('globalSearchResults');
+        
+        if (!query || query.length < 2) {
+            resultsContainer.classList.add('hidden');
+            return;
+        }
+
+        globalSearchTimeout = setTimeout(() => {
+            fetch(`/Collaboration/SearchGlobal?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(results => {
+                    resultsContainer.innerHTML = '';
+                    if (results.length > 0) {
+                        results.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = "flex items-center p-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer border-b border-gray-100 dark:border-slate-700 last:border-0 transition-colors";
+                            
+                            if (item.type === 'user') {
+                                div.onclick = () => {
+                                    document.getElementById('privateChatTarget').value = item.name;
+                                    document.getElementById('startPrivateChatForm').submit();
+                                };
+                                
+                                const avatar = item.photo 
+                                    ? `<img src="${item.photo}" class="w-8 h-8 rounded-full object-cover mr-3 bg-gray-200">` 
+                                    : `<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs font-bold mr-3">${item.name[0].toUpperCase()}</div>`;
+                                    
+                                div.innerHTML = `
+                                    ${avatar}
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${item.name}</p>
+                                        <p class="text-[10px] text-slate-400">User &bull; Click to message</p>
+                                    </div>
+                                `;
+                            } else {
+                                // Group Logic
+                                div.onclick = () => {
+                                    window.location.href = `/Collaboration/Details/${item.id}`;
+                                };
+                                
+                                const avatar = item.photo 
+                                    ? `<img src="${item.photo}" class="w-8 h-8 rounded-full object-cover mr-3 bg-gray-200">` 
+                                    : `<div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 flex items-center justify-center text-xs font-bold mr-3"><i data-lucide="users" class="w-4 h-4"></i></div>`;
+                                
+                                div.innerHTML = `
+                                    ${avatar}
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${item.name}</p>
+                                        <p class="text-[10px] text-slate-400">Group &bull; Click to open</p>
+                                    </div>
+                                `;
+                            }
+                            
+                            resultsContainer.appendChild(div);
+                        });
+                        // Re-initialize Lucide icons for new elements if needed, though mostly using text/simples
+                        if(window.lucide) lucide.createIcons();
+                        resultsContainer.classList.remove('hidden');
+                    } else {
+                        resultsContainer.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">No results found.</div>';
+                        resultsContainer.classList.remove('hidden');
+                    }
+                });
+        }, 300);
+    }
+    
+    // Close search on click outside
+    document.addEventListener('click', function(e) {
+        const searchContainer = document.querySelector('.relative.w-64');
+        if (searchContainer && !searchContainer.contains(e.target)) {
+            document.getElementById('globalSearchResults').classList.add('hidden');
+        }
+    });
+    </script>
 </div>
