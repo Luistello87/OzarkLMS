@@ -58,7 +58,7 @@ namespace OzarkLMS.Controllers
                     .ThenInclude(g => g.Messages)
                 .Select(m => m.ChatGroup)
                 .OrderByDescending(g => g.IsDefault) // Default first
-                .ThenByDescending(g => g.CreatedDate)
+                .ThenByDescending(g => g.LastActivityDate) // Then by last activity
                 .ToListAsync();
             
             // Admins can see all groups? The requirement says "Admin accounts have visibility into all group chats"
@@ -70,20 +70,27 @@ namespace OzarkLMS.Controllers
             // However, requirement 2: "Admin accounts have visibility into all group chats".
             // Let's append ALL other chats if User is Admin, distinct.
             
+            var privateChats = await _context.PrivateChats
+                .Include(c => c.User1)
+                .Include(c => c.User2)
+                .Where(c => c.User1Id == userId || c.User2Id == userId)
+                .OrderByDescending(c => c.LastActivityDate)
+                .ToListAsync();
+
             if (User.IsInRole("admin"))
             {
                 var allGroups = await _context.ChatGroups
                     .Include(g => g.CreatedBy)
                     .Include(g => g.Messages)
                     .OrderByDescending(g => g.IsDefault)
-                    .ThenByDescending(g => g.CreatedDate)
+                    .ThenByDescending(g => g.LastActivityDate)
                     .ToListAsync();
                 
-                // Union with myGroups but keep order? Or just return allGroups since Admin should be in default anyway.
-                // Let's just return allGroups for Admin.
+                ViewBag.PrivateChats = privateChats;
                 return View(allGroups);
             }
-
+            
+            ViewBag.PrivateChats = privateChats;
             return View(myGroups);
         }
 
@@ -190,6 +197,9 @@ namespace OzarkLMS.Controllers
             if (!isMember && !User.IsInRole("admin")) return Forbid();
 
             string? attachmentUrl = null;
+            string? originalName = null;
+            string? contentType = null;
+            long size = 0;
 
             if (file != null && file.Length > 0)
             {
@@ -204,6 +214,9 @@ namespace OzarkLMS.Controllers
                     await file.CopyToAsync(stream);
                 }
                 attachmentUrl = "/uploads/" + fileName;
+                originalName = file.FileName;
+                contentType = file.ContentType;
+                size = file.Length;
             }
 
             var chatMessage = new ChatMessage
@@ -211,13 +224,218 @@ namespace OzarkLMS.Controllers
                 GroupId = groupId,
                 SenderId = userId,
                 Message = message ?? (file != null ? "" : ""), // Allowing empty message if file exists
-                AttachmentUrl = attachmentUrl
+                AttachmentUrl = attachmentUrl,
+                AttachmentOriginalName = originalName,
+                AttachmentContentType = contentType,
+                AttachmentSize = size,
+                SentDate = DateTime.UtcNow
             };
 
             _context.ChatMessages.Add(chatMessage);
+            
+            // Update LastActivityDate
+            group.LastActivityDate = DateTime.UtcNow;
+            
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = groupId });
+        }
+
+        // POST: /Collaboration/EditMessage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditMessage(int messageId, string newContent)
+        {
+            var userId = GetCurrentUserId();
+            var message = await _context.ChatMessages.Include(m => m.Group).FirstOrDefaultAsync(m => m.Id == messageId);
+
+            if (message == null) return NotFound();
+            
+            // Only sender can edit
+            if (message.SenderId != userId) return Forbid();
+
+            // Perform Edit
+            message.Message = newContent;
+            message.LastEditedDate = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id = message.GroupId });
+        }
+
+        // POST: /Collaboration/DeleteMessage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMessage(int messageId)
+        {
+            var userId = GetCurrentUserId();
+            var message = await _context.ChatMessages.Include(m => m.Group).FirstOrDefaultAsync(m => m.Id == messageId);
+
+            if (message == null) return NotFound();
+
+            // Sender can delete. Admin maybe? Requirement says "Delete their own messages". 
+            // Let's allow Admin too just in case, but primary is sender.
+            bool isAdmin = User.IsInRole("admin");
+            if (message.SenderId != userId && !isAdmin) return Forbid();
+
+            // Soft Delete
+            message.IsDeleted = true;
+            // Clear content for compliance/safety (optional but good practice for soft delete if we want to hide it completely)
+            message.Message = ""; 
+            message.AttachmentUrl = null; 
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id = message.GroupId });
+        }
+
+        // POST: /Collaboration/StartPrivateChat
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartPrivateChat(string targetUsername)
+        {
+            var userId = GetCurrentUserId();
+            var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == targetUsername);
+            
+            if (targetUser == null) return RedirectToAction(nameof(Index));
+            if (targetUser.Id == userId) return RedirectToAction(nameof(Index)); // Cannot chat with self
+
+            // Check for existing chat
+            var existingChat = await _context.PrivateChats
+                .FirstOrDefaultAsync(c => (c.User1Id == userId && c.User2Id == targetUser.Id) || 
+                                          (c.User1Id == targetUser.Id && c.User2Id == userId));
+
+            if (existingChat != null)
+            {
+                return RedirectToAction("PrivateDetails", new { id = existingChat.Id });
+            }
+
+            // Create new Private Chat
+            var newChat = new PrivateChat
+            {
+                User1Id = userId,
+                User2Id = targetUser.Id,
+                LastActivityDate = DateTime.UtcNow
+            };
+
+            _context.PrivateChats.Add(newChat);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(PrivateDetails), new { id = newChat.Id });
+        }
+        
+        // GET: /Collaboration/PrivateDetails/5
+        public async Task<IActionResult> PrivateDetails(int id)
+        {
+            var userId = GetCurrentUserId();
+            var chat = await _context.PrivateChats
+                .Include(c => c.User1)
+                .Include(c => c.User2)
+                .Include(c => c.Messages)
+                    .ThenInclude(m => m.Sender)
+                .FirstOrDefaultAsync(c => c.Id == id);
+                
+            if (chat == null) return NotFound();
+            
+            // Security Check
+            if (chat.User1Id != userId && chat.User2Id != userId && !User.IsInRole("admin"))
+            {
+                return Forbid();
+            }
+            
+            return View(chat);
+        }
+
+        // POST: /Collaboration/PostPrivateMessage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PostPrivateMessage(int chatId, string? message, IFormFile? file)
+        {
+            if (string.IsNullOrWhiteSpace(message) && file == null) return RedirectToAction(nameof(PrivateDetails), new { id = chatId });
+
+            var userId = GetCurrentUserId();
+            var chat = await _context.PrivateChats.FindAsync(chatId);
+            if (chat == null) return NotFound();
+            
+            if (chat.User1Id != userId && chat.User2Id != userId && !User.IsInRole("admin")) return Forbid();
+
+            string? attachmentUrl = null;
+            string? originalName = null;
+            string? contentType = null;
+            long size = 0;
+
+            if (file != null && file.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var filePath = Path.Combine(uploads, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+                attachmentUrl = "/uploads/" + fileName;
+                originalName = file.FileName;
+                contentType = file.ContentType;
+                size = file.Length;
+            }
+
+            var privateMessage = new PrivateMessage
+            {
+                PrivateChatId = chatId,
+                SenderId = userId,
+                Message = message ?? (file != null ? "" : ""),
+                AttachmentUrl = attachmentUrl,
+                AttachmentOriginalName = originalName,
+                AttachmentContentType = contentType,
+                AttachmentSize = size,
+                SentDate = DateTime.UtcNow
+            };
+
+            _context.PrivateMessages.Add(privateMessage);
+            chat.LastActivityDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(PrivateDetails), new { id = chatId });
+        }
+
+        // POST: /Collaboration/DeletePrivateMessage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePrivateMessage(int messageId)
+        {
+             var userId = GetCurrentUserId();
+             var message = await _context.PrivateMessages.Include(m => m.Chat).FirstOrDefaultAsync(m => m.Id == messageId);
+             
+             if (message == null) return NotFound();
+             if (message.SenderId != userId && !User.IsInRole("admin")) return Forbid();
+             
+             message.IsDeleted = true;
+             message.Message = "";
+             message.AttachmentUrl = null; 
+             
+             await _context.SaveChangesAsync();
+             return RedirectToAction(nameof(PrivateDetails), new { id = message.Chat.Id });
+        }
+        
+        // POST: /Collaboration/EditPrivateMessage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPrivateMessage(int messageId, string newContent)
+        {
+            var userId = GetCurrentUserId();
+            var message = await _context.PrivateMessages.Include(m => m.Chat).FirstOrDefaultAsync(m => m.Id == messageId);
+            
+            if (message == null) return NotFound();
+            if (message.SenderId != userId) return Forbid();
+            
+            message.Message = newContent;
+            message.LastEditedDate = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(PrivateDetails), new { id = message.Chat.Id });
         }
 
         [HttpPost]
@@ -466,6 +684,47 @@ namespace OzarkLMS.Controllers
                 .ToListAsync();
 
             return Json(users);
+        }
+
+        // GET: /Collaboration/SearchGlobal
+        [HttpGet]
+        public async Task<IActionResult> SearchGlobal(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return Json(new List<object>());
+
+            var userId = GetCurrentUserId();
+
+            // Search Users (exclude self)
+            var users = await _context.Users
+                .Where(u => u.Id != userId && u.Username.ToLower().Contains(query.ToLower()))
+                .Select(u => new 
+                { 
+                    type = "user",
+                    id = u.Id, 
+                    name = u.Username, 
+                    photo = u.ProfilePictureUrl 
+                })
+                .Take(5)
+                .ToListAsync();
+            
+            var groups = await _context.ChatGroups
+                .Where(g => g.Name.ToLower().Contains(query.ToLower()))
+                .Select(g => new 
+                { 
+                    type = "group",
+                    id = g.Id, 
+                    name = g.Name, 
+                    photo = g.GroupPhotoUrl 
+                })
+                .Take(5)
+                .ToListAsync();
+
+            // Merge users and groups
+            var results = new List<object>();
+            results.AddRange(users);
+            results.AddRange(groups);
+
+            return Json(results);
         }
     }
 }

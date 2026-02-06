@@ -1,0 +1,280 @@
+@model OzarkLMS.Models.PrivateChat
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Private Chat";
+    var currentUserId = int.Parse(User.FindFirstValue("UserId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+    var otherUser = Model.User1Id == currentUserId ? Model.User2 : Model.User1;
+    var otherUserName = otherUser?.Username ?? "Unknown";
+    bool isAdmin = User.IsInRole("admin");
+}
+
+<div class="flex h-[calc(100vh-6rem)]">
+    <!-- Sidebar (Optional, maybe specific to private?) -->
+    <!-- For now, we can omit sidebar or show basic info -->
+    
+    <!-- Main Chat Area -->
+    <div class="flex-1 flex flex-col bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden relative">
+        
+        <!-- Header -->
+        <div class="h-16 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between px-6 bg-white dark:bg-slate-900 z-20">
+            <div class="flex items-center">
+                 <a asp-action="Index" class="mr-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                
+                <div class="relative">
+                    @if(!string.IsNullOrEmpty(otherUser?.ProfilePictureUrl))
+                    {
+                         <img src="@otherUser.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover shadow-sm" />
+                    }
+                    else
+                    {
+                         <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300 flex items-center justify-center font-bold text-sm">
+                            @(otherUserName.Length > 0 ? otherUserName.Substring(0, 1).ToUpper() : "?")
+                        </div>
+                    }
+                    <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                </div>
+
+                <div class="ml-3">
+                    <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        @otherUserName
+                        <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold uppercase tracking-wider">Private</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                         Private Conversation
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
+                 <!-- Maybe Info Button? -->
+            </div>
+        </div>
+        
+        <!-- Messages Area -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950" id="messageContainer">
+            @if(Model.Messages == null || !Model.Messages.Any())
+            {
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-60">
+                    <i data-lucide="message-square-dashed" class="w-12 h-12 mb-2"></i>
+                    <p class="text-sm">No messages yet. Say hello!</p>
+                </div>
+            }
+            else
+            {
+                @foreach(var msg in Model.Messages.OrderBy(m => m.SentDate))
+                {
+                    bool isMe = msg.SenderId == currentUserId;
+                    bool hasAttachment = !string.IsNullOrEmpty(msg.AttachmentUrl);
+                    bool isImg = hasAttachment && (msg.AttachmentContentType?.StartsWith("image/") ?? (msg.AttachmentUrl.EndsWith(".jpg") || msg.AttachmentUrl.EndsWith(".png") || msg.AttachmentUrl.EndsWith(".jpeg") || msg.AttachmentUrl.EndsWith(".gif")));
+                    bool isDeleted = msg.IsDeleted;
+
+                    <div class="flex w-full @(isMe ? "justify-end" : "justify-start") group/msg">
+                        
+                        <!-- Avatar (Received only) -->
+                        @if(!isMe)
+                        {
+                            <div class="mr-3 flex-shrink-0 self-end mb-1">
+                                @if(!string.IsNullOrEmpty(msg.Sender.ProfilePictureUrl))
+                                {
+                                    <img src="@msg.Sender.ProfilePictureUrl" class="w-8 h-8 rounded-full object-cover shadow-sm bg-gray-200 dark:bg-slate-700" title="@msg.Sender.Username" />
+                                }
+                                else
+                                {
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-white flex items-center justify-center text-xs font-bold shadow-sm" title="@msg.Sender.Username">
+                                        @(msg.Sender.Username.Length > 0 ? msg.Sender.Username.Substring(0,1).ToUpper() : "?")
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <!-- Message Content -->
+                        <div class="flex flex-col max-w-[75%] md:max-w-[60%] @(isMe ? "items-end" : "items-start")">
+                            
+                            <div class="relative shadow-sm group/bubble @(isDeleted ? "bg-gray-100 border-gray-200 text-gray-400 italic" : (isMe ? "bg-[#004B87] text-white" : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-gray-100 dark:border-slate-700")) rounded-2xl @(isMe ? "rounded-tr-sm" : "rounded-tl-sm") overflow-hidden">
+                                
+                                @if(isDeleted)
+                                {
+                                    <div class="px-4 py-2 text-sm flex items-center">
+                                        <i data-lucide="trash-2" class="w-3 h-3 mr-2 opacity-50"></i> This message was deleted.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Options Trigger (Hover) -->
+                                    @if(isMe || isAdmin)
+                                    {
+                                        <div class="absolute top-1 right-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity bg-black/10 rounded-full p-0.5 z-10 cursor-pointer" onclick="toggleMessageOptions(@msg.Id)">
+                                            <i data-lucide="chevron-down" class="w-3 h-3 text-white/80"></i>
+                                        </div>
+                                        
+                                        <!-- Options Dropdown -->
+                                        <div id="msgOptions-@msg.Id" class="hidden absolute top-5 right-2 bg-white dark:bg-slate-800 shadow-xl rounded-lg border border-gray-100 dark:border-slate-700 py-1 z-20 min-w-[100px] text-slate-800 dark:text-slate-200">
+                                            @if(isMe)
+                                            {
+                                                <button onclick="enableEditMode(@msg.Id, `@msg.Message`)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center">
+                                                    <i data-lucide="edit-2" class="w-3 h-3 mr-2"></i> Edit
+                                                </button>
+                                            }
+                                            <form asp-action="DeletePrivateMessage" method="post" onsubmit="return confirm('Delete this message?');">
+                                                <input type="hidden" name="messageId" value="@msg.Id" />
+                                                <button type="submit" class="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center">
+                                                    <i data-lucide="trash" class="w-3 h-3 mr-2"></i> Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+
+                                    <!-- File/Image -->
+                                    @if(hasAttachment)
+                                    {
+                                        <div class="@(isImg ? "" : "p-3 border-b " + (isMe?"border-white/10":"border-gray-100 dark:border-slate-700"))">
+                                            @if(isImg)
+                                            {
+                                                <div class="max-w-[300px] max-h-[300px] overflow-hidden flex items-center justify-center bg-black/5">
+                                                    <img src="@msg.AttachmentUrl" class="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity" onclick="openLightbox('@msg.AttachmentUrl')" />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-lg @(isMe ? "bg-white/20" : "bg-gray-100 dark:bg-slate-700") flex items-center justify-center flex-shrink-0">
+                                                        @if(msg.AttachmentContentType?.Contains("pdf") == true) { <i data-lucide="file-text" class="w-5 h-5"></i> }
+                                                        else if(msg.AttachmentContentType?.Contains("word") == true) { <i data-lucide="file-type" class="w-5 h-5"></i> }
+                                                        else { <i data-lucide="file" class="w-5 h-5"></i> }
+                                                    </div>
+                                                    <div class="min-w-0">
+                                                        <p class="text-sm font-medium truncate max-w-[150px]" title="@msg.AttachmentOriginalName">@(msg.AttachmentOriginalName ?? "Attachment")</p>
+                                                        <div class="flex items-center text-[10px] opacity-70">
+                                                            <span>@((msg.AttachmentSize / 1024.0).ToString("0.0")) KB</span>
+                                                            <span class="mx-1">&bull;</span>
+                                                            <a href="@msg.AttachmentUrl" target="_blank" class="underline hover:decoration-2">Download</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    
+                                    <!-- Text -->
+                                    @if(!string.IsNullOrEmpty(msg.Message))
+                                    {
+                                        <div class="px-4 py-2" id="msgContent-@msg.Id">
+                                            <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">@msg.Message</p>
+                                        </div>
+                                        <!-- Edit Form -->
+                                        <form asp-action="EditPrivateMessage" method="post" id="editForm-@msg.Id" class="hidden px-2 py-2">
+                                            <input type="hidden" name="messageId" value="@msg.Id" />
+                                            <textarea name="newContent" class="w-full text-sm text-slate-800 rounded p-1" rows="2">@msg.Message</textarea>
+                                            <div class="flex justify-end gap-2 mt-1">
+                                                <button type="button" onclick="cancelEdit(@msg.Id)" class="text-[10px] text-white/80 hover:text-white">Cancel</button>
+                                                <button type="submit" class="text-[10px] bg-white text-[#004B87] px-2 py-0.5 rounded font-bold">Save</button>
+                                            </div>
+                                        </form>
+                                    }
+                                    
+                                    <!-- Timestamp -->
+                                    <div class="px-3 pb-1.5 text-[9px] w-full text-right @(isMe ? "text-blue-200" : "text-slate-400 dark:text-slate-500") opacity-80 flex items-center justify-end gap-1">
+                                        @if(msg.LastEditedDate.HasValue)
+                                        {
+                                            <span class="italic">edited</span>
+                                        }
+                                        @msg.SentDate.ToLocalTime().ToShortTimeString()
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        
+        <!-- Input Area -->
+        <div class="p-4 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 z-20">
+            <form asp-action="PostPrivateMessage" method="post" enctype="multipart/form-data" class="flex items-end gap-3" id="msgForm">
+                <input type="hidden" name="chatId" value="@Model.Id" />
+                
+                <button type="button" onclick="document.getElementById('fileInput').click()" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-slate-400 hover:text-[#004B87] dark:hover:text-blue-400 transition-colors flex-shrink-0">
+                    <i data-lucide="paperclip" class="w-5 h-5"></i>
+                </button>
+                <input type="file" name="file" id="fileInput" class="hidden" onchange="previewFile()" />
+                
+                <div class="flex-grow relative bg-gray-50 dark:bg-slate-800 rounded-2xl border border-transparent focus-within:border-blue-200 dark:focus-within:border-slate-700 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-slate-800/50 transition-all">
+                    <!-- File Preview -->
+                    <div id="filePreview" class="hidden px-4 pt-3 pb-1 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                         <span class="text-xs text-slate-500 truncate max-w-[200px]" id="fileNamePreview"></span>
+                         <button type="button" onclick="clearFile()" class="text-red-400 hover:text-red-500"><i data-lucide="x" class="w-3 h-3"></i></button>
+                    </div>
+                    
+                    <textarea name="message" class="w-full bg-transparent border-0 px-4 py-3 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-0 resize-none max-h-32 text-sm" rows="1" placeholder="Type a message..." oninput="autoResize(this)" onkeydown="submitOnEnter(event)"></textarea>
+                </div>
+                
+                <button type="submit" class="p-2.5 rounded-full bg-[#004B87] hover:bg-[#003B6D] text-white shadow-md shadow-blue-900/10 hover:shadow-lg hover:shadow-blue-900/20 transition-all active:scale-95 flex-shrink-0">
+                    <i data-lucide="send-horizontal" class="w-5 h-5"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function scrollBottom() {
+        var container = document.getElementById("messageContainer");
+        container.scrollTop = container.scrollHeight;
+    }
+    window.onload = scrollBottom;
+    
+     function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    function submitOnEnter(event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            document.getElementById("msgForm").submit();
+        }
+    }
+    
+    function previewFile() {
+        const input = document.getElementById('fileInput');
+        if (input.files.length > 0) {
+            document.getElementById('fileNamePreview').textContent = input.files[0].name;
+            document.getElementById('filePreview').classList.remove('hidden');
+        }
+    }
+    
+    function clearFile() {
+        document.getElementById('fileInput').value = '';
+        document.getElementById('filePreview').classList.add('hidden');
+    }
+    
+    // Message Editing Logic (Same as Group)
+    function toggleMessageOptions(msgId) {
+        const menu = document.getElementById(`msgOptions-${msgId}`);
+        document.querySelectorAll('[id^=msgOptions-]').forEach(el => {
+            if(el.id !== `msgOptions-${msgId}`) el.classList.add('hidden');
+        });
+        menu.classList.toggle('hidden');
+    }
+    
+    function enableEditMode(msgId, currentContent) {
+        document.getElementById(`msgContent-${msgId}`).classList.add('hidden');
+        document.getElementById(`editForm-${msgId}`).classList.remove('hidden');
+        document.getElementById(`msgOptions-${msgId}`).classList.add('hidden');
+    }
+    
+    function cancelEdit(msgId) {
+        document.getElementById(`msgContent-${msgId}`).classList.remove('hidden');
+        document.getElementById(`editForm-${msgId}`).classList.add('hidden');
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.group\\/bubble')) {
+             document.querySelectorAll('[id^=msgOptions-]').forEach(el => el.classList.add('hidden'));
+        }
+    });
+</script>

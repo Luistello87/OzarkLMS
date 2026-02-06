@@ -19,6 +19,10 @@ namespace OzarkLMS.Data
         public DbSet<ChatGroup> ChatGroups { get; set; }
         public DbSet<ChatGroupMember> ChatGroupMembers { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        
+        public DbSet<PrivateChat> PrivateChats { get; set; }
+        public DbSet<PrivateMessage> PrivateMessages { get; set; }
+        
         public DbSet<StickyNote> StickyNotes { get; set; }
         public DbSet<CalendarEvent> CalendarEvents { get; set; }
         public DbSet<Question> Questions { get; set; }

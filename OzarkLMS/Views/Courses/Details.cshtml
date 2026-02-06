@@ -5,9 +5,9 @@
     if (string.IsNullOrEmpty(activeTab)) activeTab = "home";
 }
 
-<div class="flex flex-col h-full bg-[#FAFBFC] dark:bg-slate-900 transition-colors duration-300">
+<div class="flex flex-col h-full bg-[#FAFBFC] dark:bg-slate-950 transition-colors duration-300">
     <!-- Course Header -->
-    <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-6 mb-6 transition-colors">
+    <div class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-8 py-6 mb-6 transition-colors">
         <div class="flex items-center justify-between">
             <div class="flex items-center">
                  <div class="w-12 h-12 rounded-lg bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center text-2xl mr-4 shadow-sm">
@@ -62,7 +62,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="?tab=grades" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "grades" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm")">
+                    <a href="?tab=grades" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "grades" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm")">
                         <i data-lucide="bar-chart-2" class="w-4 h-4 mr-3"></i> Grades
                     </a>
                 </li>
@@ -70,7 +70,7 @@
         </nav>
 
         <!-- Main Content Area -->
-        <main class="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 min-h-[500px] p-8 transition-colors">
+        <main class="flex-1 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 min-h-[500px] p-8 transition-colors">
             
             @if(activeTab == "home")
             {
@@ -89,8 +89,8 @@
                     {
                         foreach(var module in Model.Modules)
                         {
-                            <div class="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm mb-4">
-                                <div class="bg-gray-50 dark:bg-slate-750 px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                            <div class="border border-gray-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm mb-4">
+                                <div class="bg-gray-50 dark:bg-slate-950 px-5 py-3 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
                                     <h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wide">@module.Title</h3>
                                     <div class="flex items-center space-x-2">
                                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
@@ -100,10 +100,10 @@
                                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                                     </div>
                                 </div>
-                                <div class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                                <div class="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                                     @foreach(var item in module.Items)
                                     {
-                                        <div class="px-5 py-3 border-l-4 border-transparent hover:border-[#004B87] dark:hover:border-blue-500 transition-colors bg-white dark:bg-slate-800">
+                                        <div class="px-5 py-3 border-l-4 border-transparent hover:border-[#004B87] dark:hover:border-blue-500 transition-colors bg-white dark:bg-slate-900">
                                             @if(item.DisplayMode == "embed" && !string.IsNullOrEmpty(item.ContentUrl))
                                             {
                                                 <div class="mb-2 flex items-center text-[#004B87] dark:text-blue-300 font-bold">

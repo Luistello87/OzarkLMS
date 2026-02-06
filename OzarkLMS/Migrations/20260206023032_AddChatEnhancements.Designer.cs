@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OzarkLMS.Data;
@@ -11,9 +12,11 @@ using OzarkLMS.Data;
 namespace OzarkLMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260206023032_AddChatEnhancements")]
+    partial class AddChatEnhancements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,6 +133,9 @@ namespace OzarkLMS.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPrivate")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastActivityDate")
@@ -401,83 +407,6 @@ namespace OzarkLMS.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("LastActivityDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("UnfriendDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("User1Id")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("User2Id")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("User1Id");
-
-                    b.HasIndex("User2Id");
-
-                    b.ToTable("PrivateChats");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.PrivateMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AttachmentContentType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AttachmentOriginalName")
-                        .HasColumnType("text");
-
-                    b.Property<long>("AttachmentSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("AttachmentUrl")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastEditedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("PrivateChatId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("SentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PrivateChatId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("PrivateMessages");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
@@ -763,44 +692,6 @@ namespace OzarkLMS.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
-                {
-                    b.HasOne("OzarkLMS.Models.User", "User1")
-                        .WithMany()
-                        .HasForeignKey("User1Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OzarkLMS.Models.User", "User2")
-                        .WithMany()
-                        .HasForeignKey("User2Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User1");
-
-                    b.Navigation("User2");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.PrivateMessage", b =>
-                {
-                    b.HasOne("OzarkLMS.Models.PrivateChat", "Chat")
-                        .WithMany("Messages")
-                        .HasForeignKey("PrivateChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OzarkLMS.Models.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
                 {
                     b.HasOne("OzarkLMS.Models.Assignment", "Assignment")
@@ -877,11 +768,6 @@ namespace OzarkLMS.Migrations
             modelBuilder.Entity("OzarkLMS.Models.Module", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
