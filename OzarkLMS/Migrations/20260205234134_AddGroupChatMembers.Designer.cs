@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OzarkLMS.Data;
@@ -11,9 +12,11 @@ using OzarkLMS.Data;
 namespace OzarkLMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260205234134_AddGroupChatMembers")]
+    partial class AddGroupChatMembers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,9 +129,6 @@ namespace OzarkLMS.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("GroupPhotoUrl")
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsDefault")
                         .HasColumnType("boolean");
 
@@ -162,10 +162,6 @@ namespace OzarkLMS.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("ViewMode")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

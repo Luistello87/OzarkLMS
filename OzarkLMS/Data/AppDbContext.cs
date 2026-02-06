@@ -17,6 +17,7 @@ namespace OzarkLMS.Data
         public DbSet<DashboardAnnouncement> DashboardAnnouncements { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<ChatGroup> ChatGroups { get; set; }
+        public DbSet<ChatGroupMember> ChatGroupMembers { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<StickyNote> StickyNotes { get; set; }
         public DbSet<CalendarEvent> CalendarEvents { get; set; }

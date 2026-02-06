@@ -139,7 +139,13 @@ namespace OzarkLMS.Controllers
             {
                 User = user,
                 EnrolledCourses = user.Enrollments.Select(e => e.Course).ToList(),
-                TaughtCourses = await _context.Courses.Where(c => c.InstructorId == userId).ToListAsync()
+                TaughtCourses = await _context.Courses.Where(c => c.InstructorId == userId).ToListAsync(),
+                // Load Chat Groups
+                ChatGroups = await _context.ChatGroupMembers
+                    .Where(m => m.UserId == userId)
+                    .Select(m => m.ChatGroup)
+                    .OrderByDescending(g => g.IsDefault)
+                    .ToListAsync()
             };
 
             // If Admin, load lists and clear course lists (per requirement to replace them)

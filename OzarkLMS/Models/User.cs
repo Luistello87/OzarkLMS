@@ -18,5 +18,6 @@ namespace OzarkLMS.Models
         public string? ProfilePictureUrl { get; set; }
 
         public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+        public List<ChatGroupMember> ChatGroups { get; set; } = new List<ChatGroupMember>();
     }
 }

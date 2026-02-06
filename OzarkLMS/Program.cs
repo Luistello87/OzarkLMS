@@ -27,7 +27,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<OzarkLMS.Data.AppDbContext>();
-        OzarkLMS.Data.DbInitializer.Initialize(context);
+        // OzarkLMS.Data.DbInitializer.Initialize(context);
     }
     catch (Exception ex)
     {

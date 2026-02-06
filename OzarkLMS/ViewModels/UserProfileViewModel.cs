@@ -11,5 +11,7 @@ namespace OzarkLMS.ViewModels
         // For Admin View
         public List<User> AllInstructors { get; set; } = new List<User>();
         public List<User> AllStudents { get; set; } = new List<User>();
+        
+        public List<ChatGroup> ChatGroups { get; set; } = new List<ChatGroup>();
     }
 }

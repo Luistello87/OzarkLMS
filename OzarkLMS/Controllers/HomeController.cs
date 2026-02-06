@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using OzarkLMS.Data;
 using OzarkLMS.Models;
@@ -26,6 +27,7 @@ namespace OzarkLMS.Controllers
 
             if (user == null)
             {
+                await HttpContext.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
                 return RedirectToAction("Login", "Account");
             }
 
