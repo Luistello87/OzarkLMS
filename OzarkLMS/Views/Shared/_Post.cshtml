@@ -1,0 +1,151 @@
+@model OzarkLMS.Models.Post
+@{
+    var currentUserId = 0;
+
+    // Attempt to get current user info from claims or ViewBag/Model if available
+    var userIdClaim = ViewContext.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+    if(userIdClaim != null && int.TryParse(userIdClaim.Value, out int uid)) {
+        currentUserId = uid;
+    }
+    
+    // For profile pic, we might need to pass it or grab it from context if possible
+    // In _Layout we fetch it, but partials don't inherit easily without passing
+    // For now we'll rely on the parent view passing correct model or handling it, 
+    // or just minimal defaults if missing.
+    // If Model.CurrentUser is available we could use it, but this is a Post model.
+    // We will assume the parent view passes the user info if needed, or we just rely on JS for new comments.
+    // To support "Add Comment" avatar, we might need a ViewData or similar.
+}
+
+<div id="post-@Model.Id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <!-- Post Header -->
+    <div class="p-6 pb-2 flex items-center justify-between">
+        <div class="flex items-center cursor-pointer" onclick="window.location.href='/Account/Profile?userId=@Model.UserId'">
+            @if(!string.IsNullOrEmpty(Model.User.ProfilePictureUrl))
+            {
+                <img src="@Model.User.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover mr-3 border border-gray-100 dark:border-slate-600" />
+            }
+            else
+            {
+                <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300 mr-3">
+                    @(Model.User.Username.Substring(0,1).ToUpper())
+                </div>
+            }
+            <div>
+                <p class="font-bold text-slate-800 dark:text-white hover:underline">@Model.User.Username</p>
+                <p class="text-xs text-slate-500">
+                    @Model.User.Role &bull; @Model.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm")
+                </p>
+            </div>
+        </div>
+        <!-- Menu (Only for Author) -->
+        @if(Model.UserId == currentUserId)
+        {
+            <div class="relative">
+                <button onclick="togglePostMenu(@Model.Id)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                </button>
+                <!-- Dropdown -->
+                <div id="post-menu-@Model.Id" class="hidden absolute right-0 top-8 w-32 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-10 overflow-hidden">
+                    <button onclick="openEditPostModal(@Model.Id, `@System.Web.HttpUtility.JavaScriptStringEncode(Model.Content)`)" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center">
+                        <i data-lucide="edit-2" class="w-3 h-3 mr-2"></i> Edit
+                    </button>
+                    <button onclick="openDeletePostModal(@Model.Id)" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center">
+                        <i data-lucide="trash-2" class="w-3 h-3 mr-2"></i> Delete
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Post Content -->
+    <div class="px-6 py-2">
+            @if(!string.IsNullOrEmpty(Model.Content))
+            {
+                <p class="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">@Model.Content</p>
+            }
+    </div>
+
+    <!-- Attachments -->
+    @if(!string.IsNullOrEmpty(Model.ImageUrl))
+    {
+        <div class="mt-3">
+            <img src="@Model.ImageUrl" class="w-full h-auto max-h-[600px] object-cover bg-gray-50 dark:bg-black" />
+        </div>
+    }
+    @if(!string.IsNullOrEmpty(Model.AttachmentUrl))
+    {
+        <div class="px-6 py-4">
+            <a href="@Model.AttachmentUrl" target="_blank" class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg group hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                <div class="w-10 h-10 rounded bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 flex items-center justify-center mr-3">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-blue-800 dark:text-blue-300 group-hover:underline">Attachment</p>
+                    <p class="text-xs text-blue-600 dark:text-blue-400">Click to view/download</p>
+                </div>
+            </a>
+        </div>
+    }
+
+    <!-- Post Footer (Likes/Comments/Share) -->
+    <div class="px-6 py-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 flex items-center space-x-6">
+        @{
+            var userVote = Model.Votes.FirstOrDefault(v => v.UserId == currentUserId)?.Value ?? 0;
+            var score = Model.Votes.Sum(v => v.Value);
+            var commentCount = Model.Comments.Count;
+        }
+        
+        <!-- Upvote/Downvote Section -->
+        <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg px-2 py-1">
+            <button onclick="vote(@Model.Id, 1, this)" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors group">
+                <i data-lucide="arrow-big-up" class="w-6 h-6 transition-colors @(userVote == 1 ? "text-blue-600 fill-blue-600" : "text-slate-400 dark:text-slate-500 hover:text-blue-600")"></i>
+            </button>
+            
+            <span class="font-bold text-sm min-w-[20px] text-center like-count @(userVote == 1 ? "text-blue-600" : (userVote == -1 ? "text-red-700" : "text-slate-700 dark:text-slate-300"))">@score</span>
+            
+            <button onclick="vote(@Model.Id, -1, this)" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors group">
+                <i data-lucide="arrow-big-down" class="w-6 h-6 transition-colors @(userVote == -1 ? "text-red-700 fill-red-700" : "text-slate-400 dark:text-slate-500 hover:text-red-700")"></i>
+            </button>
+        </div>
+
+            <button onclick="toggleComments(@Model.Id)" class="flex items-center text-slate-500 hover:text-blue-600 transition-colors space-x-1.5 text-sm font-medium ml-4">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            <span><span class="comment-count">@commentCount</span> Comment@(commentCount != 1 ? "s" : "")</span>
+        </button>
+            <button onclick="sharePost(@Model.Id)" class="flex items-center text-slate-500 hover:text-green-600 transition-colors space-x-1.5 text-sm font-medium ml-auto">
+            <i data-lucide="share-2" class="w-4 h-4"></i>
+            <span>Share</span>
+        </button>
+    </div>
+
+    <!-- Comment Section (Hidden by default) -->
+    <div id="comments-@Model.Id" class="hidden border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+        <div class="px-6 py-4 space-y-4">
+            <div id="comment-list-@Model.Id" class="space-y-3">
+                @foreach(var comment in Model.Comments.Where(c => c.ParentCommentId == null).OrderBy(c => c.CreatedAt))
+                {
+                    <partial name="~/Views/Collaboration/_PostComment.cshtml" model="comment" />
+                }
+            </div>
+            
+            <!-- Add Comment -->
+            <div class="flex items-start space-x-3 pt-2">
+                 <!-- Placeholder Avatar for Current User (since we don't have it in Model easily without ViewData) -->
+                 <!-- JS will handle optimistic add with correct avatar from server response -->
+                 <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                     <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+                 </div>
+                <div class="flex-1 relative">
+                    <input id="comment-input-@Model.Id" type="text" 
+                        class="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-[#004B87] outline-none pr-10" 
+                        placeholder="Write a comment..." 
+                        onkeydown="if(event.key === 'Enter') submitComment(@Model.Id)" />
+                    <button onclick="submitComment(@Model.Id)" class="absolute right-2 top-1.5 text-[#004B87] dark:text-blue-400 hover:text-blue-700 p-1">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

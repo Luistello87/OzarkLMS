@@ -145,9 +145,25 @@ namespace OzarkLMS.Controllers
             }
 
             var user = await _context.Users
+                .AsSplitQuery()
                 .Include(u => u.Enrollments)
                     .ThenInclude(e => e.Course)
                 .Include(u => u.Posts)
+                    .ThenInclude(p => p.Votes)
+                .Include(u => u.Posts)
+                    .ThenInclude(p => p.Comments)
+                        .ThenInclude(c => c.User)
+                .Include(u => u.Posts)
+                    .ThenInclude(p => p.Comments)
+                        .ThenInclude(c => c.Votes)
+                .Include(u => u.Posts)
+                    .ThenInclude(p => p.Comments)
+                        .ThenInclude(c => c.Replies)
+                            .ThenInclude(r => r.User)
+                .Include(u => u.Posts)
+                    .ThenInclude(p => p.Comments)
+                        .ThenInclude(c => c.Replies)
+                            .ThenInclude(r => r.Votes)
                 .Include(u => u.Followers)
                 .Include(u => u.Following)
                 .FirstOrDefaultAsync(u => u.Id == targetUserId);

@@ -198,7 +198,7 @@ namespace OzarkLMS.Controllers
 
                 // Broadcast Updated Score
                 var newScore = post.UpvoteCount - post.DownvoteCount;
-                await _voteHub.Clients.All.SendAsync("ReceiveVoteUpdate", postId, newScore);
+                await _voteHub.Clients.All.SendAsync("ReceiveVoteUpdate", postId, newScore, userVote, userId);
 
                 return Json(new { score = newScore, userVote = userVote });
             }
@@ -266,7 +266,7 @@ namespace OzarkLMS.Controllers
 
             var user = await _context.Users.FindAsync(userId);
             
-            return Json(new { 
+            var commentData = new { 
                 success = true, 
                 user = user.Username, 
                 avatar = user.ProfilePictureUrl, 
@@ -274,7 +274,11 @@ namespace OzarkLMS.Controllers
                 date = comment.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm"),
                 parentId = parentCommentId,
                 id = comment.Id
-            });
+            };
+
+            await _voteHub.Clients.All.SendAsync("ReceiveNewComment", postId, commentData);
+
+            return Json(commentData);
         }
 
         // POST: /Collaboration/VoteComment
@@ -347,7 +351,7 @@ namespace OzarkLMS.Controllers
 
                 // Broadcast Updated Score
                 var newScore = comment.UpvoteCount - comment.DownvoteCount;
-                await _voteHub.Clients.All.SendAsync("ReceiveCommentVoteUpdate", commentId, newScore);
+                await _voteHub.Clients.All.SendAsync("ReceiveCommentVoteUpdate", commentId, newScore, userVote, userId);
 
                 return Json(new { score = newScore, userVote = userVote });
             }
@@ -356,6 +360,47 @@ namespace OzarkLMS.Controllers
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        // POST: /Collaboration/EditComment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditComment(int commentId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return BadRequest();
+            var userId = GetCurrentUserId();
+            var comment = await _context.PostComments.FindAsync(commentId);
+            
+            if (comment == null) return NotFound();
+            if (comment.UserId != userId) return Forbid();
+
+            comment.Content = content;
+            // comment.LastEditedDate = DateTime.UtcNow; // If model supported it
+            await _context.SaveChangesAsync();
+            
+            
+            await _voteHub.Clients.All.SendAsync("ReceiveCommentEdited", commentId, comment.Content);
+
+            return Json(new { success = true, content = comment.Content });
+        }
+
+        // POST: /Collaboration/DeleteComment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteComment(int commentId)
+        {
+            var userId = GetCurrentUserId();
+            var comment = await _context.PostComments.FindAsync(commentId);
+            
+            if (comment == null) return NotFound();
+            if (comment.UserId != userId && !User.IsInRole("admin")) return Forbid();
+
+            _context.PostComments.Remove(comment);
+            await _context.SaveChangesAsync();
+            
+            await _voteHub.Clients.All.SendAsync("ReceiveCommentDeleted", commentId, comment.PostId);
+
+            return Json(new { success = true });
         }
 
         // POST: /Collaboration/CreatePost
@@ -602,18 +647,55 @@ namespace OzarkLMS.Controllers
             var message = await _context.ChatMessages.Include(m => m.Group).FirstOrDefaultAsync(m => m.Id == messageId);
 
             if (message == null) return NotFound();
-
-            // Only sender can edit
             if (message.SenderId != userId) return Forbid();
 
-            // Perform Edit
+            // Store edit history? Not required yet.
             message.Message = newContent;
             message.LastEditedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Details), new { id = message.GroupId });
+            return RedirectToAction(nameof(Details), new { id = message.Group.Id });
         }
+
+        // POST: /Collaboration/EditPost
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPost(int postId, string newContent)
+        {
+            var userId = GetCurrentUserId();
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound();
+
+            if (post.UserId != userId && !User.IsInRole("admin")) return Forbid();
+
+            post.Content = newContent;
+            // post.LastEditedDate = DateTime.UtcNow; // If model supports it
+            await _context.SaveChangesAsync();
+
+            await _voteHub.Clients.All.SendAsync("ReceivePostEdited", postId, newContent);
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /Collaboration/DeletePost
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePost(int postId)
+        {
+            var userId = GetCurrentUserId();
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound();
+
+            if (post.UserId != userId && !User.IsInRole("admin")) return Forbid();
+
+            _context.Posts.Remove(post);
+            await _context.SaveChangesAsync();
+
+            await _voteHub.Clients.All.SendAsync("ReceivePostDeleted", postId);
+
+            return RedirectToAction(nameof(Index));
+        }
+
 
         // POST: /Collaboration/DeleteMessage
         [HttpPost]
