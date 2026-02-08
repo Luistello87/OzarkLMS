@@ -1,0 +1,253 @@
+@* 
+    Animated Background Partial 
+    - Rendered on Login and Register pages.
+    - Contains 2D Outline-style animations for Books and Laptops.
+*@
+
+<div id="auth-background" class="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none transition-colors duration-300" aria-hidden="true">
+    <!-- SVGs are injected here by JS -->
+</div>
+
+<style>
+    /* Base Animation Container settings */
+    #auth-background {
+        --stroke-color: rgba(0, 0, 0, 0.8); /* Darker for better visibility */
+        --fill-color: transparent;
+    }
+    .dark #auth-background {
+        --stroke-color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Common SVG Styles */
+    .auth-bg-item {
+        position: absolute;
+        stroke: var(--stroke-color);
+        stroke-width: 1.5;
+        fill: none;
+        will-change: transform, opacity;
+        opacity: 0; /* Start invisible */
+    }
+
+    /* Book Animation: Faster open/close */
+    .book-cover {
+        transform-origin: center right;
+        transform-style: preserve-3d;
+        animation: bookOpenClose 4s ease-in-out infinite;
+    }
+    
+    @@keyframes bookOpenClose {
+        0%, 100% { transform: rotateY(0deg); }
+        50% { transform: rotateY(-45deg); }
+    }
+
+    /* Laptop Text: Base style */
+    .laptop-text {
+        stroke: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: bold;
+        font-size: 11px;
+        text-anchor: middle;
+        opacity: 1; /* Visibility controlled by container fade, but text changes */
+    }
+
+    /* Motion: Continuous Fade + Drift */
+    .dynamic-motion {
+        animation: 
+            fadeInOut 5s ease-in-out infinite,
+            drift 10s linear infinite alternate;
+    }
+
+    /* Staggered animations will be applied via inline styles delay */
+
+    @@keyframes fadeInOut {
+        0% { opacity: 0; }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+
+    @@keyframes drift {
+        0% { transform: translate(0, 0) scale(0.8); }
+        100% { transform: translate(20px, -15px) scale(0.8); }
+    }
+    
+    /* Reduced Motion */
+    @@media (prefers-reduced-motion: reduce) {
+        .auth-bg-item, .book-cover, .dynamic-motion {
+            animation: none !important;
+            opacity: 0.3 !important; /* Static visible */
+            transform: none !important;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('auth-background');
+        const names = ["Ifrad", "Gonzalo", "Sanyoung", "Sebastian", "Luis"];
+        const colors = [
+            "#EF4444", // Red
+            "#3B82F6", // Blue
+            "#10B981", // Emerald
+            "#F59E0B", // Amber
+            "#8B5CF6", // Violet
+            "#EC4899"  // Pink
+        ];
+        
+        // Grid Configuration for Non-Overlap
+        const cols = 6;
+        const rows = 6;
+        const totalCells = cols * rows;
+        const itemCount = 12; 
+        
+        // Exclude central zone (assuming form is roughly in middle 2x2 or 4x2)
+        // 0  1  2  3  4  5
+        // 6  7  8  9  10 11 ...
+        // Middle indices for 6x6:
+        // Rows 2 and 3 (index 2, 3). Cols 2 and 3 (index 2, 3).
+        // Cell indices: 14, 15, 20, 21. Also maybe padded: 13,16, 19,22.
+        const excludedIndices = [14, 15, 20, 21, 8, 9, 26, 27]; // Center-ish block
+        
+        let availableIndices = [];
+        for(let i=0; i<totalCells; i++) {
+            if(!excludedIndices.includes(i)) availableIndices.push(i);
+        }
+        
+        // Templates
+        const laptopSvg = (name, color, delay, duration) => `
+            <svg class="auth-bg-item dynamic-motion" width="120" height="80" viewBox="0 0 120 80" 
+                 style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
+                <rect x="10" y="5" width="100" height="60" rx="4" />
+                <path d="M 0 65 L 120 65 L 110 75 L 10 75 Z" />
+                <text x="60" y="40" class="laptop-text" fill="${color}">${name}</text>
+            </svg>
+        `;
+
+        const desktopSvg = (type, name, color, delay, duration) => {
+            // type: 'normal' or 'wide'
+            const isWide = type === 'wide';
+            const monitorWidth = isWide ? 100 : 80;
+            const viewBoxWidth = isWide ? 160 : 140; // Adjust viewbox to fit PC + Monitor
+            
+            // Monitor Center Calculation
+            const monitorX = 0;
+            const screenCenter = monitorX + (monitorWidth / 2);
+            
+            return `
+            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth}" height="100" viewBox="0 0 ${viewBoxWidth} 100" 
+                 style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
+                
+                <!-- Monitor Group -->
+                <g transform="translate(10, 0)">
+                    <!-- Screen (Bezel-less) -->
+                    <rect x="0" y="0" width="${monitorWidth}" height="60" rx="2" stroke-width="1.5" />
+                    <!-- Stand -->
+                    <line x1="${monitorWidth/2}" y1="60" x2="${monitorWidth/2}" y2="75" stroke-width="3" />
+                    <line x1="${monitorWidth/2 - 15}" y1="75" x2="${monitorWidth/2 + 15}" y2="75" stroke-width="2" />
+                    
+                    <!-- Flashing Name -->
+                    <text x="${monitorWidth/2}" y="35" class="laptop-text" fill="${color}">${name}</text>
+                </g>
+
+                <!-- PC Tower (Right of monitor) -->
+                <!-- Moved down to y=15 to align bottom with peripherals (roughly) -->
+                <g transform="translate(${monitorWidth + 25}, 15)"> 
+                    <!-- The Top (Perspective) -->
+                    <path d="M 0 0 L 20 0 L 24 -6 L 4 -6 Z" stroke-width="1.5" stroke-linejoin="round" />
+                    
+                    <!-- Main Body -->
+                    <rect x="0" y="0" width="20" height="80" rx="2" />
+                    
+                    <!-- Vertical Text OZARK (Blue) -->
+                    <text x="10" y="40" text-anchor="middle" font-size="8" stroke="none" fill="#2563EB" 
+                          style="writing-mode: tb; opacity: 1; font-family: 'Inter', sans-serif; font-weight: bold;">OZARK</text>
+                    
+                    <!-- Power Button (Blue) -->
+                    <circle cx="10" cy="10" r="2" fill="#2563EB" stroke="none" />
+                </g>
+
+                <!-- Peripherals -->
+                <g transform="translate(10, 80)">
+                    <!-- Keyboard -->
+                    <rect x="0" y="0" width="${monitorWidth}" height="15" rx="2" />
+                    <!-- Mouse -->
+                    <rect x="${monitorWidth + 5}" y="2" width="10" height="12" rx="4" />
+                </g>
+            </svg>
+            `;
+        };
+
+        const bookSvg = (delay, duration) => `
+            <svg class="auth-bg-item dynamic-motion" width="100" height="120" viewBox="0 0 100 120" 
+                 style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
+                <rect x="10" y="10" width="80" height="100" rx="2" />
+                <g class="book-cover">
+                    <rect x="10" y="10" width="80" height="100" rx="2" fill="none" style="fill: transparent;" />
+                    <line x1="15" y1="10" x2="15" y2="110" />
+                    <text x="50" y="60" text-anchor="middle" font-size="10" stroke="none" fill="#DC2626" style="opacity: 1; font-weight: bold;">Ozark LMS</text>
+                </g>
+                <path d="M 15 110 Q 50 115 90 110" stroke-linecap="round" />
+            </svg>
+        `;
+
+        // Shuffle Array
+        availableIndices.sort(() => Math.random() - 0.5);
+        
+        // Spawn
+        const cellsToUse = availableIndices.slice(0, 15); // Increased to 15 for variety
+        
+        cellsToUse.forEach(cellIndex => {
+            const rand = Math.random();
+            // Distribution: 33% Laptop, 33% Book, 33% Desktop
+            let type = 'book';
+            if (rand < 0.33) type = 'laptop';
+            else if (rand < 0.66) type = 'desktop';
+            
+            const containerDiv = document.createElement('div');
+            
+            // Grid Position
+            const col = cellIndex % cols;
+            const row = Math.floor(cellIndex / cols);
+            
+            // Jitter within cell
+            const left = (col * (100/cols)) + 2 + Math.random() * 8;
+            const top = (row * (100/rows)) + 2 + Math.random() * 8;
+            
+            containerDiv.style.position = 'absolute';
+            containerDiv.style.left = left + '%';
+            containerDiv.style.top = top + '%';
+            
+            // Randomize timing
+            const delay = Math.random() * 5;
+            const duration = 4 + Math.random() * 3;
+
+            if (type === 'laptop' || type === 'desktop') {
+                const initialName = names[Math.floor(Math.random() * names.length)];
+                const initialColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                if (type === 'laptop') {
+                    containerDiv.innerHTML = laptopSvg(initialName, initialColor, delay, duration);
+                } else {
+                    const desktopType = Math.random() > 0.5 ? 'wide' : 'normal';
+                    containerDiv.innerHTML = desktopSvg(desktopType, initialName, initialColor, delay, duration);
+                }
+                
+                const textEl = containerDiv.querySelector('.laptop-text');
+                
+                // Update Name & Color frequently
+                setInterval(() => {
+                    const n = names[Math.floor(Math.random() * names.length)];
+                    const c = colors[Math.floor(Math.random() * colors.length)];
+                    if(textEl) {
+                        textEl.textContent = n;
+                        textEl.setAttribute('fill', c);
+                    }
+                }, 2500); 
+            } else {
+                containerDiv.innerHTML = bookSvg(delay, duration);
+            }
+            
+            container.appendChild(containerDiv);
+        });
+    });
+</script>

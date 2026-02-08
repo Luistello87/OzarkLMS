@@ -19,5 +19,7 @@ namespace OzarkLMS.Models
         public string? Feedback { get; set; } // Instructor feedback
         
         public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+        
+        public List<SubmissionAttachment> Attachments { get; set; } = new List<SubmissionAttachment>();
     }
 }

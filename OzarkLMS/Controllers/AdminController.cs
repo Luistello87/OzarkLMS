@@ -114,5 +114,33 @@ namespace OzarkLMS.Controllers
 
             return RedirectToAction(nameof(Dashboard));
         }
+
+        // POST: Admin/EditUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(int id, string username, string password)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return RedirectToAction(nameof(Dashboard));
+
+            // Check if username is taken by another user
+             if (await _context.Users.AnyAsync(u => u.Username == username && u.Id != id))
+             {
+                 // In a real app, we'd pass an error. For now, just return.
+                 return RedirectToAction(nameof(Dashboard));
+             }
+
+            user.Username = username;
+            
+            // Only update password if provided
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                user.Password = password; // In a real app, hash this!
+            }
+
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Dashboard));
+        }
     }
 }

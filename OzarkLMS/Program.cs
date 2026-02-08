@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 builder.Services.AddScoped<ISelfTestService, SelfTestService>();
 
 builder.Services.AddDbContext<OzarkLMS.Data.AppDbContext>(options =>
@@ -28,6 +29,13 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<OzarkLMS.Data.AppDbContext>();
         // OzarkLMS.Data.DbInitializer.Initialize(context);
+        
+        // Backfill Vote Counts (One-time fix for existing data)
+        context.Database.ExecuteSqlRaw(
+            "UPDATE \"Posts\" p " +
+            "SET \"UpvoteCount\" = (SELECT COUNT(*) FROM \"PostVotes\" pv WHERE pv.\"PostId\" = p.\"Id\" AND pv.\"Value\" = 1), " +
+            "    \"DownvoteCount\" = (SELECT COUNT(*) FROM \"PostVotes\" pv WHERE pv.\"PostId\" = p.\"Id\" AND pv.\"Value\" = -1)");
+
     }
     catch (Exception ex)
     {
@@ -51,12 +59,10 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.MapHub<OzarkLMS.Hubs.VoteHub>("/voteHub");
 
 app.Run();

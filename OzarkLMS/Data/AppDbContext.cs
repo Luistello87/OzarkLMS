@@ -13,6 +13,7 @@ namespace OzarkLMS.Data
         public DbSet<Module> Modules { get; set; }
         public DbSet<ModuleItem> ModuleItems { get; set; }
         public DbSet<Submission> Submissions { get; set; }
+        public DbSet<SubmissionAttachment> SubmissionAttachments { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<DashboardAnnouncement> DashboardAnnouncements { get; set; }
         public DbSet<Notification> Notifications { get; set; }
@@ -28,8 +29,63 @@ namespace OzarkLMS.Data
         public DbSet<Question> Questions { get; set; }
         public DbSet<QuestionOption> QuestionOptions { get; set; }
 
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Follow> Follows { get; set; }
+
+        public DbSet<PostVote> PostVotes { get; set; }
+        public DbSet<PostComment> PostComments { get; set; }
+        public DbSet<PostCommentVote> PostCommentVotes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Social Hub: Follow Relationship
+            modelBuilder.Entity<Follow>()
+                .HasKey(f => new { f.FollowerId, f.FollowingId });
+
+            modelBuilder.Entity<Follow>()
+                .HasOne(f => f.Follower)
+                .WithMany(u => u.Following)
+                .HasForeignKey(f => f.FollowerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Follow>()
+                .HasOne(f => f.Following)
+                .WithMany(u => u.Followers)
+                .HasForeignKey(f => f.FollowingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Social Hub: Votes
+            modelBuilder.Entity<PostVote>()
+                .HasKey(pv => new { pv.PostId, pv.UserId });
+
+            modelBuilder.Entity<PostVote>()
+                .HasOne(pv => pv.Post)
+                .WithMany(p => p.Votes)
+                .HasForeignKey(pv => pv.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostComment>()
+                .HasOne(pc => pc.Post)
+                .WithMany(p => p.Comments)
+                .HasForeignKey(pc => pc.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostComment>()
+                .HasOne(pc => pc.ParentComment)
+                .WithMany(pc => pc.Replies)
+                .HasForeignKey(pc => pc.ParentCommentId)
+                .OnDelete(DeleteBehavior.Cascade); // Deleting a parent comment deletes replies.
+
+            // Comment Votes
+            modelBuilder.Entity<PostCommentVote>()
+                .HasKey(cv => new { cv.CommentId, cv.UserId });
+
+            modelBuilder.Entity<PostCommentVote>()
+                .HasOne(cv => cv.Comment)
+                .WithMany(c => c.Votes)
+                .HasForeignKey(cv => cv.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Seed generic data if needed here, or just basic config
             base.OnModelCreating(modelBuilder);
             

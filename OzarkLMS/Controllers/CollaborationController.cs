@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OzarkLMS.Data;
 using OzarkLMS.Models;
+using OzarkLMS.ViewModels;
 using System.Security.Claims;
+using Microsoft.AspNetCore.SignalR;
+using OzarkLMS.Hubs;
 
 namespace OzarkLMS.Controllers
 {
@@ -11,10 +14,12 @@ namespace OzarkLMS.Controllers
     public class CollaborationController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<VoteHub> _voteHub;
 
-        public CollaborationController(AppDbContext context)
+        public CollaborationController(AppDbContext context, IHubContext<VoteHub> voteHub)
         {
             _context = context;
+            _voteHub = voteHub;
         }
 
         private int GetCurrentUserId()
@@ -28,48 +33,33 @@ namespace OzarkLMS.Controllers
         {
             var userId = GetCurrentUserId();
             var user = await _context.Users.FindAsync(userId);
-            if (user == null) return RedirectToAction("Login", "Account");
+            if (user == null) return NotFound();
 
-            // Ensure membership in Default Chat ("Main Organization Chat")
-            var defaultChats = await _context.ChatGroups.Where(g => g.IsDefault).ToListAsync();
-            foreach (var defaultChat in defaultChats)
-            {
-                var isMember = await _context.ChatGroupMembers
-                    .AnyAsync(m => m.ChatGroupId == defaultChat.Id && m.UserId == userId);
+            // 1. Feed: Posts from followed users + self
+            var followingIds = await _context.Follows
+                .Where(f => f.FollowerId == userId)
+                .Select(f => f.FollowingId)
+                .ToListAsync();
+            
+            followingIds.Add(userId); 
 
-                if (!isMember)
-                {
-                    _context.ChatGroupMembers.Add(new ChatGroupMember
-                    {
-                        ChatGroupId = defaultChat.Id,
-                        UserId = userId,
-                        JoinedDate = DateTime.UtcNow
-                    });
-                }
-            }
-            if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
-
-            // Get user's groups (Member of)
-            var myGroups = await _context.ChatGroupMembers
-                .Where(m => m.UserId == userId)
-                .Include(m => m.ChatGroup)
-                    .ThenInclude(g => g.CreatedBy)
-                .Include(m => m.ChatGroup)
-                    .ThenInclude(g => g.Messages)
-                .Select(m => m.ChatGroup)
-                .OrderByDescending(g => g.IsDefault) // Default first
-                .ThenByDescending(g => g.LastActivityDate) // Then by last activity
+            var feed = await _context.Posts
+                .Where(p => followingIds.Contains(p.UserId)) 
+                .Include(p => p.User)
+                .Include(p => p.Votes) // Important for voting status
+                .Include(p => p.Comments)
+                    .ThenInclude(c => c.User) // For comment display
+                .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
-            // Admins can see all groups? The requirement says "Admin accounts have visibility into all group chats"
-            // But usually "Index" shows "My Chats". If Admin wants to manage, maybe a standard list?
-            // "Each user’s profile must automatically display a list of all group chats they are currently a member of"
-            // Let's stick to "My Groups" for the main view, but if Admin, maybe show all (or have a toggle). 
-            // For now, let's just show My Groups + Default (which includes Admin).
-            // If Admin needs to see others, they might need a special Admin View. 
-            // However, requirement 2: "Admin accounts have visibility into all group chats".
-            // Let's append ALL other chats if User is Admin, distinct.
-
+            // 2. Chat Groups
+            var groups = await _context.ChatGroups
+                .Include(g => g.Members)
+                .Where(g => g.Members.Any(m => m.UserId == userId) || g.IsDefault) 
+                .OrderByDescending(g => g.LastActivityDate)
+                .ToListAsync();
+                
+            // 3. Private Chats
             var privateChats = await _context.PrivateChats
                 .Include(c => c.User1)
                 .Include(c => c.User2)
@@ -77,21 +67,352 @@ namespace OzarkLMS.Controllers
                 .OrderByDescending(c => c.LastActivityDate)
                 .ToListAsync();
 
-            if (User.IsInRole("admin"))
-            {
-                var allGroups = await _context.ChatGroups
-                    .Include(g => g.CreatedBy)
-                    .Include(g => g.Messages)
-                    .OrderByDescending(g => g.IsDefault)
-                    .ThenByDescending(g => g.LastActivityDate)
-                    .ToListAsync();
+            // 4. Unread Counts (via Notifications)
+            var notifications = await _context.Notifications
+                .Where(n => n.RecipientId == userId && !n.IsRead && n.ActionUrl.StartsWith("/Collaboration/"))
+                .ToListAsync();
 
-                ViewBag.PrivateChats = privateChats;
-                return View(allGroups);
+            var groupUnread = new Dictionary<int, int>();
+            foreach(var g in groups)
+            {
+                int count = notifications.Count(n => n.ActionUrl == $"/Collaboration/Details/{g.Id}");
+                if (count > 0) groupUnread[g.Id] = count;
             }
 
-            ViewBag.PrivateChats = privateChats;
-            return View(myGroups);
+            var privateUnread = new Dictionary<int, int>();
+            foreach(var c in privateChats)
+            {
+                int count = notifications.Count(n => n.ActionUrl == $"/Collaboration/PrivateDetails/{c.Id}");
+                if (count > 0) privateUnread[c.Id] = count;
+            }
+
+            var viewModel = new SocialHubViewModel
+            {
+                CurrentUser = user,
+                Feed = feed,
+                ChatGroups = groups,
+                PrivateChats = privateChats,
+                GroupUnread = groupUnread,
+                PrivateUnread = privateUnread
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: /Collaboration/Vote
+        // POST: /Collaboration/Vote
+        [HttpPost]
+        public async Task<IActionResult> Vote(int postId, int value)
+        {
+            // Value: 1 (Up), -1 (Down)
+            if (value != 1 && value != -1) return BadRequest();
+
+            var userId = GetCurrentUserId();
+
+            // Transaction for Atomic Updates
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == postId);
+                if (post == null) return NotFound();
+
+                var existingVote = await _context.PostVotes.FirstOrDefaultAsync(pv => pv.PostId == postId && pv.UserId == userId);
+
+                int userVote = 0; // Final state for the user
+                int upvoteChange = 0;
+                int downvoteChange = 0;
+
+                if (existingVote != null)
+                {
+                    if (existingVote.Value == value)
+                    {
+                        // Toggle Off (Remove vote)
+                        _context.PostVotes.Remove(existingVote);
+                        userVote = 0;
+
+                        if (value == 1) { upvoteChange = -1; }
+                        else { downvoteChange = -1; }
+                    }
+                    else
+                    {
+                        // Switch Vote
+                        userVote = value;
+                        existingVote.Value = value;
+
+                        if (value == 1) 
+                        {
+                            // Switching Down -> Up
+                            upvoteChange = 1;
+                            downvoteChange = -1;
+                        }
+                        else 
+                        {
+                            // Switching Up -> Down
+                            upvoteChange = -1;
+                            downvoteChange = 1;
+                        }
+                    }
+                }
+                else
+                {
+                    // New Vote
+                    _context.PostVotes.Add(new PostVote { PostId = postId, UserId = userId, Value = value });
+                    userVote = value;
+
+                    if (value == 1) { upvoteChange = 1; }
+                    else { downvoteChange = 1; }
+                }
+
+                // Update Post aggregates
+                post.UpvoteCount += upvoteChange;
+                post.DownvoteCount += downvoteChange;
+
+                await _context.SaveChangesAsync();
+
+                // Notification Logic (only for new upvotes)
+                if (value == 1 && existingVote == null && post.UserId != userId)
+                {
+                     bool alreadyNotified = await _context.Notifications.AnyAsync(n => 
+                            n.RecipientId == post.UserId && 
+                            n.SenderId == userId && 
+                            n.Title == "New Upvote" && 
+                            n.ActionUrl.Contains($"#post-{postId}") &&
+                            n.SentDate > DateTime.UtcNow.AddMinutes(-10));
+
+                        if (!alreadyNotified)
+                        {
+                            _context.Notifications.Add(new Notification
+                            {
+                                RecipientId = post.UserId,
+                                SenderId = userId,
+                                Title = "New Upvote",
+                                Message = $"{User.Identity.Name} upvoted your post.",
+                                ActionUrl = $"/Collaboration#post-{postId}",
+                                SentDate = DateTime.UtcNow
+                            });
+                             await _context.SaveChangesAsync();
+                        }
+                }
+
+                await transaction.CommitAsync();
+
+                // Broadcast Updated Score
+                var newScore = post.UpvoteCount - post.DownvoteCount;
+                await _voteHub.Clients.All.SendAsync("ReceiveVoteUpdate", postId, newScore);
+
+                return Json(new { score = newScore, userVote = userVote });
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        // POST: /Collaboration/AddComment
+        // POST: /Collaboration/AddComment
+        [HttpPost]
+        public async Task<IActionResult> AddComment(int postId, string content, int? parentCommentId = null)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return BadRequest();
+
+            var userId = GetCurrentUserId();
+            var comment = new PostComment
+            {
+                PostId = postId,
+                UserId = userId,
+                Content = content,
+                ParentCommentId = parentCommentId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.PostComments.Add(comment);
+
+            // Notifications
+            var post = await _context.Posts.FindAsync(postId);
+            if (post != null && post.UserId != userId)
+            {
+                // Notify Post Owner
+                _context.Notifications.Add(new Notification
+                {
+                    RecipientId = post.UserId,
+                    SenderId = userId,
+                    Title = "New Comment",
+                    Message = $"{User.Identity.Name} commented on your post.",
+                    ActionUrl = $"/Collaboration#comment-{comment.Id}", // Link to specific comment
+                    SentDate = DateTime.UtcNow
+                });
+            }
+
+            if (parentCommentId.HasValue)
+            {
+                var parent = await _context.PostComments.FindAsync(parentCommentId.Value);
+                if (parent != null && parent.UserId != userId && (post == null || parent.UserId != post.UserId)) // Avoid double notify if post owner == comment owner
+                {
+                    // Notify Parent Comment Owner
+                     _context.Notifications.Add(new Notification
+                    {
+                        RecipientId = parent.UserId,
+                        SenderId = userId,
+                        Title = "New Reply",
+                        Message = $"{User.Identity.Name} replied to your comment.",
+                        ActionUrl = $"/Collaboration#comment-{comment.Id}",
+                        SentDate = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            var user = await _context.Users.FindAsync(userId);
+            
+            return Json(new { 
+                success = true, 
+                user = user.Username, 
+                avatar = user.ProfilePictureUrl, 
+                content = comment.Content, 
+                date = comment.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm"),
+                parentId = parentCommentId,
+                id = comment.Id
+            });
+        }
+
+        // POST: /Collaboration/VoteComment
+        [HttpPost]
+        public async Task<IActionResult> VoteComment(int commentId, int value)
+        {
+            // Value: 1 (Up), -1 (Down)
+            if (value != 1 && value != -1) return BadRequest();
+
+            var userId = GetCurrentUserId();
+
+            // Transaction for Atomic Updates
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var comment = await _context.PostComments.FirstOrDefaultAsync(c => c.Id == commentId);
+                if (comment == null) return NotFound();
+
+                var existingVote = await _context.PostCommentVotes.FirstOrDefaultAsync(cv => cv.CommentId == commentId && cv.UserId == userId);
+
+                int userVote = 0;
+                int upvoteChange = 0;
+                int downvoteChange = 0;
+
+                if (existingVote != null)
+                {
+                    if (existingVote.Value == value)
+                    {
+                        // Toggle Off
+                        _context.PostCommentVotes.Remove(existingVote);
+                        userVote = 0;
+
+                        if (value == 1) { upvoteChange = -1; }
+                        else { downvoteChange = -1; }
+                    }
+                    else
+                    {
+                        // Switch Vote
+                        userVote = value;
+                        existingVote.Value = value;
+
+                        if (value == 1) 
+                        {
+                            upvoteChange = 1;
+                            downvoteChange = -1;
+                        }
+                        else 
+                        {
+                            upvoteChange = -1;
+                            downvoteChange = 1;
+                        }
+                    }
+                }
+                else
+                {
+                    // New Vote
+                    _context.PostCommentVotes.Add(new PostCommentVote { CommentId = commentId, UserId = userId, Value = value });
+                    userVote = value;
+
+                    if (value == 1) { upvoteChange = 1; }
+                    else { downvoteChange = 1; }
+                }
+
+                // Update Comment aggregates
+                comment.UpvoteCount += upvoteChange;
+                comment.DownvoteCount += downvoteChange;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Broadcast Updated Score
+                var newScore = comment.UpvoteCount - comment.DownvoteCount;
+                await _voteHub.Clients.All.SendAsync("ReceiveCommentVoteUpdate", commentId, newScore);
+
+                return Json(new { score = newScore, userVote = userVote });
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        // POST: /Collaboration/CreatePost
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePost(string content, IFormFile? media, IFormFile? attachment)
+        {
+            if (string.IsNullOrWhiteSpace(content) && media == null && attachment == null) 
+                return RedirectToAction(nameof(Index));
+
+            var userId = GetCurrentUserId();
+
+            string? imageUrl = null;
+            string? attachmentUrl = null;
+
+            // Handle Image
+            if (media != null && media.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(media.FileName);
+                await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
+                {
+                    await media.CopyToAsync(stream);
+                }
+                imageUrl = "/uploads/" + fileName;
+            }
+
+            // Handle Doc Attachment (Reuse logic or separate?)
+            // For now let's just use 'attachment' arg if provided
+            if (attachment != null && attachment.Length > 0)
+            {
+                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(attachment.FileName);
+                await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
+                {
+                    await attachment.CopyToAsync(stream);
+                }
+                attachmentUrl = "/uploads/" + fileName;
+            }
+
+            var post = new Post
+            {
+                UserId = userId,
+                Content = content ?? "",
+                ImageUrl = imageUrl,
+                AttachmentUrl = attachmentUrl,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Requirement: By default all posts have 1 upvote (from the author)
+            post.Votes.Add(new OzarkLMS.Models.PostVote { UserId = userId, Value = 1 });
+
+            _context.Posts.Add(post);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: /Collaboration/CreateGroup
@@ -176,6 +497,17 @@ namespace OzarkLMS.Controllers
                         return Forbid();
                     }
                 }
+            }
+
+            // Mark notifications as read for this group
+            var unreadNotes = await _context.Notifications
+                .Where(n => n.RecipientId == userId && !n.IsRead && n.ActionUrl == $"/Collaboration/Details/{id}")
+                .ToListAsync();
+            
+            if (unreadNotes.Any())
+            {
+                foreach(var note in unreadNotes) note.IsRead = true;
+                await _context.SaveChangesAsync();
             }
 
             return View(group);
@@ -361,6 +693,17 @@ namespace OzarkLMS.Controllers
             if (chat.User1Id != userId && chat.User2Id != userId && !User.IsInRole("admin"))
             {
                 return Forbid();
+            }
+
+            // Mark notifications as read for this private chat
+            var unreadNotes = await _context.Notifications
+                .Where(n => n.RecipientId == userId && !n.IsRead && n.ActionUrl == $"/Collaboration/PrivateDetails/{id}")
+                .ToListAsync();
+            
+            if (unreadNotes.Any())
+            {
+                foreach(var note in unreadNotes) note.IsRead = true;
+                await _context.SaveChangesAsync();
             }
 
             return View(chat);

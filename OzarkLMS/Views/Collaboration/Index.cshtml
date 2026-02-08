@@ -1,162 +1,364 @@
-@model IEnumerable<OzarkLMS.Models.ChatGroup>
+@model OzarkLMS.ViewModels.SocialHubViewModel
 @using System.Security.Claims
 
-<div class="p-8 max-w-[1200px] mx-auto">
-    <div class="flex items-center justify-between mb-8">
-        <div>
-             <h1 class="text-3xl font-bold text-[#004B87] dark:text-white">Student Hub</h1>
-             <p class="text-slate-500 dark:text-slate-400 mt-1">Chat, collaborate, and connect.</p>
-        </div>
+<div class="max-w-7xl mx-auto py-8 text-slate-800 dark:text-slate-100">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <div class="flex gap-2">
-            <!-- Global User Search for Private Chat -->
-             <div class="relative w-64 z-50">
-                <input id="globalUserSearch" class="w-full rounded-lg border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm px-4 py-2 outline-none focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 shadow-sm" placeholder="Find user to chat..." autocomplete="off" oninput="searchUsersGlobal(this.value)" />
-                <div id="globalSearchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto"></div>
-                <form id="startPrivateChatForm" asp-action="StartPrivateChat" method="post" class="hidden">
-                    <input type="hidden" name="targetUsername" id="privateChatTarget" />
-                </form>
-            </div>
-
-            <!-- Create Group Trigger -->
-            <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-[#003d6e] dark:hover:bg-blue-700 transition-colors shadow-sm flex items-center">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Group
-            </button>
-        </div>
-    </div>
-
-    <!-- Inline Create Form -->
-    <div id="createGroupForm" class="hidden mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-slate-800">Create New Group</h3>
-        <form asp-action="CreateGroup" method="post" enctype="multipart/form-data" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Group Name</label>
-                    <input name="name" class="w-full rounded-lg border-gray-300 px-4 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none" required placeholder="e.g. Study Group 101" />
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Group Photo (Optional)</label>
-                    <input type="file" name="photo" class="w-full rounded-lg border border-gray-300 px-4 py-1.5 bg-gray-50 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1">Description</label>
-                <input name="description" class="w-full rounded-lg border-gray-300 px-4 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none" placeholder="What is this group for?" />
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button type="button" onclick="document.getElementById('createGroupForm').classList.add('hidden')" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium">Cancel</button>
-                <button type="submit" class="bg-[#DA291C] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#b01e14]">Create Group</button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Groups List -->
-@using System.Security.Claims
-    <div class="space-y-3">
-        @{
-            var currentUserId = int.Parse(User.FindFirstValue("UserId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-            var privateChats = (ViewBag.PrivateChats as IEnumerable<OzarkLMS.Models.PrivateChat>) ?? new List<OzarkLMS.Models.PrivateChat>();
+        <!-- MAIN CONTENT (Feed & Composer) -->
+        <div class="lg:col-span-2 space-y-8">
             
-            // Unified List Item for sorting
-            var mixedList = new List<dynamic>();
-            foreach(var g in Model) 
-            {
-                mixedList.Add(new { 
-                    IsPrivate = false, 
-                    Id = g.Id,
-                    Name = g.Name, 
-                    Photo = g.GroupPhotoUrl, 
-                    IsDefault = g.IsDefault, 
-                    Date = g.LastActivityDate,
-                    MsgCount = g.Messages?.Count ?? 0,
-                    Members = g.Members
-                });
-            }
-            foreach(var p in privateChats) 
-            {
-                var otherUser = p.User1Id == currentUserId ? p.User2 : p.User1;
-                // Safety check if user is null (e.g. deleted)
-                var name = otherUser?.Username ?? "Unknown User";
-                var photo = otherUser?.ProfilePictureUrl;
-                
-                mixedList.Add(new { 
-                    IsPrivate = true, 
-                    Id = p.Id,
-                    Name = name, 
-                    Photo = photo, 
-                    IsDefault = false, 
-                    Date = p.LastActivityDate,
-                    MsgCount = p.Messages?.Count ?? 0,
-                    Members = (ICollection<OzarkLMS.Models.ChatGroupMember>)null
-                });
-            }
-            
-            var sortedList = mixedList.OrderByDescending(x => x.IsDefault).ThenByDescending(x => x.Date).ToList();
-        }
+            <!-- Header (Mobile/Tablet only, hidden on lg if desired, or keep as main header) -->
+            <div class="flex items-center justify-between">
+                <div>
+                     <h1 class="text-3xl font-bold text-[#004B87] dark:text-white">Student Hub</h1>
+                     <p class="text-slate-500 dark:text-slate-400 mt-1">Connect with your peers and instructors.</p>
+                </div>
+                <!-- Create Group Trigger (Moved to Sidebar usually, but keep here for now) -->
+                <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="lg:hidden bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-[#003d6e] transition-colors shadow-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+            </div>
 
-        @foreach (var item in sortedList)
-        {
-            <!-- Different Link Actions based on Type -->
-            <a asp-action="@(item.IsPrivate ? "PrivateDetails" : "Details")" asp-route-id="@item.Id" class="block group relative">
-                <div class="flex items-center p-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-900 border border-transparent hover:border-gray-100 dark:hover:border-slate-800 transition-all duration-200">
+            <!-- Create Post Composer -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+                <div class="flex space-x-4">
+                    @if(!string.IsNullOrEmpty(Model.CurrentUser.ProfilePictureUrl))
+                    {
+                        <img src="@Model.CurrentUser.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-600" />
+                    }
+                    else
+                    {
+                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300">
+                            @(Model.CurrentUser.Username.Substring(0,1).ToUpper())
+                        </div>
+                    }
                     
-                    <!-- Avatar -->
-                    <div class="relative flex-shrink-0 mr-4">
-                        @if (!string.IsNullOrEmpty(item.Photo))
+                    <form asp-action="CreatePost" method="post" enctype="multipart/form-data" class="flex-1">
+                        <textarea name="content" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#004B87] resize-none dark:text-white placeholder:text-slate-400" placeholder="Share something with the community..."></textarea>
+                        
+                        <!-- Attachments / Actions -->
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex space-x-2">
+                                <label class="cursor-pointer p-2 text-slate-500 hover:text-[#004B87] dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors relative group">
+                                    <input type="file" name="media" accept="image/*" class="hidden" onchange="previewImage(this)" />
+                                    <i data-lucide="image" class="w-5 h-5"></i>
+                                    <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Add Photo</span>
+                                </label>
+                                <label class="cursor-pointer p-2 text-slate-500 hover:text-[#004B87] dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors relative group">
+                                    <input type="file" name="attachment" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" class="hidden" onchange="previewFile(this)" />
+                                    <i data-lucide="paperclip" class="w-5 h-5"></i>
+                                    <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Attach File</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="bg-[#004B87] hover:bg-[#003d6e] text-white px-6 py-1.5 rounded-full font-bold text-sm shadow-md transition-colors">
+                                Post
+                            </button>
+                        </div>
+                        
+                        <!-- Upload Previews -->
+                        <div id="imagePreviewContainer" class="hidden mt-3 relative">
+                            <img id="imagePreview" src="" class="w-full h-auto max-h-60 object-cover rounded-lg border border-gray-200 dark:border-slate-700" />
+                            <button type="button" onclick="clearImagePreview()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="filePreviewContainer" class="hidden mt-3 relative bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 flex items-center justify-between">
+                            <div class="flex items-center text-blue-800 dark:text-blue-300">
+                                <i data-lucide="file-text" class="w-5 h-5 mr-2"></i>
+                                <span id="fileNamePreview" class="text-sm font-bold truncate max-w-[200px]"></span>
+                            </div>
+                            <button type="button" onclick="clearFilePreview()" class="text-slate-500 hover:text-red-500">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- News Feed -->
+            <div class="space-y-6">
+                @foreach(var post in Model.Feed)
+                {
+                    <div id="post-@post.Id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+                        <!-- Post Header -->
+                        <div class="p-6 pb-2 flex items-center justify-between">
+                            <div class="flex items-center cursor-pointer" onclick="window.location.href='/Account/Profile?userId=@post.UserId'">
+                                @if(!string.IsNullOrEmpty(post.User.ProfilePictureUrl))
+                                {
+                                    <img src="@post.User.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover mr-3 border border-gray-100 dark:border-slate-600" />
+                                }
+                                else
+                                {
+                                    <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300 mr-3">
+                                        @(post.User.Username.Substring(0,1).ToUpper())
+                                    </div>
+                                }
+                                <div>
+                                    <p class="font-bold text-slate-800 dark:text-white hover:underline">@post.User.Username</p>
+                                    <p class="text-xs text-slate-500">
+                                        @post.User.Role &bull; @post.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm")
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Menu (Optional) -->
+                            <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <!-- Post Content -->
+                        <div class="px-6 py-2">
+                             @if(!string.IsNullOrEmpty(post.Content))
+                             {
+                                 <p class="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">@post.Content</p>
+                             }
+                        </div>
+
+                        <!-- Attachments -->
+                        @if(!string.IsNullOrEmpty(post.ImageUrl))
                         {
-                            <img src="@item.Photo" class="w-12 h-12 rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform" />
-                        }
-                        else
-                        {
-                            <div class="w-12 h-12 rounded-xl @(item.IsDefault ? "bg-gradient-to-br from-[#004B87] to-[#003B6D] text-white" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-600 text-slate-500 dark:text-slate-300") flex items-center justify-center font-bold text-lg shadow-sm">
-                                @(item.Name?.Length > 0 ? item.Name.Substring(0, 1).ToUpper() : "?")
+                            <div class="mt-3">
+                                <img src="@post.ImageUrl" class="w-full h-auto max-h-[600px] object-cover bg-gray-50 dark:bg-black" />
                             </div>
                         }
-                        
-                        @if (item.IsPrivate)
+                        @if(!string.IsNullOrEmpty(post.AttachmentUrl))
                         {
-                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-slate-800" title="Private Chat"></div>
+                            <div class="px-6 py-4">
+                                <a href="@post.AttachmentUrl" target="_blank" class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg group hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                                    <div class="w-10 h-10 rounded bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 flex items-center justify-center mr-3">
+                                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-blue-800 dark:text-blue-300 group-hover:underline">Attachment</p>
+                                        <p class="text-xs text-blue-600 dark:text-blue-400">Click to view/download</p>
+                                    </div>
+                                </a>
+                            </div>
                         }
-                    </div>
 
-                    <!-- Content -->
-                    <div class="flex-grow min-w-0">
-                        <div class="flex justify-between items-baseline mb-1">
-                            <h3 class="font-bold text-slate-800 dark:text-slate-200 truncate pr-2 group-hover:text-[#004B87] dark:group-hover:text-blue-400 transition-colors">
-                                @item.Name
-                                @if (item.IsDefault)
-                                {
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 ml-1">Official</span>
-                                }
-                            </h3>
-                            <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-                                @item.Date.ToLocalTime().ToString("MMM dd HH:mm")
-                            </span>
+                        <!-- Post Footer (Likes/Comments/Share) -->
+                        <div class="px-6 py-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 flex items-center space-x-6">
+                            @{
+                                var userVote = post.Votes.FirstOrDefault(v => v.UserId == Model.CurrentUser.Id)?.Value ?? 0;
+                                var score = post.Votes.Sum(v => v.Value);
+                                var commentCount = post.Comments.Count;
+                            }
+                            
+                            <!-- Upvote/Downvote Section -->
+                            <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg px-2 py-1">
+                                <button onclick="vote(@post.Id, 1, this)" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors group">
+                                    <i data-lucide="arrow-big-up" class="w-6 h-6 transition-colors @(userVote == 1 ? "text-blue-600 fill-blue-600" : "text-slate-400 dark:text-slate-500 hover:text-blue-600")"></i>
+                                </button>
+                                
+                                <span class="font-bold text-sm min-w-[20px] text-center like-count @(userVote == 1 ? "text-blue-600" : (userVote == -1 ? "text-red-700" : "text-slate-700 dark:text-slate-300"))">@score</span>
+                                
+                                <button onclick="vote(@post.Id, -1, this)" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors group">
+                                    <i data-lucide="arrow-big-down" class="w-6 h-6 transition-colors @(userVote == -1 ? "text-red-700 fill-red-700" : "text-slate-400 dark:text-slate-500 hover:text-red-700")"></i>
+                                </button>
+                            </div>
+
+                             <button onclick="toggleComments(@post.Id)" class="flex items-center text-slate-500 hover:text-blue-600 transition-colors space-x-1.5 text-sm font-medium ml-4">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                <span><span class="comment-count">@commentCount</span> Comment@(commentCount != 1 ? "s" : "")</span>
+                            </button>
+                             <button onclick="sharePost(@post.Id)" class="flex items-center text-slate-500 hover:text-green-600 transition-colors space-x-1.5 text-sm font-medium ml-auto">
+                                <i data-lucide="share-2" class="w-4 h-4"></i>
+                                <span>Share</span>
+                            </button>
                         </div>
-                        
-                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate opacity-80 group-hover:opacity-100 transition-opacity">
-                           @(item.IsPrivate ? "Private Conversation" :  $"{item.Members?.Count ?? 0} members")
-                        </p>
+
+                        <!-- Comment Section (Hidden by default) -->
+                        <div id="comments-@post.Id" class="hidden border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+                            <div class="px-6 py-4 space-y-4">
+                                <div id="comment-list-@post.Id" class="space-y-3">
+                                    @foreach(var comment in post.Comments.Where(c => c.ParentCommentId == null).OrderBy(c => c.CreatedAt))
+                                    {
+                                        <partial name="_PostComment" model="comment" />
+                                    }
+                                </div>
+                                
+                                <!-- Add Comment -->
+                                <div class="flex items-start space-x-3 pt-2">
+                                    @if(!string.IsNullOrEmpty(Model.CurrentUser.ProfilePictureUrl))
+                                    {
+                                        <img src="@Model.CurrentUser.ProfilePictureUrl" class="w-8 h-8 rounded-full object-cover" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500">
+                                            @(Model.CurrentUser.Username.Substring(0,1).ToUpper())
+                                        </div>
+                                    }
+                                    <div class="flex-1 relative">
+                                        <input id="comment-input-@post.Id" type="text" 
+                                            class="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-[#004B87] outline-none pr-10" 
+                                            placeholder="Write a comment..." 
+                                            onkeydown="if(event.key === 'Enter') submitComment(@post.Id)" />
+                                        <button onclick="submitComment(@post.Id)" class="absolute right-2 top-1.5 text-[#004B87] dark:text-blue-400 hover:text-blue-700 p-1">
+                                            <i data-lucide="send" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                }
+                
+                @if(!Model.Feed.Any())
+                {
+                    <div class="text-center py-16">
+                        <div class="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="coffee" class="w-8 h-8 text-slate-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300">Your feed is quiet</h3>
+                        <p class="text-slate-500 dark:text-slate-500 text-sm mt-1">Follow more people or join groups to see activity here!</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- SIDEBAR (Chats) -->
+        <div class="lg:col-span-1 border-l border-gray-200 dark:border-slate-700 lg:pl-8">
+            <div class="sticky top-24">
+                
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-bold text-lg text-slate-800 dark:text-white flex items-center">
+                        <i data-lucide="message-square" class="w-5 h-5 mr-2 text-[#004B87] dark:text-blue-400"></i>
+                        Your Chats
+                    </h2>
                     
-                    <!-- Meta & Action -->
-                    <div class="flex flex-col items-end gap-2 flex-shrink-0">
-                        @if(item.MsgCount > 0)
-                        {
-                            <span class="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">@item.MsgCount <span class="hidden sm:inline">mssgs</span></span>
-                        }
-                         <div class="text-sm font-bold text-[#004B87] dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                            Open <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
-                        </div>
-                    </div>
+                    <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-full font-bold transition-colors">
+                        + New
+                    </button>
                 </div>
-            </a>
-        }
-    </div>
+                
+                <!-- Global User Search -->
+                <div class="relative w-full z-50 mb-4">
+                    <input id="globalUserSearch" class="w-full rounded-lg border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm px-4 py-2 outline-none focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 shadow-sm transition-all focus:bg-white dark:focus:bg-slate-900" placeholder="Find people or groups..." autocomplete="off" oninput="searchUsersGlobal(this.value)" />
+                    <div id="globalSearchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto"></div>
+                    <form id="startPrivateChatForm" asp-action="StartPrivateChat" method="post" class="hidden">
+                        <input type="hidden" name="targetUsername" id="privateChatTarget" />
+                    </form>
+                </div>
 
+                <!-- Create Group Form (Hidden by default) -->
+                <div id="createGroupForm" class="hidden mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-slate-700">
+                    <h3 class="font-bold text-sm mb-3">New Group</h3>
+                    <form asp-action="CreateGroup" method="post" enctype="multipart/form-data" class="space-y-3">
+                        <input name="name" class="w-full text-sm rounded-lg border-gray-300 px-3 py-1.5" required placeholder="Group Name" />
+                        <input name="description" class="w-full text-sm rounded-lg border-gray-300 px-3 py-1.5" placeholder="Description" />
+                        <div class="flex justify-end space-x-2">
+                             <button type="button" onclick="document.getElementById('createGroupForm').classList.add('hidden')" class="text-xs text-slate-500 font-bold">Cancel</button>
+                             <button type="submit" class="px-3 py-1 bg-[#004B87] text-white text-xs font-bold rounded hover:bg-blue-700">Create</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Chat List -->
+                <div class="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
+                    @{
+                        // Re-using the sorting logic
+                        var mixedList = new List<dynamic>();
+                        foreach(var g in Model.ChatGroups) 
+                        {
+                            int unread = Model.GroupUnread.ContainsKey(g.Id) ? Model.GroupUnread[g.Id] : 0;
+                            mixedList.Add(new { IsPrivate = false, Id = g.Id, Name = g.Name, Photo = g.GroupPhotoUrl, IsDefault = g.IsDefault, Date = g.LastActivityDate, UnreadCount = unread, Members = g.Members });
+                        }
+                        foreach(var p in Model.PrivateChats) 
+                        {
+                            int unread = Model.PrivateUnread.ContainsKey(p.Id) ? Model.PrivateUnread[p.Id] : 0;
+                            var otherUser = p.User1Id == Model.CurrentUser.Id ? p.User2 : p.User1;
+                            var name = otherUser?.Username ?? "Unknown";
+                            var photo = otherUser?.ProfilePictureUrl;
+                            mixedList.Add(new { IsPrivate = true, Id = p.Id, Name = name, Photo = photo, IsDefault = false, Date = p.LastActivityDate, UnreadCount = unread, Members = (ICollection<OzarkLMS.Models.ChatGroupMember>)null });
+                        }
+                        var sortedList = mixedList.OrderByDescending(x => x.UnreadCount > 0).ThenByDescending(x => x.IsDefault).ThenByDescending(x => x.Date).ToList();
+                    }
+
+                    @foreach (var item in sortedList)
+                    {
+                         // Condensed Chat Card
+                         <a asp-action="@(item.IsPrivate ? "PrivateDetails" : "Details")" asp-route-id="@item.Id" class="block group relative" onclick="markChatAsRead(this)">
+                             <div class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-gray-100 dark:hover:border-slate-700 @(item.UnreadCount > 0 ? "bg-blue-50/50 dark:bg-blue-900/10" : "")">
+                                 <div class="relative flex-shrink-0 mr-3">
+                                     @if (!string.IsNullOrEmpty(item.Photo))
+                                     {
+                                         <img src="@item.Photo" class="w-10 h-10 rounded-lg object-cover" />
+                                     }
+                                     else
+                                     {
+                                         <div class="w-10 h-10 rounded-lg @(item.IsDefault ? "bg-gradient-to-br from-[#004B87] to-[#003B6D] text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-500") flex items-center justify-center font-bold text-sm">
+                                             @(item.Name?.Length > 0 ? item.Name.Substring(0, 1).ToUpper() : "?")
+                                         </div>
+                                     }
+                                     @if (item.IsPrivate)
+                                     {
+                                         <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+                                     }
+                                 </div>
+                                 <div class="flex-1 min-w-0">
+                                     <div class="flex justify-between items-baseline">
+                                         <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate pr-2">@item.Name</h4>
+                                         @if(item.UnreadCount > 0)
+                                         {
+                                             <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                         }
+                                     </div>
+                                     <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                         @item.Date.ToLocalTime().ToString("MMM dd") 
+                                         @if(!item.IsPrivate) { <span>&bull; @(item.Members?.Count ?? 0)</span> }
+                                     </p>
+                                 </div>
+                             </div>
+                         </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Scripts (Search, etc.) -->
+    <!-- SignalR Client Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <script>
+    // --- SignalR Connection ---
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/voteHub")
+        .build();
+
+    connection.on("ReceiveVoteUpdate", function (postId, newScore) {
+        // Update the score in the DOM
+        const scoreSpan = document.querySelector(`#post-${postId} .like-count`);
+        if (scoreSpan) {
+            scoreSpan.innerText = newScore;
+            // Visual feedback (flash effect)
+            scoreSpan.classList.add('scale-150', 'text-yellow-500'); // Pop effect
+            setTimeout(() => {
+                scoreSpan.classList.remove('scale-150', 'text-yellow-500');
+            }, 300);
+        }
+    });
+
+    connection.on("ReceiveCommentVoteUpdate", function (commentId, newScore) {
+        const scoreSpan = document.querySelector(`.comment-like-count[data-comment-id="${commentId}"]`);
+        if (scoreSpan) {
+            scoreSpan.innerText = newScore;
+            // Visual feedback
+            scoreSpan.classList.add('scale-150');
+            setTimeout(() => {
+                scoreSpan.classList.remove('scale-150');
+            }, 300);
+        }
+    });
+
+    connection.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+
     let globalSearchTimeout;
     function searchUsersGlobal(query) {
+        // ... (rest of existing code)
         clearTimeout(globalSearchTimeout);
         const resultsContainer = document.getElementById('globalSearchResults');
         
@@ -189,32 +391,24 @@
                                     ${avatar}
                                     <div class="flex-1">
                                         <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${item.name}</p>
-                                        <p class="text-[10px] text-slate-400">User &bull; Click to message</p>
+                                        <p class="text-[10px] text-slate-400">User</p>
                                     </div>
                                 `;
                             } else {
-                                // Group Logic
-                                div.onclick = () => {
-                                    window.location.href = `/Collaboration/Details/${item.id}`;
-                                };
-                                
+                                div.onclick = () => { window.location.href = `/Collaboration/Details/${item.id}`; };
                                 const avatar = item.photo 
                                     ? `<img src="${item.photo}" class="w-8 h-8 rounded-full object-cover mr-3 bg-gray-200">` 
                                     : `<div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 flex items-center justify-center text-xs font-bold mr-3"><i data-lucide="users" class="w-4 h-4"></i></div>`;
-                                
                                 div.innerHTML = `
                                     ${avatar}
                                     <div class="flex-1">
                                         <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${item.name}</p>
-                                        <p class="text-[10px] text-slate-400">Group &bull; Click to open</p>
+                                        <p class="text-[10px] text-slate-400">Group</p>
                                     </div>
                                 `;
                             }
-                            
                             resultsContainer.appendChild(div);
                         });
-                        // Re-initialize Lucide icons for new elements if needed, though mostly using text/simples
-                        if(window.lucide) lucide.createIcons();
                         resultsContainer.classList.remove('hidden');
                     } else {
                         resultsContainer.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">No results found.</div>';
@@ -224,12 +418,417 @@
         }, 300);
     }
     
-    // Close search on click outside
     document.addEventListener('click', function(e) {
-        const searchContainer = document.querySelector('.relative.w-64');
+        const searchContainer = document.querySelector('.relative.w-full'); // Updated selector
         if (searchContainer && !searchContainer.contains(e.target)) {
             document.getElementById('globalSearchResults').classList.add('hidden');
         }
     });
+
+    function markChatAsRead(element) {
+        // UI Optimistic Update
+        const badge = element.querySelector('.animate-pulse');
+        if (badge) badge.remove();
+        element.querySelector('div').classList.remove('bg-blue-50/50', 'dark:bg-blue-900/10');
+    }
+
+    // --- UPLOAD PREVIEWS ---
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreviewContainer').classList.remove('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+            
+            // Hide file preview if exists (mutually exclusive UI for simplicity, though backend supports both)
+            document.getElementById('filePreviewContainer').classList.add('hidden');
+        }
+    }
+    
+    function clearImagePreview() {
+        document.querySelector('input[name="media"]').value = '';
+        document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+
+    function previewFile(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('fileNamePreview').textContent = input.files[0].name;
+            document.getElementById('filePreviewContainer').classList.remove('hidden');
+            document.getElementById('filePreviewContainer').classList.add('flex');
+            
+            // Hide image preview
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+        }
+    }
+
+    function clearFilePreview() {
+         document.querySelector('input[name="attachment"]').value = '';
+         document.getElementById('filePreviewContainer').classList.add('hidden');
+         document.getElementById('filePreviewContainer').classList.remove('flex');
+    }
+
+
+    // --- SOCIAL INTERACTIONS ---
+    function vote(postId, value, btn) {
+        const container = btn.parentElement;
+        const upBtn = container.children[0];
+        const scoreSpan = container.children[1];
+        const downBtn = container.children[2];
+        const upIcon = upBtn.querySelector('svg') || upBtn.querySelector('i');
+        const downIcon = downBtn.querySelector('svg') || downBtn.querySelector('i');
+        
+        let currentScore = parseInt(scoreSpan.innerText);
+        
+        // Determine current state based on classes
+        let isUpvoted = upIcon.classList.contains('text-blue-600') && upIcon.classList.contains('fill-blue-600');
+        let isDownvoted = downIcon.classList.contains('text-red-700') && downIcon.classList.contains('fill-red-700'); // Bloodred check
+        
+        // Optimistic Update Logic
+        if (value === 1) { // Upvote clicked
+            if (isUpvoted) {
+                // Remove Upvote
+                upIcon.classList.remove('text-blue-600', 'fill-blue-600');
+                upIcon.classList.add('text-slate-400', 'dark:text-slate-500');
+                scoreSpan.classList.remove('text-blue-600');
+                scoreSpan.classList.add('text-slate-700', 'dark:text-slate-300');
+                currentScore--;
+            } else {
+                // Add Upvote (Remove downvote if exists)
+                if (isDownvoted) {
+                    downIcon.classList.remove('text-red-700', 'fill-red-700');
+                    downIcon.classList.add('text-slate-400', 'dark:text-slate-500');
+                    currentScore++; // Neutralize downvote
+                }
+                upIcon.classList.remove('text-slate-400', 'dark:text-slate-500');
+                upIcon.classList.add('text-blue-600', 'fill-blue-600');
+                
+                scoreSpan.classList.remove('text-slate-700', 'dark:text-slate-300', 'text-red-700');
+                scoreSpan.classList.add('text-blue-600');
+                
+                // Animation
+                upIcon.classList.add('scale-125');
+                setTimeout(() => upIcon.classList.remove('scale-125'), 200);
+                
+                currentScore++;
+            }
+        } else if (value === -1) { // Downvote clicked
+             if (isDownvoted) {
+                // Remove Downvote
+                downIcon.classList.remove('text-red-700', 'fill-red-700');
+                downIcon.classList.add('text-slate-400', 'dark:text-slate-500');
+                scoreSpan.classList.remove('text-red-700');
+                scoreSpan.classList.add('text-slate-700', 'dark:text-slate-300');
+                currentScore++;
+            } else {
+                // Add Downvote (Remove upvote if exists)
+                if (isUpvoted) {
+                    upIcon.classList.remove('text-blue-600', 'fill-blue-600');
+                    upIcon.classList.add('text-slate-400', 'dark:text-slate-500');
+                    currentScore--; // Neutralize upvote
+                }
+                downIcon.classList.remove('text-slate-400', 'dark:text-slate-500');
+                downIcon.classList.add('text-red-700', 'fill-red-700');
+                
+                scoreSpan.classList.remove('text-slate-700', 'dark:text-slate-300', 'text-blue-600');
+                scoreSpan.classList.add('text-red-700');
+                
+                // Animation
+                downIcon.classList.add('scale-125');
+                setTimeout(() => downIcon.classList.remove('scale-125'), 200);
+                
+                currentScore--;
+            }
+        }
+        
+        scoreSpan.innerText = currentScore;
+
+        fetch('/Collaboration/Vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `postId=${postId}&value=${value}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Server Sync
+            scoreSpan.innerText = data.score;
+            
+            // Updates Colors based on server 'userVote'
+            // Reset all
+            upIcon.classList.remove('text-blue-600', 'fill-blue-600');
+            upIcon.classList.add('text-slate-400', 'dark:text-slate-500');
+            downIcon.classList.remove('text-red-700', 'fill-red-700');
+            downIcon.classList.add('text-slate-400', 'dark:text-slate-500');
+            
+            scoreSpan.className = "font-bold text-sm min-w-[20px] text-center like-count";
+            
+            if (data.userVote === 1) {
+                upIcon.classList.remove('text-slate-400', 'dark:text-slate-500');
+                upIcon.classList.add('text-blue-600', 'fill-blue-600');
+                scoreSpan.classList.add('text-blue-600');
+            } else if (data.userVote === -1) {
+                downIcon.classList.remove('text-slate-400', 'dark:text-slate-500');
+                downIcon.classList.add('text-red-700', 'fill-red-700');
+                scoreSpan.classList.add('text-red-700');
+            } else {
+                 scoreSpan.classList.add('text-slate-700', 'dark:text-slate-300');
+            }
+        });
+    }
+
+    function voteComment(commentId, value, btn) {
+        const container = btn.parentElement;
+        const upBtn = container.children[0];
+        const scoreSpan = container.children[1];
+        const downBtn = container.children[2];
+        
+        let currentScore = parseInt(scoreSpan.innerText);
+        
+        // Determine current state (Reddit colors: orange=up, blue=down)
+        let isUpvoted = upBtn.classList.contains('text-orange-500');
+        let isDownvoted = downBtn.classList.contains('text-blue-500');
+        
+        // Optimistic Update
+        if (value === 1) {
+            if (isUpvoted) {
+                // Toggle off upvote
+                upBtn.classList.remove('text-orange-500');
+                upBtn.classList.add('text-slate-400', 'hover:text-orange-500');
+                scoreSpan.classList.remove('text-orange-500');
+                scoreSpan.classList.add('text-slate-600', 'dark:text-slate-400');
+                currentScore--;
+            } else {
+                if (isDownvoted) {
+                    // Switch from downvote to upvote
+                    downBtn.classList.remove('text-blue-500');
+                    downBtn.classList.add('text-slate-400', 'hover:text-blue-500');
+                    currentScore += 2; // Remove downvote AND add upvote
+                } else {
+                    currentScore++;
+                }
+                upBtn.classList.remove('text-slate-400', 'hover:text-orange-500');
+                upBtn.classList.add('text-orange-500');
+                scoreSpan.classList.remove('text-slate-600', 'dark:text-slate-400', 'text-blue-500');
+                scoreSpan.classList.add('text-orange-500');
+            }
+        } else {
+            if (isDownvoted) {
+                // Toggle off downvote
+                downBtn.classList.remove('text-blue-500');
+                downBtn.classList.add('text-slate-400', 'hover:text-blue-500');
+                scoreSpan.classList.remove('text-blue-500');
+                scoreSpan.classList.add('text-slate-600', 'dark:text-slate-400');
+                currentScore++;
+            } else {
+                if (isUpvoted) {
+                    // Switch from upvote to downvote
+                    upBtn.classList.remove('text-orange-500');
+                    upBtn.classList.add('text-slate-400', 'hover:text-orange-500');
+                    currentScore -= 2; // Remove upvote AND add downvote
+                } else {
+                    currentScore--;
+                }
+                downBtn.classList.remove('text-slate-400', 'hover:text-blue-500');
+                downBtn.classList.add('text-blue-500');
+                scoreSpan.classList.remove('text-slate-600', 'dark:text-slate-400', 'text-orange-500');
+                scoreSpan.classList.add('text-blue-500');
+            }
+        }
+        
+        scoreSpan.innerText = currentScore;
+
+        fetch('/Collaboration/VoteComment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `commentId=${commentId}&value=${value}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            scoreSpan.innerText = data.score;
+            
+            // Reset all states
+            upBtn.classList.remove('text-orange-500', 'text-slate-400', 'hover:text-orange-500');
+            downBtn.classList.remove('text-blue-500', 'text-slate-400', 'hover:text-blue-500');
+            scoreSpan.className = "comment-like-count text-xs font-bold my-0.5";
+            
+            if (data.userVote === 1) {
+                upBtn.classList.add('text-orange-500');
+                scoreSpan.classList.add('text-orange-500');
+                downBtn.classList.add('text-slate-400', 'hover:text-blue-500');
+            } else if (data.userVote === -1) {
+                downBtn.classList.add('text-blue-500');
+                scoreSpan.classList.add('text-blue-500');
+                upBtn.classList.add('text-slate-400', 'hover:text-orange-500');
+            } else {
+                upBtn.classList.add('text-slate-400', 'hover:text-orange-500');
+                downBtn.classList.add('text-slate-400', 'hover:text-blue-500');
+                scoreSpan.classList.add('text-slate-600', 'dark:text-slate-400');
+            }
+        });
+    }
+
+    function toggleComments(postId) {
+        const section = document.getElementById(`comments-${postId}`);
+        section.classList.toggle('hidden');
+        if (!section.classList.contains('hidden')) {
+             if(window.lucide) lucide.createIcons();
+             setTimeout(() => document.getElementById(`comment-input-${postId}`).focus(), 100);
+        }
+    }
+    
+    function toggleReplyForm(commentId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+            setTimeout(() => document.getElementById(`reply-input-${commentId}`).focus(), 100);
+        }
+    }
+
+    function toggleCommentThread(commentId) {
+        const repliesContainer = document.getElementById(`replies-${commentId}`);
+        const collapseBtn = document.getElementById(`collapse-btn-${commentId}`);
+        const collapseText = document.getElementById(`collapse-text-${commentId}`);
+        const icon = collapseBtn.querySelector('i');
+        
+        if (repliesContainer.classList.contains('hidden')) {
+            // Expand
+            repliesContainer.classList.remove('hidden');
+            collapseText.textContent = 'Collapse';
+            icon.setAttribute('data-lucide', 'minus-square');
+        } else {
+            // Collapse
+            repliesContainer.classList.add('hidden');
+            const replyCount = repliesContainer.querySelectorAll('[id^="comment-"]').length;
+            collapseText.textContent = `Expand (${replyCount} ${replyCount === 1 ? 'reply' : 'replies'})`;
+            icon.setAttribute('data-lucide', 'plus-square');
+        }
+        
+        // Re-initialize lucide icons for the changed icon
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    function submitComment(postId, parentId = null) {
+        const inputId = parentId ? `reply-input-${parentId}` : `comment-input-${postId}`;
+        const input = document.getElementById(inputId);
+        const content = input.value.trim();
+        if(!content) return;
+        
+        input.value = '';
+
+        let body = `postId=${postId}&content=${encodeURIComponent(content)}`;
+        if (parentId) body += `&parentCommentId=${parentId}`;
+
+        fetch('/Collaboration/AddComment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                const list = parentId ? document.getElementById(`replies-${parentId}`) : document.getElementById(`comment-list-${postId}`);
+                
+                const avatarHtml = data.avatar 
+                    ? `<img src="${data.avatar}" class="w-8 h-8 rounded-full object-cover border border-gray-200" />`
+                    : `<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500">${data.user[0].toUpperCase()}</div>`;
+
+                const html = `
+                    <div class="flex space-x-3 mb-3 animate-fade-in">
+                        ${avatarHtml}
+                        <div class="flex-1">
+                            <div class="bg-white dark:bg-slate-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100 dark:border-slate-700 inline-block">
+                               <div class="flex items-baseline space-x-2">
+                                    <span class="font-bold text-slate-800 dark:text-slate-200">${data.user}</span>
+                                    <span class="text-xs text-slate-400">${data.date}</span>
+                               </div>
+                               <p class="text-slate-600 dark:text-slate-300 mt-1">${data.content}</p>
+                            </div>
+                            <!-- Actions -->
+                            ${!parentId ? `
+                             <div class="flex items-center space-x-4 mt-1 ml-1">
+                                <button onclick="toggleReplyForm(${data.id})" class="text-xs font-bold text-slate-500 hover:text-[#004B87] dark:hover:text-blue-400">Reply</button>
+                             </div>
+                             <!-- Nested Replies Container -->
+                             <div id="replies-${data.id}" class="mt-3 space-y-3 pl-4 border-l-2 border-slate-100 dark:border-slate-700 hidden"></div>
+                             <!-- Hidden Reply Form -->
+                             <div id="reply-form-${data.id}" class="hidden mt-2 flex items-center space-x-2">
+                                <input id="reply-input-${data.id}" type="text" class="flex-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full px-3 py-1.5 text-xs outline-none focus:border-[#004B87]" placeholder="Write a reply..." onkeydown="if(event.key === 'Enter') submitComment(${postId}, ${data.id})" />
+                                <button onclick="submitComment(${postId}, ${data.id})" class="text-[#004B87] dark:text-blue-400 hover:text-blue-700"><i data-lucide="send" class="w-3 h-3"></i></button>
+                             </div>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                if (parentId) {
+                    // FIX: Unhide the replies container itself, not its parent
+                    list.classList.remove('hidden'); 
+                    list.insertAdjacentHTML('beforeend', html);
+                    
+                    // Hide reply form (optional, but smoother UX usually keeps it open or closes it. Let's hide it to 'finish' the action)
+                    toggleReplyForm(parentId);
+                } else {
+                    list.insertAdjacentHTML('beforeend', html);
+                    // Update main comment count
+                    const countSpan = document.querySelector(`button[onclick="toggleComments(${postId})"] .comment-count`);
+                    if(countSpan) {
+                        let current = parseInt(countSpan.innerText);
+                        countSpan.parentElement.innerHTML = `<span class="comment-count">${current + 1}</span> Comment${(current + 1) !== 1 ? 's' : ''}`;
+                    }
+                }
+                
+                if(window.lucide) lucide.createIcons();
+            }
+        })
+        .catch(err => console.error("Comment failed", err));
+    }
+
+    function sharePost(postId) {
+        const url = `${window.location.origin}/Collaboration#post-${postId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50 animate-bounce';
+            toast.innerText = 'Link copied to clipboard!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        });
+    }
+
+    // Deep Linking Handler
+    function handleDeepLink() {
+        const hash = window.location.hash;
+        if (hash) {
+            // Remove the #
+            const targetId = hash.substring(1);
+            let targetElement = document.getElementById(targetId);
+
+            if (targetElement) {
+                // If it's a comment, we might need to show the comment section
+                if (targetId.startsWith("comment-")) {
+                    const postCommentsSection = targetElement.closest('[id^="comments-"]');
+                    if (postCommentsSection) {
+                        postCommentsSection.classList.remove('hidden');
+                    }
+                }
+                
+                // Scroll and Highlight
+                setTimeout(() => {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Highlight effect
+                    const originalClasses = targetElement.className;
+                    targetElement.classList.add('ring-2', 'ring-offset-2', 'ring-[#004B87]', 'dark:ring-blue-400', 'transition-all', 'duration-500');
+                    
+                    setTimeout(() => {
+                        targetElement.classList.remove('ring-2', 'ring-offset-2', 'ring-[#004B87]', 'dark:ring-blue-400');
+                    }, 2500);
+                }, 100);
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", handleDeepLink);
+    window.addEventListener("hashchange", handleDeepLink);
     </script>
 </div>

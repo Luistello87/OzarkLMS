@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OzarkLMS.Data;
@@ -11,9 +12,11 @@ using OzarkLMS.Data;
 namespace OzarkLMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260207204059_AddCommentVoting")]
+    partial class AddCommentVoting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -729,35 +732,6 @@ namespace OzarkLMS.Migrations
                     b.ToTable("Submissions");
                 });
 
-            modelBuilder.Entity("OzarkLMS.Models.SubmissionAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("SubmissionId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubmissionId");
-
-                    b.ToTable("SubmissionAttachments");
-                });
-
             modelBuilder.Entity("OzarkLMS.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -1117,17 +1091,6 @@ namespace OzarkLMS.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("OzarkLMS.Models.SubmissionAttachment", b =>
-                {
-                    b.HasOne("OzarkLMS.Models.Submission", "Submission")
-                        .WithMany("Attachments")
-                        .HasForeignKey("SubmissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Submission");
-                });
-
             modelBuilder.Entity("OzarkLMS.Models.Assignment", b =>
                 {
                     b.Navigation("Questions");
@@ -1176,11 +1139,6 @@ namespace OzarkLMS.Migrations
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
                 {
                     b.Navigation("Options");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.Submission", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.User", b =>

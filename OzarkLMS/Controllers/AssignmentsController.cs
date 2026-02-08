@@ -252,28 +252,43 @@ namespace OzarkLMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitAssignment(int assignmentId, string? content, IFormFile? file)
+        public async Task<IActionResult> SubmitAssignment(int assignmentId, string? content, List<IFormFile> files)
         {
             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
             if (userIdClaim == null) return Unauthorized();
             var userId = int.Parse(userIdClaim.Value);
 
-            string? fileUrl = null;
+            var attachments = new List<SubmissionAttachment>();
+            string? firstFileUrl = null;
 
-            // Handle File Upload
-            if (file != null && file.Length > 0)
+            // Handle Multiple File Uploads
+            if (files != null && files.Count > 0)
             {
-                // ensure uploads folder
                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-                var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(uploads, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                foreach (var file in files)
                 {
-                    await file.CopyToAsync(stream);
+                    if (file.Length > 0)
+                    {
+                        var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+                        var filePath = Path.Combine(uploads, fileName);
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+                        
+                        var fileUrl = "/uploads/" + fileName;
+                        if (firstFileUrl == null) firstFileUrl = fileUrl; // Keep first for legacy
+
+                        attachments.Add(new SubmissionAttachment
+                        {
+                            FileName = file.FileName,
+                            FilePath = fileUrl,
+                            UploadedAt = DateTime.UtcNow
+                        });
+                    }
                 }
-                fileUrl = "/uploads/" + fileName;
             }
 
             var submission = new Submission
@@ -281,7 +296,8 @@ namespace OzarkLMS.Controllers
                 AssignmentId = assignmentId,
                 StudentId = userId,
                 Content = content ?? "",
-                AttachmentUrl = fileUrl,
+                AttachmentUrl = firstFileUrl, // Legacy support
+                Attachments = attachments,
                 SubmittedAt = DateTime.UtcNow
             };
 
@@ -308,6 +324,7 @@ namespace OzarkLMS.Controllers
 
             var submissions = await _context.Submissions
                 .Include(s => s.Student)
+                .Include(s => s.Attachments)
                 .Where(s => s.AssignmentId == id)
                 .OrderByDescending(s => s.SubmittedAt)
                 .ToListAsync();

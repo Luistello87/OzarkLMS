@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OzarkLMS.Data;
@@ -11,9 +12,11 @@ using OzarkLMS.Data;
 namespace OzarkLMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260207200411_AddPostVoteCounts")]
+    partial class AddPostVoteCounts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -475,16 +478,10 @@ namespace OzarkLMS.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("DownvoteCount")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("ParentCommentId")
                         .HasColumnType("integer");
 
                     b.Property<int>("PostId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UpvoteCount")
                         .HasColumnType("integer");
 
                     b.Property<int>("UserId")
@@ -499,24 +496,6 @@ namespace OzarkLMS.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("PostComments");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.PostCommentVote", b =>
-                {
-                    b.Property<int>("CommentId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CommentId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PostCommentVotes");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.PostVote", b =>
@@ -727,35 +706,6 @@ namespace OzarkLMS.Migrations
                     b.HasIndex("StudentId");
 
                     b.ToTable("Submissions");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.SubmissionAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("SubmissionId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubmissionId");
-
-                    b.ToTable("SubmissionAttachments");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.User", b =>
@@ -989,25 +939,6 @@ namespace OzarkLMS.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("OzarkLMS.Models.PostCommentVote", b =>
-                {
-                    b.HasOne("OzarkLMS.Models.PostComment", "Comment")
-                        .WithMany("Votes")
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OzarkLMS.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Comment");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("OzarkLMS.Models.PostVote", b =>
                 {
                     b.HasOne("OzarkLMS.Models.Post", "Post")
@@ -1117,17 +1048,6 @@ namespace OzarkLMS.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("OzarkLMS.Models.SubmissionAttachment", b =>
-                {
-                    b.HasOne("OzarkLMS.Models.Submission", "Submission")
-                        .WithMany("Attachments")
-                        .HasForeignKey("SubmissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Submission");
-                });
-
             modelBuilder.Entity("OzarkLMS.Models.Assignment", b =>
                 {
                     b.Navigation("Questions");
@@ -1164,8 +1084,6 @@ namespace OzarkLMS.Migrations
             modelBuilder.Entity("OzarkLMS.Models.PostComment", b =>
                 {
                     b.Navigation("Replies");
-
-                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.PrivateChat", b =>
@@ -1176,11 +1094,6 @@ namespace OzarkLMS.Migrations
             modelBuilder.Entity("OzarkLMS.Models.Question", b =>
                 {
                     b.Navigation("Options");
-                });
-
-            modelBuilder.Entity("OzarkLMS.Models.Submission", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("OzarkLMS.Models.User", b =>

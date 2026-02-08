@@ -32,6 +32,23 @@ namespace OzarkLMS.Controllers
             return View(notifications);
         }
 
+        // GET: /Notification/GetDropdownPartial
+        public async Task<IActionResult> GetDropdownPartial()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim == null) return Unauthorized();
+            
+            var userId = int.Parse(userIdClaim.Value);
+            var notifications = await _context.Notifications
+                .Where(n => n.RecipientId == userId || n.RecipientId == null)
+                .OrderByDescending(n => n.SentDate)
+                .Take(5) // Limit for dropdown
+                .Include(n => n.Sender)
+                .ToListAsync();
+
+            return PartialView("_NotificationList", notifications);
+        }
+
         // GET: /Notification/Send (Admin/Instructor Only)
         [Authorize(Roles = "admin, instructor")]
         public async Task<IActionResult> Send()
