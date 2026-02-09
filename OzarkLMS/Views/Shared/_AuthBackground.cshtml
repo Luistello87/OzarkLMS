@@ -50,15 +50,22 @@
         opacity: 1; /* Visibility controlled by container fade, but text changes */
     }
 
-    /* Motion: Continuous Fade + Drift */
+    /* Motion: Checkpoint - Smoother Float & Fade */
     .dynamic-motion {
         animation: 
-            fadeInOut 5s ease-in-out infinite,
-            drift 10s linear infinite alternate;
+            fadeInOut 8s ease-in-out infinite,
+            float 12s ease-in-out infinite alternate;
     }
 
-    /* Staggered animations will be applied via inline styles delay */
+    /* Keyframes: Smooth Float (Vertical + Slight Rotation) */
+    @@keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-10px) rotate(2deg); }
+        67% { transform: translateY(5px) rotate(-1deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+    }
 
+    /* Keyframes: Gentle Fade In/Out */
     @@keyframes fadeInOut {
         0% { opacity: 0; }
         20% { opacity: 1; }
@@ -66,9 +73,10 @@
         100% { opacity: 0; }
     }
 
+    /* Keyframes: Drift (Horizontal - Optional, kept for variety if needed, but not used in base class now) */
     @@keyframes drift {
-        0% { transform: translate(0, 0) scale(0.8); }
-        100% { transform: translate(20px, -15px) scale(0.8); }
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(20px, -15px); }
     }
     
     /* Reduced Motion */
@@ -94,28 +102,27 @@
             "#EC4899"  // Pink
         ];
         
-        // Grid Configuration for Non-Overlap
-        const cols = 6;
-        const rows = 6;
+        // Grid Configuration for Non-Overlap (8x8 for finer control)
+        const cols = 8;
+        const rows = 8;
         const totalCells = cols * rows;
-        const itemCount = 12; 
         
-        // Exclude central zone (assuming form is roughly in middle 2x2 or 4x2)
-        // 0  1  2  3  4  5
-        // 6  7  8  9  10 11 ...
-        // Middle indices for 6x6:
-        // Rows 2 and 3 (index 2, 3). Cols 2 and 3 (index 2, 3).
-        // Cell indices: 14, 15, 20, 21. Also maybe padded: 13,16, 19,22.
-        const excludedIndices = [14, 15, 20, 21, 8, 9, 26, 27]; // Center-ish block
+        // Exclude central zone for the login form (Vertical oriented for 8x8)
+        const excludedIndices = [];
+        for (let r = 1; r <= 6; r++) {
+            for (let c = 2; c <= 5; c++) {
+                excludedIndices.push(r * cols + c);
+            }
+        }
         
         let availableIndices = [];
         for(let i=0; i<totalCells; i++) {
             if(!excludedIndices.includes(i)) availableIndices.push(i);
         }
         
-        // Templates
+        // Templates (Slightly smaller dimensions for better spacing)
         const laptopSvg = (name, color, delay, duration) => `
-            <svg class="auth-bg-item dynamic-motion" width="120" height="80" viewBox="0 0 120 80" 
+            <svg class="auth-bg-item dynamic-motion" width="100" height="70" viewBox="0 0 120 80" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <rect x="10" y="5" width="100" height="60" rx="4" />
                 <path d="M 0 65 L 120 65 L 110 75 L 10 75 Z" />
@@ -124,53 +131,28 @@
         `;
 
         const desktopSvg = (type, name, color, delay, duration) => {
-            // type: 'normal' or 'wide'
             const isWide = type === 'wide';
             const monitorWidth = isWide ? 100 : 80;
-            const viewBoxWidth = isWide ? 160 : 140; // Adjust viewbox to fit PC + Monitor
-            
-            // Monitor Center Calculation
-            const monitorX = 0;
-            const screenCenter = monitorX + (monitorWidth / 2);
+            const viewBoxWidth = isWide ? 160 : 140; 
             
             return `
-            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth}" height="100" viewBox="0 0 ${viewBoxWidth} 100" 
+            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth * 0.8}" height="80" viewBox="0 0 ${viewBoxWidth} 100" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
-                
-                <!-- Monitor Group -->
                 <g transform="translate(10, 0)">
-                    <!-- Screen (Bezel-less) -->
                     <rect x="0" y="0" width="${monitorWidth}" height="60" rx="2" stroke-width="1.5" />
-                    <!-- Stand -->
                     <line x1="${monitorWidth/2}" y1="60" x2="${monitorWidth/2}" y2="75" stroke-width="3" />
                     <line x1="${monitorWidth/2 - 15}" y1="75" x2="${monitorWidth/2 + 15}" y2="75" stroke-width="2" />
-                    
-                    <!-- Flashing Name -->
                     <text x="${monitorWidth/2}" y="35" class="laptop-text" fill="${color}">${name}</text>
                 </g>
-
-                <!-- PC Tower (Right of monitor) -->
-                <!-- Moved down to y=15 to align bottom with peripherals (roughly) -->
                 <g transform="translate(${monitorWidth + 25}, 15)"> 
-                    <!-- The Top (Perspective) -->
                     <path d="M 0 0 L 20 0 L 24 -6 L 4 -6 Z" stroke-width="1.5" stroke-linejoin="round" />
-                    
-                    <!-- Main Body -->
                     <rect x="0" y="0" width="20" height="80" rx="2" />
-                    
-                    <!-- Vertical Text OZARK (Blue) -->
                     <text x="10" y="40" text-anchor="middle" font-size="8" stroke="none" fill="#2563EB" 
                           style="writing-mode: tb; opacity: 1; font-family: 'Inter', sans-serif; font-weight: bold;">OZARK</text>
-                    
-                    <!-- Power Button (Blue) -->
                     <circle cx="10" cy="10" r="2" fill="#2563EB" stroke="none" />
                 </g>
-
-                <!-- Peripherals -->
                 <g transform="translate(10, 80)">
-                    <!-- Keyboard -->
                     <rect x="0" y="0" width="${monitorWidth}" height="15" rx="2" />
-                    <!-- Mouse -->
                     <rect x="${monitorWidth + 5}" y="2" width="10" height="12" rx="4" />
                 </g>
             </svg>
@@ -178,7 +160,7 @@
         };
 
         const bookSvg = (delay, duration) => `
-            <svg class="auth-bg-item dynamic-motion" width="100" height="120" viewBox="0 0 100 120" 
+            <svg class="auth-bg-item dynamic-motion" width="80" height="100" viewBox="0 0 100 120" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <rect x="10" y="10" width="80" height="100" rx="2" />
                 <g class="book-cover">
@@ -193,15 +175,15 @@
         // Shuffle Array
         availableIndices.sort(() => Math.random() - 0.5);
         
-        // Spawn
-        const cellsToUse = availableIndices.slice(0, 15); // Increased to 15 for variety
+        // Spawn - Adjusted count for better density without clutter
+        const itemCount = 16;
+        const cellsToUse = availableIndices.slice(0, itemCount); 
         
         cellsToUse.forEach(cellIndex => {
             const rand = Math.random();
-            // Distribution: 33% Laptop, 33% Book, 33% Desktop
             let type = 'book';
-            if (rand < 0.33) type = 'laptop';
-            else if (rand < 0.66) type = 'desktop';
+            if (rand < 0.35) type = 'laptop';
+            else if (rand < 0.70) type = 'desktop';
             
             const containerDiv = document.createElement('div');
             
@@ -209,17 +191,18 @@
             const col = cellIndex % cols;
             const row = Math.floor(cellIndex / cols);
             
-            // Jitter within cell
-            const left = (col * (100/cols)) + 2 + Math.random() * 8;
-            const top = (row * (100/rows)) + 2 + Math.random() * 8;
+            // Center within cell + slight jitter (max 4% to avoid crossing cell boundaries)
+            const left = (col * (100/cols)) + (100/(cols*2)) - 2 + Math.random() * 4;
+            const top = (row * (100/rows)) + (100/(rows*2)) - 2 + Math.random() * 4;
             
             containerDiv.style.position = 'absolute';
             containerDiv.style.left = left + '%';
             containerDiv.style.top = top + '%';
+            containerDiv.style.transform = 'translate(-50%, -50%)'; // Center item on its coordinates
             
             // Randomize timing
-            const delay = Math.random() * 5;
-            const duration = 4 + Math.random() * 3;
+            const delay = Math.random() * 8; // Wider range for more varied start
+            const duration = 6 + Math.random() * 4;
 
             if (type === 'laptop' || type === 'desktop') {
                 const initialName = names[Math.floor(Math.random() * names.length)];
@@ -242,7 +225,7 @@
                         textEl.textContent = n;
                         textEl.setAttribute('fill', c);
                     }
-                }, 2500); 
+                }, 3000 + Math.random() * 2000); // Async updates
             } else {
                 containerDiv.innerHTML = bookSvg(delay, duration);
             }

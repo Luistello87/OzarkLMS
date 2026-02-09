@@ -291,14 +291,17 @@
         const editorContainer = document.getElementById('editorContainer');
         
         // ------------------------------------------------------------------
-        // PAGINATION LOGIC
+        // ROBUST PAGINATION LOGIC (NO FREEZE)
         // ------------------------------------------------------------------
         
-        // Check for overflow on input
+        // Input Listener
         pagesContainer.addEventListener('input', (e) => {
+            // Debounce slightly to allow the UI to update
             const page = e.target.closest('.editor-page');
             if (page) {
-                requestAnimationFrame(() => window.checkPageOverflow(page));
+                // Use a small timeout to let the browser paint the new character before we calculate layout
+                // This prevents some "cursor jumping" glitches
+                setTimeout(() => window.checkPageOverflow(page), 0);
             }
         });
 
@@ -309,7 +312,6 @@
             if (nextBreak && nextBreak.classList.contains('page-break')) {
                 next = nextBreak.nextElementSibling;
             } else {
-                // Insert break and new page
                 nextBreak = document.createElement('div');
                 nextBreak.className = 'page-break';
                 next = document.createElement('div');
@@ -317,43 +319,178 @@
                 next.contentEditable = true;
                 next.id = 'page-' + (document.querySelectorAll('.editor-page').length + 1);
                 
+                // Copy styles if needed? No, CSS handles it.
+                
                 currentPage.parentNode.insertBefore(nextBreak, currentPage.nextSibling);
                 currentPage.parentNode.insertBefore(next, nextBreak.nextSibling);
             }
             return next;
         };
 
-        window.moveContentToNextPage = function(sourcePage, targetPage) {
-            let iterations = 0;
-            // Move nodes from the bottom until sourcePage no longer overflows
-            while (sourcePage.scrollHeight > sourcePage.clientHeight && iterations < 200) {
-                const lastChild = sourcePage.lastChild;
-                if (!lastChild) break;
+        window.checkPageOverflow = function(page) {
+            // Safety break counter to prevent ANY possibility of infinite UI freeze
+            let safetyCounter = 0;
+            const MAX_ITERATIONS = 50; 
+
+            // While content exceeds page height
+            while (page.scrollHeight > page.clientHeight && safetyCounter < MAX_ITERATIONS) {
+                safetyCounter++;
                 
-                if (targetPage.firstChild) {
-                    targetPage.insertBefore(lastChild, targetPage.firstChild);
-                } else {
-                    targetPage.appendChild(lastChild);
+                // Get the last node causing overflow
+                const lastChild = page.lastChild;
+                if (!lastChild) break; 
+
+                const nextPage = window.getOrCreateNextPage(page);
+
+                // Strategy:
+                // 1. If 'lastChild' is a text node, strict split is needed.
+                // 2. If 'lastChild' is an Element, check if we should move it entirely or drill down.
+                
+                // CASE 1: Text Node
+                if (lastChild.nodeType === 3) {
+                    splitTextNodeToNextPage(lastChild, page, nextPage);
+                } 
+                // CASE 2: Element Node (P, DIV, etc.)
+                else if (lastChild.nodeType === 1) {
+                    // If it's the *only* child, moving it entirely won't help (infinite loop). 
+                    // We MUST drill down and split its contents.
+                    if (page.childNodes.length === 1) {
+                        splitElementToNextPage(lastChild, page, nextPage);
+                    } else {
+                        // It has siblings before it. Try moving the whole element first.
+                        moveNodeToNextPage(lastChild, nextPage);
+                    }
                 }
-                iterations++;
             }
             
-            // Recurse if needed
-            if (targetPage.scrollHeight > targetPage.clientHeight) {
-                const nextNext = window.getOrCreateNextPage(targetPage);
-                window.moveContentToNextPage(targetPage, nextNext);
+            // Ripple effect: Check if the next page now overflows
+            const nextLink = page.nextElementSibling?.nextElementSibling; // skip page-break
+            if (nextLink && nextLink.classList.contains('editor-page')) {
+                // Throttle the ripple to avoid blocking typing
+                if (nextLink.scrollHeight > nextLink.clientHeight) {
+                     window.checkPageOverflow(nextLink);
+                }
             }
         };
 
-        window.checkPageOverflow = function(page) {
-            // Check scrollHeight vs clientHeight (11in - padding)
-            // Actually clientHeight is 1056px now because of border-box
-            if (page.scrollHeight > page.clientHeight) {
-                const nextPage = window.getOrCreateNextPage(page);
-                window.moveContentToNextPage(page, nextPage);
+        function moveNodeToNextPage(node, nextPage) {
+            if (nextPage.firstChild) {
+                nextPage.insertBefore(node, nextPage.firstChild);
+            } else {
+                nextPage.appendChild(node);
             }
-        };
+        }
 
+        function splitTextNodeToNextPage(textNode, sourcePage, targetPage) {
+            const text = textNode.textContent;
+            const words = text.split(/(\s+)/); // Split keeping whitespace
+            
+            if (words.length <= 1) {
+                // Can't split a single word easily without breaking it? 
+                // For now, move the whole word. 
+                // (In a full word processor we'd split the word, but here let's stick to word wrap logic)
+                moveNodeToNextPage(textNode, targetPage);
+                return;
+            }
+
+            // Create a new text node for the target page
+            const newTextNode = document.createTextNode("");
+            moveNodeToNextPage(newTextNode, targetPage);
+
+            // Move words from end to start until source fits
+            // Optimization: Move big chunks? No, typing is usually one char at a time.
+            // But PASTING might differ. Let's do word by word from end.
+            
+            let movedContent = "";
+            let remainingContent = text;
+            
+            // We loop while source overflows. 
+            // NOTE: updating DOM in a loop causes reflow. 
+            // Faster approach: Binary search fit? 
+            // For now, simpler robust approach:
+            
+            while (sourcePage.scrollHeight > sourcePage.clientHeight && words.length > 0) {
+                const word = words.pop();
+                if (word === undefined) break;
+
+                // Move word to next page buffer
+                movedContent = word + movedContent;
+                newTextNode.textContent = movedContent;
+                
+                // Update source
+                remainingContent = words.join('');
+                textNode.textContent = remainingContent;
+            }
+            
+            // Clean up empty source node
+            if (textNode.textContent.length === 0) {
+                textNode.remove();
+            }
+            
+             // Restore focus if we were editing this node
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+                 // Check if our cursor was in the moved part
+                 // Ideally we'd map the offset. This is complex. 
+                 // Simple behavior: If cursor is lost, focus the end of new node.
+            }
+        }
+
+        function splitElementToNextPage(element, sourcePage, targetPage) {
+            // We need to move the LAST child of this element to the next page
+            // But we need a wrapper in the next page to hold it.
+            
+            // Create "continuation" element in target page
+            let continuation = targetPage.firstChild;
+            
+            // Check if we can merge into an existing generic container or need a new clone
+            // If the first child of target is same tag and class? 
+            let needsNewWrapper = true;
+            
+            if (continuation && continuation.tagName === element.tagName && continuation.className === element.className) {
+                needsNewWrapper = false;
+            }
+            
+            if (needsNewWrapper) {
+                continuation = element.cloneNode(false); // Shallow clone (attributes, tag)
+                continuation.innerHTML = '';
+                moveNodeToNextPage(continuation, targetPage);
+            }
+
+            // Now move last child of 'element' to 'continuation'
+            // We recurse the overflow logic on the element level
+            
+            while (sourcePage.scrollHeight > sourcePage.clientHeight) {
+                const child = element.lastChild;
+                if (!child) break;
+
+                // Edge case: Element has only 1 child and itself is causing overflow?
+                // Recurse down.
+                if (element.childNodes.length === 1) {
+                     if (child.nodeType === 3) {
+                         splitTextNodeToNextPage(child, sourcePage, continuation); // Note: we pass 'sourcePage' for height check context
+                     } else {
+                         splitElementToNextPage(child, sourcePage, continuation);
+                     }
+                     // If element became empty, remove it
+                     if (element.childNodes.length === 0) element.remove();
+                     break; 
+                } else {
+                    // Element has multiple children, move the last one to continuation
+                    if (continuation.firstChild) continuation.insertBefore(child, continuation.firstChild);
+                    else continuation.appendChild(child);
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // CURSOR & SELECTION PRESERVATION
+        // ------------------------------------------------------------------
+
+        // We override the default input handler slightly to ensure we check cursor
+        // ... (Already handled by browser mostly, but we trigger checkPageOverflow)
+
+        // Function to find active page
         function getActivePage() {
             const sel = window.getSelection();
             if (sel.rangeCount > 0) {
@@ -367,7 +504,6 @@
 
         function applyFormat(command, value = null) {
             document.execCommand(command, false, value);
-            // Keep focus
             const page = getActivePage();
             if (page) page.focus();
         }
@@ -381,92 +517,93 @@
         pagesContainer.addEventListener('mouseup', saveSelection);
         pagesContainer.addEventListener('blur', saveSelection);
 
-        // Handle Backspace for Merging
+        // ------------------------------------------------------------------
+        // PAGE MERGING (BACKSPACE HANDLING)
+        // ------------------------------------------------------------------
+        
         pagesContainer.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace') {
-                const page = getActivePage();
-                if (!page) return;
-
                 const sel = window.getSelection();
-                if (sel.rangeCount > 0) {
-                    const range = sel.getRangeAt(0);
+                if (!sel.rangeCount) return;
+                
+                const range = sel.getRangeAt(0);
+                const page = getActivePage();
+                
+                // If at start of page, merge with previous
+                if (page && window.isAtStartOfPage(page, range)) {
+                    const prevPage = page.previousElementSibling?.previousElementSibling; // Skip page-break div
                     
-                    // Check if we are at the very beginning of the page
-                    // This is slightly complex: startOffset 0 of the first text node in the first element
-                    if (window.isAtStartOfPage(page, range)) {
-                        const prevPage = page.previousElementSibling;
-                        if (prevPage && prevPage.classList.contains('editor-page')) {
-                            e.preventDefault();
-                            window.mergePages(prevPage, page);
-                        }
+                    if (prevPage && prevPage.classList.contains('editor-page')) {
+                        e.preventDefault();
+                        window.mergePages(prevPage, page);
                     }
                 }
             }
         });
 
         window.isAtStartOfPage = function(page, range) {
-            // Simplified check: is the cursor at the very beginning of the page's first child?
+            // Strict check: Are we at offset 0 of the first text node?
             if (range.startOffset !== 0) return false;
             
-            let firstChild = page.firstChild;
-            // Skip empty text nodes
-            while (firstChild && firstChild.nodeType === 3 && firstChild.textContent.length === 0) {
-                firstChild = firstChild.nextSibling;
-            }
+            // Check if there are any significant nodes before current cursor
+            let current = range.startContainer;
             
-            if (!firstChild) return true; // Empty page
-            
-            // If the start container is the first child (or deeply within it at offset 0)
-            let container = range.startContainer;
-            while (container && container !== page) {
-                if (container.previousSibling) return false;
-                container = container.parentNode;
+            // Walk up to page
+            while (current && current !== page) {
+                if (current.previousSibling) {
+                    // Check if previous siblings have content
+                    let sib = current.previousSibling;
+                    while (sib) {
+                        if (sib.textContent && sib.textContent.trim().length > 0) return false;
+                        sib = sib.previousSibling;
+                    }
+                }
+                current = current.parentNode;
             }
             return true;
         };
 
         window.mergePages = function(prevPage, currentPage) {
-            // Move all content from currentPage to the end of prevPage
-            const children = Array.from(currentPage.childNodes);
+            // Save cursor position idea: 
+            // We want the cursor to be at the END of prevPage content
             
-            // Move cursor to the end of prevPage before merging
+            const lastChild = prevPage.lastChild;
+            
+            // Move children
+            while (currentPage.firstChild) {
+                prevPage.appendChild(currentPage.firstChild);
+            }
+            
+            // Remove page and break
+            const pageBreak = currentPage.previousElementSibling;
+            if (pageBreak && pageBreak.classList.contains('page-break')) pageBreak.remove();
+            currentPage.remove();
+            
+            // Restore Selection to the join point
             const range = document.createRange();
             const sel = window.getSelection();
             
-            if (prevPage.lastChild) {
-                range.selectNodeContents(prevPage.lastChild);
+            if (lastChild) {
+                // If lastChild is text, go to end of it. 
+                // If it's element, try to go inside.
+                range.selectNodeContents(lastChild);
                 range.collapse(false);
             } else {
-                range.selectNodeContents(prevPage);
-                range.collapse(false);
+                 range.selectNodeContents(prevPage);
+                 range.collapse(false);
             }
             
-            children.forEach(child => prevPage.appendChild(child));
-            
-            // Focus and restore selection at the merge point
             sel.removeAllRanges();
             sel.addRange(range);
-            prevPage.focus();
             
-            // Remove the now empty current page
-            currentPage.remove();
-            
-            // Clean up empty trailing pages if any
-            window.cleanupEmptyPages();
+            // Check if merge caused overflow in prevPage
+            window.checkPageOverflow(prevPage);
         };
-
+        
         window.cleanupEmptyPages = function() {
-            const pages = document.querySelectorAll('.editor-page');
-            for (let i = pages.length - 1; i > 0; i--) {
-                const page = pages[i];
-                // If page is empty (no visible content)
-                if (page.innerText.trim() === '' && page.querySelectorAll('img').length === 0) {
-                    page.remove();
-                } else {
-                    // Stop at the first non-empty page from the bottom
-                    break;
-                }
-            }
+            // Optional: Auto-remove empty pages at end?
+            // Users often want empty pages, so maybe only on explicit delete?
+            // Leaving mostly manual for now to avoid annoyance.
         };
 
         document.addEventListener('click', (e) => {
