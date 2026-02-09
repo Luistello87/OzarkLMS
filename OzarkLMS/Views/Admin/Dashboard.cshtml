@@ -1,29 +1,29 @@
 @model OzarkLMS.ViewModels.AdminDashboardViewModel
 
 <div class="p-8 max-w-[1400px] mx-auto">
-    <h1 class="text-3xl font-bold text-[#004B87] mb-8">Admin Dashboard</h1>
+    <h1 class="text-3xl font-bold text-[#004B87] dark:text-white mb-8">Admin Dashboard</h1>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 class="text-slate-500 font-medium text-sm">Total Students</h3>
-            <p class="text-3xl font-bold text-slate-800 mt-2">@ViewBag.StudentCount</p>
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800">
+            <h3 class="text-slate-500 dark:text-slate-400 font-medium text-sm">Total Students</h3>
+            <p class="text-3xl font-bold text-slate-800 dark:text-white mt-2">@ViewBag.StudentCount</p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 class="text-slate-500 font-medium text-sm">Instructors</h3>
-            <p class="text-3xl font-bold text-slate-800 mt-2">@ViewBag.InstructorCount</p>
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800">
+            <h3 class="text-slate-500 dark:text-slate-400 font-medium text-sm">Instructors</h3>
+            <p class="text-3xl font-bold text-slate-800 dark:text-white mt-2">@ViewBag.InstructorCount</p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 class="text-slate-500 font-medium text-sm">Active Courses</h3>
-            <p class="text-3xl font-bold text-slate-800 mt-2">@ViewBag.CourseCount</p>
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800">
+            <h3 class="text-slate-500 dark:text-slate-400 font-medium text-sm">Active Courses</h3>
+            <p class="text-3xl font-bold text-slate-800 dark:text-white mt-2">@ViewBag.CourseCount</p>
         </div>
     </div>
 
     <!-- Quick Actions -->
     <div class="mb-8 flex space-x-4">
-        <a asp-action="CreateUser" class="bg-[#004B87] text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center hover:bg-[#003d6e] transition-colors shadow-sm">
+        <a asp-action="CreateUser" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center hover:bg-[#003d6e] dark:hover:bg-blue-700 transition-colors shadow-sm">
              <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i> Add Student
         </a>
-        <button onclick="document.getElementById('add-instructor-form').classList.toggle('hidden')" class="bg-white border border-gray-200 text-slate-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center hover:bg-gray-50 transition-colors shadow-sm">
+        <button onclick="document.getElementById('add-instructor-form').classList.toggle('hidden')" class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium text-sm flex items-center hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
              <i data-lucide="briefcase" class="w-4 h-4 mr-2"></i> Add Professor
         </button>
     </div>
@@ -40,32 +40,32 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Faculty Directory -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-             <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-slate-800">Faculty Directory</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
+             <div class="p-6 border-b border-gray-200 dark:border-slate-800">
+                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Faculty Directory</h2>
             </div>
             <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-slate-500 font-medium border-b border-gray-200">
+                <thead class="bg-gray-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-medium border-b border-gray-200 dark:border-slate-800">
                     <tr>
                         <th class="px-6 py-4">Name</th>
                         <th class="px-6 py-4">Role</th>
                         <th class="px-6 py-4">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
                     @foreach (var instructor in Model.Instructors)
                     {
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 font-medium text-slate-800 flex items-center">
-                            <span class="w-8 h-8 rounded-full bg-blue-100 text-[#004B87] flex items-center justify-center font-bold mr-3">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                        <td class="px-6 py-4 font-medium text-slate-800 dark:text-slate-200 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-[#004B87] dark:text-blue-300 flex items-center justify-center font-bold mr-3">
                                 @instructor.Username.Substring(0,1).ToUpper()
                             </span>
                             @instructor.Username
                         </td>
-                        <td class="px-6 py-4"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-bold uppercase">Instructor</span></td>
+                        <td class="px-6 py-4"><span class="bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full text-xs font-bold uppercase">Instructor</span></td>
                         <td class="px-6 py-4">
-                            <button class="text-slate-400 hover:text-[#004B87] transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="confirmDelete(@instructor.Id, '@instructor.Username')" class="text-slate-400 hover:text-red-600 transition-colors ml-2" title="Delete User">
+                            <button onclick="openEditModal(@instructor.Id, '@instructor.Username')" class="text-slate-400 hover:text-[#004B87] dark:hover:text-blue-400 transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="confirmDelete(@instructor.Id, '@instructor.Username')" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors ml-2" title="Delete User">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </td>
@@ -76,27 +76,27 @@
         </div>
 
         <!-- Student Directory -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-slate-800">Student Directory</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
+            <div class="p-6 border-b border-gray-200 dark:border-slate-800">
+                <h2 class="text-xl font-bold text-slate-800 dark:text-white">Student Directory</h2>
             </div>
             <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-slate-500 font-medium border-b border-gray-200">
+                <thead class="bg-gray-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-medium border-b border-gray-200 dark:border-slate-800">
                     <tr>
                         <th class="px-6 py-4">Username</th>
                         <th class="px-6 py-4">Role</th>
                         <th class="px-6 py-4">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
                     @foreach (var student in Model.Students)
                     {
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 font-medium text-slate-800">@student.Username</td>
-                        <td class="px-6 py-4"><span class="bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs font-bold uppercase">@student.Role</span></td>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                        <td class="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">@student.Username</td>
+                        <td class="px-6 py-4"><span class="bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-bold uppercase">@student.Role</span></td>
                         <td class="px-6 py-4">
-                            <button class="text-slate-400 hover:text-[#004B87] transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="confirmDelete(@student.Id, '@student.Username')" class="text-slate-400 hover:text-red-600 transition-colors ml-2" title="Delete User">
+                            <button onclick="openEditModal(@student.Id, '@student.Username')" class="text-slate-400 hover:text-[#004B87] dark:hover:text-blue-400 transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="confirmDelete(@student.Id, '@student.Username')" class="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors ml-2" title="Delete User">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </td>
@@ -147,4 +147,47 @@
     function closeDeleteModal() {
         document.getElementById('delete-modal').classList.add('hidden');
     }
+
+    // Edit Modal Logic
+    function openEditModal(id, username) {
+        document.getElementById('edit-user-id').value = id;
+        document.getElementById('edit-username').value = username;
+        document.getElementById('edit-password').value = ''; // Reset password field
+        document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-modal').classList.add('hidden');
+    }
 </script>
+
+<!-- Edit User Modal -->
+<div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
+    <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800">
+        <div class="mt-3">
+            <h3 class="text-lg font-bold text-[#004B87] dark:text-white mb-4">Edit User Account</h3>
+            <form asp-action="EditUser" method="post" class="space-y-4">
+                <input type="hidden" name="id" id="edit-user-id" />
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
+                    <input type="text" name="username" id="edit-username" class="w-full rounded-lg border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-[#004B87] focus:border-[#004B87] px-3 py-2" required />
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Password</label>
+                    <input type="password" name="password" id="edit-password" placeholder="Leave blank to keep unchanged" class="w-full rounded-lg border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-[#004B87] focus:border-[#004B87] px-3 py-2" />
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-[#004B87] hover:bg-[#003d6e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

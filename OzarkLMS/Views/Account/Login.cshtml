@@ -38,10 +38,20 @@
     </script>
     <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
-<body class="bg-[#FAFBFC] dark:bg-slate-900 h-screen flex items-center justify-center p-4 transition-colors duration-300">
-    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-slate-700">
+<body class="bg-[#FAFBFC] dark:bg-slate-900 h-screen flex items-center justify-center p-4 transition-colors duration-300 relative overflow-hidden">
+    <!-- Animated Background -->
+    <partial name="_AuthBackground" />
+
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-slate-700 relative z-10">
         <div class="text-center mb-8">
-            <div class="w-12 h-12 bg-[#DA291C] rounded-lg flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-md">O</div>
+            <!-- Logo -->
+            <div class="flex items-center justify-center mb-6">
+                 <img src="~/images/logo.jpg" alt="OzarkLMS Logo" class="h-16 w-auto object-contain drop-shadow-md rounded-xl mr-4" />
+                 <div class="flex flex-col justify-center text-left">
+                     <h1 class="font-extrabold text-3xl tracking-wider leading-none text-[#004B87] dark:text-blue-500 drop-shadow-sm">OZARK</h1>
+                     <p class="text-xs font-bold text-[#004B87] dark:text-blue-400 uppercase tracking-[0.25em] leading-none mt-1">LMS</p>
+                 </div>
+            </div>
             <h1 class="text-2xl font-bold text-[#004B87] dark:text-white">Welcome Back</h1>
             <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">Sign in to access your portal</p>
         </div>

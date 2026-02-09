@@ -90,28 +90,53 @@ namespace OzarkLMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .IgnoreQueryFilters() // Include soft-deleted users
+                .FirstOrDefaultAsync(u => u.Id == id);
+                
             if (user == null) return RedirectToAction(nameof(Dashboard));
 
-            // 1. Remove Enrollments (Cascade Delete)
-            var enrollments = _context.Enrollments.Where(e => e.StudentId == id);
-            _context.Enrollments.RemoveRange(enrollments);
+            // Soft Delete: Mark user as deleted instead of removing
+            user.IsDeleted = true;
 
-            // 2. Remove Submissions (Cascade Delete)
-            var submissions = _context.Submissions.Where(s => s.StudentId == id);
-            _context.Submissions.RemoveRange(submissions);
-
-            // 3. Unassign Courses (if Instructor)
+            // Unassign Courses (if Instructor)
             var courses = _context.Courses.Where(c => c.InstructorId == id);
             foreach (var course in courses)
             {
                 course.InstructorId = null;
             }
 
-            // 4. Remove User
-            _context.Users.Remove(user);
+            _context.Update(user);
             await _context.SaveChangesAsync();
 
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        // POST: Admin/EditUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(int id, string username, string password)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return RedirectToAction(nameof(Dashboard));
+
+            // Check if username is taken by another user
+             if (await _context.Users.AnyAsync(u => u.Username == username && u.Id != id))
+             {
+                 // In a real app, we'd pass an error. For now, just return.
+                 return RedirectToAction(nameof(Dashboard));
+             }
+
+            user.Username = username;
+            
+            // Only update password if provided
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                user.Password = password; // In a real app, hash this!
+            }
+
+            _context.Update(user);
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Dashboard));
         }
     }

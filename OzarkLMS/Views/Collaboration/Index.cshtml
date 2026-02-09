@@ -1,162 +1,256 @@
-@model IEnumerable<OzarkLMS.Models.ChatGroup>
+@model OzarkLMS.ViewModels.SocialHubViewModel
 @using System.Security.Claims
 
-<div class="p-8 max-w-[1200px] mx-auto">
-    <div class="flex items-center justify-between mb-8">
-        <div>
-             <h1 class="text-3xl font-bold text-[#004B87] dark:text-white">Student Hub</h1>
-             <p class="text-slate-500 dark:text-slate-400 mt-1">Chat, collaborate, and connect.</p>
-        </div>
+<div class="max-w-7xl mx-auto py-8 text-slate-800 dark:text-slate-100">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <div class="flex gap-2">
-            <!-- Global User Search for Private Chat -->
-             <div class="relative w-64 z-50">
-                <input id="globalUserSearch" class="w-full rounded-lg border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm px-4 py-2 outline-none focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 shadow-sm" placeholder="Find user to chat..." autocomplete="off" oninput="searchUsersGlobal(this.value)" />
-                <div id="globalSearchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto"></div>
-                <form id="startPrivateChatForm" asp-action="StartPrivateChat" method="post" class="hidden">
-                    <input type="hidden" name="targetUsername" id="privateChatTarget" />
+        <!-- MAIN CONTENT (Feed & Composer) -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Header (Mobile/Tablet only, hidden on lg if desired, or keep as main header) -->
+            <div class="flex items-center justify-between">
+                <div>
+                     <h1 class="text-3xl font-bold text-[#004B87] dark:text-white">Student Hub</h1>
+                     <p class="text-slate-500 dark:text-slate-400 mt-1">Connect with your peers and instructors.</p>
+                </div>
+                <!-- Create Group Trigger (Moved to Sidebar usually, but keep here for now) -->
+                <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="lg:hidden bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-[#003d6e] transition-colors shadow-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Create Post Composer -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+                <div class="flex space-x-4">
+                    @if(!string.IsNullOrEmpty(Model.CurrentUser.ProfilePictureUrl))
+                    {
+                        <img src="@Model.CurrentUser.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-600" />
+                    }
+                    else
+                    {
+                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300">
+                            @(Model.CurrentUser.Username.Substring(0,1).ToUpper())
+                        </div>
+                    }
+                    
+                    <form asp-action="CreatePost" method="post" enctype="multipart/form-data" class="flex-1">
+                        <textarea name="content" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#004B87] resize-none dark:text-white placeholder:text-slate-400" placeholder="Share something with the community..."></textarea>
+                        
+                        <!-- Attachments / Actions -->
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex space-x-2">
+                                <label class="cursor-pointer p-2 text-slate-500 hover:text-[#004B87] dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors relative group">
+                                    <input type="file" name="media" accept="image/*" class="hidden" onchange="previewImage(this)" />
+                                    <i data-lucide="image" class="w-5 h-5"></i>
+                                    <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Add Photo</span>
+                                </label>
+                                <label class="cursor-pointer p-2 text-slate-500 hover:text-[#004B87] dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors relative group">
+                                    <input type="file" name="attachment" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" class="hidden" onchange="previewFile(this)" />
+                                    <i data-lucide="paperclip" class="w-5 h-5"></i>
+                                    <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Attach File</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="bg-[#004B87] hover:bg-[#003d6e] text-white px-6 py-1.5 rounded-full font-bold text-sm shadow-md transition-colors">
+                                Post
+                            </button>
+                        </div>
+                        
+                        <!-- Upload Previews -->
+                        <div id="imagePreviewContainer" class="hidden mt-3 relative">
+                            <img id="imagePreview" src="" class="w-full h-auto max-h-60 object-cover rounded-lg border border-gray-200 dark:border-slate-700" />
+                            <button type="button" onclick="clearImagePreview()" class="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="filePreviewContainer" class="hidden mt-3 relative bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 flex items-center justify-between">
+                            <div class="flex items-center text-blue-800 dark:text-blue-300">
+                                <i data-lucide="file-text" class="w-5 h-5 mr-2"></i>
+                                <span id="fileNamePreview" class="text-sm font-bold truncate max-w-[200px]"></span>
+                            </div>
+                            <button type="button" onclick="clearFilePreview()" class="text-slate-500 hover:text-red-500">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- News Feed -->
+            <div class="space-y-6">
+                @foreach(var post in Model.Feed)
+                {
+                    <partial name="_Post" model="post" />
+                }
+                
+                @if(!Model.Feed.Any())
+                {
+                    <div class="text-center py-16">
+                        <div class="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="coffee" class="w-8 h-8 text-slate-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300">Your feed is quiet</h3>
+                        <p class="text-slate-500 dark:text-slate-500 text-sm mt-1">Follow accounts and for testing purposes follow Demoadmin</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- SIDEBAR (Chats) -->
+        <div class="lg:col-span-1 border-l border-gray-200 dark:border-slate-700 lg:pl-8">
+            <div class="sticky top-24">
+                
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-bold text-lg text-slate-800 dark:text-white flex items-center">
+                        <i data-lucide="message-square" class="w-5 h-5 mr-2 text-[#004B87] dark:text-blue-400"></i>
+                        Your Chats
+                    </h2>
+                    
+                    <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-full font-bold transition-colors">
+                        + New
+                    </button>
+                </div>
+                
+                <!-- Global User Search -->
+                <div class="relative w-full z-50 mb-4">
+                    <input id="globalUserSearch" class="w-full rounded-lg border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm px-4 py-2 outline-none focus:ring-2 focus:ring-[#004B87] dark:focus:ring-blue-500 shadow-sm transition-all focus:bg-white dark:focus:bg-slate-900" placeholder="Search for students..." autocomplete="off" oninput="searchUsersGlobal(this.value)" />
+                    <div id="globalSearchResults" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto"></div>
+                    <form id="startPrivateChatForm" asp-action="StartPrivateChat" method="post" class="hidden">
+                        <input type="hidden" name="targetUsername" id="privateChatTarget" />
+                    </form>
+                </div>
+
+                <!-- Create Group Form (Hidden by default) -->
+                <div id="createGroupForm" class="hidden mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-slate-700">
+                    <h3 class="font-bold text-sm mb-3">New Group</h3>
+                    <form asp-action="CreateGroup" method="post" enctype="multipart/form-data" class="space-y-3">
+                        <input name="name" class="w-full text-sm rounded-lg border-gray-300 px-3 py-1.5" required placeholder="Group Name" />
+                        <input name="description" class="w-full text-sm rounded-lg border-gray-300 px-3 py-1.5" placeholder="Description" />
+                        <div class="flex justify-end space-x-2">
+                             <button type="button" onclick="document.getElementById('createGroupForm').classList.add('hidden')" class="text-xs text-slate-500 font-bold">Cancel</button>
+                             <button type="submit" class="px-3 py-1 bg-[#004B87] text-white text-xs font-bold rounded hover:bg-blue-700">Create</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Chat List -->
+                <div class="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
+                    @{
+                        // Re-using the sorting logic
+                        var mixedList = new List<dynamic>();
+                        foreach(var g in Model.ChatGroups) 
+                        {
+                            int unread = Model.GroupUnread.ContainsKey(g.Id) ? Model.GroupUnread[g.Id] : 0;
+                            mixedList.Add(new { IsPrivate = false, Id = g.Id, Name = g.Name, Photo = g.GroupPhotoUrl, IsDefault = g.IsDefault, Date = g.LastActivityDate, UnreadCount = unread, Members = g.Members });
+                        }
+                        foreach(var p in Model.PrivateChats) 
+                        {
+                            int unread = Model.PrivateUnread.ContainsKey(p.Id) ? Model.PrivateUnread[p.Id] : 0;
+                            var otherUser = p.User1Id == Model.CurrentUser.Id ? p.User2 : p.User1;
+                            var name = otherUser?.Username ?? "Unknown";
+                            var photo = otherUser?.ProfilePictureUrl;
+                            mixedList.Add(new { IsPrivate = true, Id = p.Id, Name = name, Photo = photo, IsDefault = false, Date = p.LastActivityDate, UnreadCount = unread, Members = (ICollection<OzarkLMS.Models.ChatGroupMember>)null });
+                        }
+                        var sortedList = mixedList.OrderByDescending(x => x.UnreadCount > 0).ThenByDescending(x => x.IsDefault).ThenByDescending(x => x.Date).ToList();
+                    }
+
+                    @foreach (var item in sortedList)
+                    {
+                         // Condensed Chat Card
+                         <a asp-action="@(item.IsPrivate ? "PrivateDetails" : "Details")" asp-route-id="@item.Id" class="block group relative" onclick="markChatAsRead(this)">
+                             <div class="flex items-center p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-gray-100 dark:hover:border-slate-700 @(item.UnreadCount > 0 ? "bg-blue-50/50 dark:bg-blue-900/10" : "")">
+                                 <div class="relative flex-shrink-0 mr-3">
+                                     @if (!string.IsNullOrEmpty(item.Photo))
+                                     {
+                                         <img src="@item.Photo" class="w-10 h-10 rounded-lg object-cover" />
+                                     }
+                                     else
+                                     {
+                                         <div class="w-10 h-10 rounded-lg @(item.IsDefault ? "bg-gradient-to-br from-[#004B87] to-[#003B6D] text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-500") flex items-center justify-center font-bold text-sm">
+                                             @(item.Name?.Length > 0 ? item.Name.Substring(0, 1).ToUpper() : "?")
+                                         </div>
+                                     }
+                                     @if (item.IsPrivate)
+                                     {
+                                         <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+                                     }
+                                 </div>
+                                 <div class="flex-1 min-w-0">
+                                     <div class="flex justify-between items-baseline">
+                                         <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200 truncate pr-2">@item.Name</h4>
+                                         @if(item.UnreadCount > 0)
+                                         {
+                                             <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                         }
+                                     </div>
+                                     <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                         @item.Date.ToLocalTime().ToString("MMM dd") 
+                                         @if(!item.IsPrivate) { <span>&bull; @(item.Members?.Count ?? 0)</span> }
+                                     </p>
+                                 </div>
+                             </div>
+                         </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Scripts (Search, etc.) -->
+    <!-- SignalR Client Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <!-- Edit Post Modal -->
+    <div id="editPostModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in duration-200">
+             <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Edit Post</h3>
+                <button onclick="closeEditPostModal()" class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form asp-action="EditPost" method="post">
+                <input type="hidden" name="postId" id="editPostId" />
+                <textarea name="newContent" id="editPostContent" rows="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#004B87] resize-none dark:text-white" required></textarea>
+                
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" onclick="closeEditPostModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-[#004B87] hover:bg-[#003d6e] text-white text-sm font-bold rounded-lg shadow-md transition-colors">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Post Modal -->
+    <div id="deletePostModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in duration-200">
+             <div class="text-center">
+                <div class="bg-red-100 dark:bg-red-900/30 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Delete Post?</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
+                
+                <form asp-action="DeletePost" method="post">
+                    <input type="hidden" name="postId" id="deletePostId" />
+                    <div class="flex justify-center space-x-3">
+                        <button type="button" onclick="closeDeletePostModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg shadow-md transition-colors">Delete</button>
+                    </div>
                 </form>
             </div>
-
-            <!-- Create Group Trigger -->
-            <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-[#003d6e] dark:hover:bg-blue-700 transition-colors shadow-sm flex items-center">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Group
-            </button>
         </div>
     </div>
 
-    <!-- Inline Create Form -->
-    <div id="createGroupForm" class="hidden mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-slate-800">Create New Group</h3>
-        <form asp-action="CreateGroup" method="post" enctype="multipart/form-data" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Group Name</label>
-                    <input name="name" class="w-full rounded-lg border-gray-300 px-4 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none" required placeholder="e.g. Study Group 101" />
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Group Photo (Optional)</label>
-                    <input type="file" name="photo" class="w-full rounded-lg border border-gray-300 px-4 py-1.5 bg-gray-50 file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                </div>
-            </div>
-            <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1">Description</label>
-                <input name="description" class="w-full rounded-lg border-gray-300 px-4 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#004B87] outline-none" placeholder="What is this group for?" />
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button type="button" onclick="document.getElementById('createGroupForm').classList.add('hidden')" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium">Cancel</button>
-                <button type="submit" class="bg-[#DA291C] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#b01e14]">Create Group</button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Groups List -->
-@using System.Security.Claims
-    <div class="space-y-3">
-        @{
-            var currentUserId = int.Parse(User.FindFirstValue("UserId") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-            var privateChats = (ViewBag.PrivateChats as IEnumerable<OzarkLMS.Models.PrivateChat>) ?? new List<OzarkLMS.Models.PrivateChat>();
-            
-            // Unified List Item for sorting
-            var mixedList = new List<dynamic>();
-            foreach(var g in Model) 
-            {
-                mixedList.Add(new { 
-                    IsPrivate = false, 
-                    Id = g.Id,
-                    Name = g.Name, 
-                    Photo = g.GroupPhotoUrl, 
-                    IsDefault = g.IsDefault, 
-                    Date = g.LastActivityDate,
-                    MsgCount = g.Messages?.Count ?? 0,
-                    Members = g.Members
-                });
-            }
-            foreach(var p in privateChats) 
-            {
-                var otherUser = p.User1Id == currentUserId ? p.User2 : p.User1;
-                // Safety check if user is null (e.g. deleted)
-                var name = otherUser?.Username ?? "Unknown User";
-                var photo = otherUser?.ProfilePictureUrl;
-                
-                mixedList.Add(new { 
-                    IsPrivate = true, 
-                    Id = p.Id,
-                    Name = name, 
-                    Photo = photo, 
-                    IsDefault = false, 
-                    Date = p.LastActivityDate,
-                    MsgCount = p.Messages?.Count ?? 0,
-                    Members = (ICollection<OzarkLMS.Models.ChatGroupMember>)null
-                });
-            }
-            
-            var sortedList = mixedList.OrderByDescending(x => x.IsDefault).ThenByDescending(x => x.Date).ToList();
-        }
-
-        @foreach (var item in sortedList)
-        {
-            <!-- Different Link Actions based on Type -->
-            <a asp-action="@(item.IsPrivate ? "PrivateDetails" : "Details")" asp-route-id="@item.Id" class="block group relative">
-                <div class="flex items-center p-4 rounded-xl hover:bg-white/50 dark:hover:bg-slate-900 border border-transparent hover:border-gray-100 dark:hover:border-slate-800 transition-all duration-200">
-                    
-                    <!-- Avatar -->
-                    <div class="relative flex-shrink-0 mr-4">
-                        @if (!string.IsNullOrEmpty(item.Photo))
-                        {
-                            <img src="@item.Photo" class="w-12 h-12 rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform" />
-                        }
-                        else
-                        {
-                            <div class="w-12 h-12 rounded-xl @(item.IsDefault ? "bg-gradient-to-br from-[#004B87] to-[#003B6D] text-white" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-600 text-slate-500 dark:text-slate-300") flex items-center justify-center font-bold text-lg shadow-sm">
-                                @(item.Name?.Length > 0 ? item.Name.Substring(0, 1).ToUpper() : "?")
-                            </div>
-                        }
-                        
-                        @if (item.IsPrivate)
-                        {
-                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full border-2 border-white dark:border-slate-800" title="Private Chat"></div>
-                        }
-                    </div>
-
-                    <!-- Content -->
-                    <div class="flex-grow min-w-0">
-                        <div class="flex justify-between items-baseline mb-1">
-                            <h3 class="font-bold text-slate-800 dark:text-slate-200 truncate pr-2 group-hover:text-[#004B87] dark:group-hover:text-blue-400 transition-colors">
-                                @item.Name
-                                @if (item.IsDefault)
-                                {
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 ml-1">Official</span>
-                                }
-                            </h3>
-                            <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-                                @item.Date.ToLocalTime().ToString("MMM dd HH:mm")
-                            </span>
-                        </div>
-                        
-                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate opacity-80 group-hover:opacity-100 transition-opacity">
-                           @(item.IsPrivate ? "Private Conversation" :  $"{item.Members?.Count ?? 0} members")
-                        </p>
-                    </div>
-                    
-                    <!-- Meta & Action -->
-                    <div class="flex flex-col items-end gap-2 flex-shrink-0">
-                        @if(item.MsgCount > 0)
-                        {
-                            <span class="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">@item.MsgCount <span class="hidden sm:inline">mssgs</span></span>
-                        }
-                         <div class="text-sm font-bold text-[#004B87] dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                            Open <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        }
-    </div>
-
+    <!-- SignalR Client Library (Already included above) -->
+    <!-- Shared Feed Logic -->
+    <script src="~/js/feed.js"></script>
+    
     <script>
+    // --- Global Search & Chat Logic (Specific to Layout/Index Sidebar) ---
     let globalSearchTimeout;
     function searchUsersGlobal(query) {
+        // ... (rest of existing code)
         clearTimeout(globalSearchTimeout);
         const resultsContainer = document.getElementById('globalSearchResults');
         
@@ -177,8 +271,8 @@
                             
                             if (item.type === 'user') {
                                 div.onclick = () => {
-                                    document.getElementById('privateChatTarget').value = item.name;
-                                    document.getElementById('startPrivateChatForm').submit();
+                                    // Navigate to Profile
+                                    window.location.href = `/Account/Profile?userId=${item.id}`;
                                 };
                                 
                                 const avatar = item.photo 
@@ -189,32 +283,24 @@
                                     ${avatar}
                                     <div class="flex-1">
                                         <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${item.name}</p>
-                                        <p class="text-[10px] text-slate-400">User &bull; Click to message</p>
+                                        <p class="text-[10px] text-slate-400">Student</p>
                                     </div>
                                 `;
                             } else {
-                                // Group Logic
-                                div.onclick = () => {
-                                    window.location.href = `/Collaboration/Details/${item.id}`;
-                                };
-                                
+                                div.onclick = () => { window.location.href = `/Collaboration/Details/${item.id}`; };
                                 const avatar = item.photo 
                                     ? `<img src="${item.photo}" class="w-8 h-8 rounded-full object-cover mr-3 bg-gray-200">` 
                                     : `<div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 flex items-center justify-center text-xs font-bold mr-3"><i data-lucide="users" class="w-4 h-4"></i></div>`;
-                                
                                 div.innerHTML = `
                                     ${avatar}
                                     <div class="flex-1">
                                         <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${item.name}</p>
-                                        <p class="text-[10px] text-slate-400">Group &bull; Click to open</p>
+                                        <p class="text-[10px] text-slate-400">Group</p>
                                     </div>
                                 `;
                             }
-                            
                             resultsContainer.appendChild(div);
                         });
-                        // Re-initialize Lucide icons for new elements if needed, though mostly using text/simples
-                        if(window.lucide) lucide.createIcons();
                         resultsContainer.classList.remove('hidden');
                     } else {
                         resultsContainer.innerHTML = '<div class="p-4 text-center text-sm text-slate-400">No results found.</div>';
@@ -224,12 +310,18 @@
         }, 300);
     }
     
-    // Close search on click outside
     document.addEventListener('click', function(e) {
-        const searchContainer = document.querySelector('.relative.w-64');
+        const searchContainer = document.querySelector('.relative.w-full'); // Updated selector
         if (searchContainer && !searchContainer.contains(e.target)) {
             document.getElementById('globalSearchResults').classList.add('hidden');
         }
     });
+
+    function markChatAsRead(element) {
+        // UI Optimistic Update
+        const badge = element.querySelector('.animate-pulse');
+        if (badge) badge.remove();
+        element.querySelector('div').classList.remove('bg-blue-50/50', 'dark:bg-blue-900/10');
+    }
     </script>
 </div>

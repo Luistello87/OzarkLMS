@@ -1,4 +1,5 @@
 using OzarkLMS.Models;
+using System.Collections.Generic;
 
 namespace OzarkLMS.ViewModels
 {
@@ -13,5 +14,12 @@ namespace OzarkLMS.ViewModels
         public List<User> AllStudents { get; set; } = new List<User>();
         
         public List<ChatGroup> ChatGroups { get; set; } = new List<ChatGroup>();
+
+        // Social Hub Extensions
+        public List<Post> Posts { get; set; } = new List<Post>();
+        public int FollowersCount { get; set; }
+        public int FollowingCount { get; set; }
+        public bool IsFollowing { get; set; } // For the viewer to know if they follow this profile
+
     }
 }

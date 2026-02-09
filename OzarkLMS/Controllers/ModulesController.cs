@@ -20,7 +20,7 @@ namespace OzarkLMS.Controllers
         public IActionResult Create(int? courseId)
         {
             if (courseId == null) return NotFound();
-            
+
             // Security Check
             if (User.IsInRole("instructor"))
             {
@@ -55,6 +55,10 @@ namespace OzarkLMS.Controllers
                 _context.Add(module);
                 await _context.SaveChangesAsync(); // Save to get Module Id
 
+                // Notify new Module
+                var courseName = (await _context.Courses.FindAsync(module.CourseId))?.Name ?? "Course";
+                await NotifyStudents(module.CourseId, $"New Module: {module.Title}", $"New module '{module.Title}' added to {courseName}.");
+
                 // Handle optional initial file upload
                 if (file != null && file.Length > 0)
                 {
@@ -73,13 +77,13 @@ namespace OzarkLMS.Controllers
             if (moduleId == null) return NotFound();
             var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
             if (module == null) return NotFound();
-            
+
             if (User.IsInRole("instructor"))
             {
                 var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
                 if (module.Course.InstructorId != userId) return Forbid();
             }
-            
+
             ViewBag.Module = module;
             return View();
         }
@@ -114,6 +118,9 @@ namespace OzarkLMS.Controllers
                 };
                 _context.ModuleItems.Add(item);
                 await _context.SaveChangesAsync();
+
+                // Notify Enrolled Students (Non-file item)
+                await NotifyStudents(module.CourseId, $"New Content: {title}", $"New content '{title}' added to {module.Course.Name}.", type == "link" || type == "page" ? $"/Courses/Details/{module.CourseId}" : null);
             }
 
             return RedirectToAction("Details", "Courses", new { id = module.CourseId });
@@ -121,38 +128,38 @@ namespace OzarkLMS.Controllers
 
         private async Task AddFileItem(int moduleId, IFormFile file, string title, string type, string displayMode)
         {
-             var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-             if(!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+            if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-             var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-             var filePath = Path.Combine(uploads, fileName);
-             using (var stream = new FileStream(filePath, FileMode.Create))
-             {
-                 await file.CopyToAsync(stream);
-             }
-             var contentUrl = "/uploads/" + fileName;
+            var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploads, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            var contentUrl = "/uploads/" + fileName;
 
-             var item = new ModuleItem
-             {
-                 ModuleId = moduleId,
-                 Title = title,
-                 Type = type,
-                 ContentUrl = contentUrl,
-                 DisplayMode = displayMode
-             };
+            var item = new ModuleItem
+            {
+                ModuleId = moduleId,
+                Title = title,
+                Type = type,
+                ContentUrl = contentUrl,
+                DisplayMode = displayMode
+            };
 
-             _context.ModuleItems.Add(item);
-             await _context.SaveChangesAsync();
+            _context.ModuleItems.Add(item);
+            await _context.SaveChangesAsync();
 
-             // Notify Enrolled Students
-             var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
-             if (module != null)
-             {
-                 await NotifyStudents(module.CourseId, $"New Content: {title}", $"New content has been added to {module.Course.Name}: {title}");
-             }
+            // Notify Enrolled Students
+            var module = await _context.Modules.Include(m => m.Course).FirstOrDefaultAsync(m => m.Id == moduleId);
+            if (module != null)
+            {
+                await NotifyStudents(module.CourseId, $"New Content: {title}", $"New content has been added to {module.Course.Name}: {title}");
+            }
         }
 
-        private async Task NotifyStudents(int courseId, string title, string message)
+        private async Task NotifyStudents(int courseId, string title, string message, string? actionUrl = null)
         {
             var enrollments = await _context.Enrollments
                 .Where(e => e.CourseId == courseId)
@@ -168,7 +175,8 @@ namespace OzarkLMS.Controllers
                 Title = title,
                 Message = message,
                 SentDate = DateTime.UtcNow,
-                IsRead = false
+                IsRead = false,
+                ActionUrl = actionUrl
             });
 
             _context.Notifications.AddRange(notifications);
