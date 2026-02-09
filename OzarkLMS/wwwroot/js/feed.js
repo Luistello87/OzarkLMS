@@ -457,6 +457,24 @@ function toggleCommentThread(commentId) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+// Show more replies (for collapsed comment chains)
+function showMoreReplies(commentId) {
+    const viewMoreBtn = document.getElementById(`view-more-${commentId}`);
+    const hiddenReplies = document.getElementById(`hidden-replies-${commentId}`);
+
+    if (viewMoreBtn && hiddenReplies) {
+        // Hide the "view more" button
+        viewMoreBtn.classList.add('hidden');
+
+        // Show hidden replies with animation
+        hiddenReplies.classList.remove('hidden');
+        hiddenReplies.classList.add('animate-in', 'fade-in', 'duration-300');
+
+        // Initialize lucide icons for newly shown content
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}
+
 function toggleEditComment(commentId) {
     const form = document.getElementById(`edit-form-${commentId}`);
     if (form) form.classList.toggle('hidden');

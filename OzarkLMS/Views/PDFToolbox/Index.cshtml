@@ -2,241 +2,785 @@
     ViewData["Title"] = "PDF Toolbox";
 }
 
-<div class="p-8 max-w-[1600px] mx-auto">
-    @* Header *@
+<style>
+    /* Multi-page editor - each page is a distinct element */
+    .editor-page {
+        background-color: white;
+        width: 8.5in;
+        height: 11in; /* Professional Letter size */
+        padding: 1in;
+        margin: 0 auto; 
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        outline: none;
+        font-family: Arial;
+        font-size: 11pt;
+        line-height: 1.5;
+        position: relative;
+        overflow: hidden;
+        box-sizing: border-box; /* Crucial for height calculation */
+    }
+
+    .page-break {
+        height: 20px;
+        background: transparent;
+        page-break-after: always;
+        position: relative;
+    }
+    
+    .page-break::after {
+        content: "";
+        position: absolute;
+        top: 10px;
+        left: 0;
+        right: 0;
+        border-top: 1px dashed #cbd5e1;
+    }
+
+    /* Hide scrollbar for toolbar */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    /* Force white page in dark mode */
+    .editor-page {
+        background-color: white !important;
+        color: black !important;
+    }
+</style>
+
+<div class="max-w-7xl mx-auto py-8 px-4 text-slate-800 dark:text-slate-100">
+    
+    <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-[#004B87] dark:text-white mb-2">PDF Toolbox</h1>
-        <p class="text-slate-600 dark:text-slate-400">Merge PDFs and convert documents to PDF format</p>
+        <h1 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20">
+                <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+            </span>
+            PDF Toolbox
+        </h1>
+        <p class="text-slate-600 dark:text-slate-400">Professional document tools for students</p>
     </div>
 
-    @* Success/Error Messages *@
+    <!-- Success/Error Messages -->
     @if (TempData["Success"] != null)
     {
-        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 flex items-center gap-3 shadow-sm">
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
             <i data-lucide="check-circle" class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0"></i>
             <div class="flex-1">
                 <p class="text-green-800 dark:text-green-200 font-medium text-sm">@TempData["Success"]</p>
                 @if (TempData["DownloadFile"] != null)
                 {
                     <a asp-action="DownloadFile" asp-route-fileName="@TempData["DownloadFile"]" 
-                       class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm">
+                       class="inline-flex items-center gap-2 mt-2 text-green-700 dark:text-green-300 font-semibold text-sm hover:underline">
                         <i data-lucide="download" class="w-4 h-4"></i>
-                        @if (TempData["DownloadFile"]?.ToString()?.EndsWith(".txt") == true)
-                        {
-                            <text>Download Text File</text>
-                        }
-                        else
-                        {
-                            <text>Download PDF</text>
-                        }
+                        Download File
                     </a>
                 }
             </div>
         </div>
     }
-
     @if (TempData["Error"] != null)
     {
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-center gap-3 shadow-sm">
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
             <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0"></i>
-            <p class="text-red-800 dark:text-red-200 text-sm">@TempData["Error"]</p>
+            <p class="text-red-800 dark:text-red-200 font-medium text-sm">@TempData["Error"]</p>
         </div>
     }
 
-    <div class="grid md:grid-cols-2 gap-8">
-        @* Merge PDFs Card *@
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 hover:shadow-md hover:border-[#004B87]/30 dark:hover:border-blue-500 transition-all duration-200">
-            @* Colored Accent Bar *@
-            <div class="h-1.5 bg-[#004B87] dark:bg-blue-600 rounded-t-xl"></div>
-            
-            <div class="p-6">
-                @* Header with Icon Badge *@
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="layers" class="w-5 h-5 text-[#004B87] dark:text-blue-400"></i>
-                    </div>
-                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Merge PDFs</h2>
+    <!-- Quick Tools Grid -->
+    <div class="grid md:grid-cols-2 gap-6 mb-12">
+        <!-- Merge Card -->
+        <div class="glass-card rounded-2xl p-6 hover:shadow-xl transition-all group">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="layers" class="w-6 h-6 text-[#004B87] dark:text-blue-400"></i>
                 </div>
-                
-                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Combine multiple PDF files into one document</p>
-                
-                <form asp-action="MergePDFs" method="post" enctype="multipart/form-data" id="merge-form">
-                    @Html.AntiForgeryToken()
-                    
-                    <div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-[#004B87] dark:hover:border-blue-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all cursor-pointer" 
-                         onclick="document.getElementById('merge-files').click()">
-                        <i data-lucide="upload-cloud" class="w-10 h-10 mx-auto text-slate-400 dark:text-slate-500 mb-3"></i>
-                        <p class="text-slate-700 dark:text-slate-300 font-medium mb-1">Click to upload PDF files</p>
-                        <p class="text-xs text-slate-500">or drag and drop • PDF files only</p>
-                        <input type="file" id="merge-files" name="files" multiple accept=".pdf" class="hidden" onchange="updateFileList('merge')" />
-                    </div>
-                    
-                    <div id="merge-file-list" class="mt-4 space-y-2 hidden">
-                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Selected Files</p>
-                        <div id="merge-files-container" class="space-y-2 max-h-40 overflow-y-auto"></div>
-                    </div>
-                    
-                    <button type="submit" 
-                            class="w-full mt-6 bg-[#004B87] hover:bg-[#003d6e] dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                            id="merge-btn" disabled>
-                        <i data-lucide="git-merge" class="w-5 h-5"></i>
-                        Merge PDFs
-                    </button>
-                </form>
+                <div>
+                    <h2 class="text-lg font-bold dark:text-white">Merge PDFs</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Combine multiple files into one</p>
+                </div>
             </div>
+            
+            <form asp-action="MergePDFs" method="post" enctype="multipart/form-data">
+                <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-[#004B87] dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all" onclick="document.getElementById('merge-files').click()">
+                    <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-slate-400 mb-2"></i>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Drop PDFs here or click to browse</p>
+                    <input type="file" id="merge-files" name="files" multiple accept=".pdf" class="hidden" onchange="updateFileList('merge')" />
+                </div>
+                <div id="merge-file-list" class="mt-4 space-y-2 hidden">
+                    <div id="merge-files-container" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar"></div>
+                </div>
+                <button type="submit" id="merge-btn" disabled class="w-full mt-4 bg-[#004B87] hover:bg-[#003d6e] disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20">
+                    Merge Files
+                </button>
+            </form>
         </div>
 
-        @* Convert to PDF Card *@
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 hover:shadow-md hover:border-[#DA291C]/30 dark:hover:border-red-500 transition-all duration-200">
-            @* Colored Accent Bar *@
-            <div class="h-1.5 bg-[#DA291C] dark:bg-red-600 rounded-t-xl"></div>
-            
-            <div class="p-6">
-                @* Header with Icon Badge *@
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-red-50 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="file-text" class="w-5 h-5 text-[#DA291C] dark:text-red-400"></i>
-                    </div>
-                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Convert to PDF</h2>
+        <!-- Convert Card -->
+        <div class="glass-card rounded-2xl p-6 hover:shadow-xl transition-all group">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i data-lucide="file-type-2" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
                 </div>
-                
-                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Convert text files (.txt) to PDF format</p>
-                
-                <form asp-action="ConvertToPDF" method="post" enctype="multipart/form-data" id="convert-form">
-                    @Html.AntiForgeryToken()
-                    
-                    <div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-[#DA291C] dark:hover:border-red-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all cursor-pointer" 
-                         onclick="document.getElementById('convert-file').click()">
-                        <i data-lucide="upload-cloud" class="w-10 h-10 mx-auto text-slate-400 dark:text-slate-500 mb-3"></i>
-                        <p class="text-slate-700 dark:text-slate-300 font-medium mb-1">Click to upload a file</p>
-                        <p class="text-xs text-slate-500">TXT files only</p>
-                        <input type="file" id="convert-file" name="file" accept=".txt" class="hidden" onchange="updateFileList('convert')" />
-                    </div>
-                    
-                    <div id="convert-file-info" class="mt-4 hidden">
-                        <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <i data-lucide="file" class="w-5 h-5 text-slate-600 dark:text-slate-400 flex-shrink-0"></i>
-                            <span id="convert-filename" class="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate font-medium"></span>
-                            <button type="button" onclick="clearConvertFile()" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+                <div>
+                    <h2 class="text-lg font-bold dark:text-white">Convert to PDF</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Turn text files into PDFs</p>
+                </div>
+            </div>
+
+            <form asp-action="ConvertToPDF" method="post" enctype="multipart/form-data">
+                <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-purple-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all" onclick="document.getElementById('convert-file').click()">
+                    <i data-lucide="file-plus" class="w-8 h-8 mx-auto text-slate-400 mb-2"></i>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Drop .txt file here or click to browse</p>
+                    <input type="file" id="convert-file" name="file" accept=".txt" class="hidden" onchange="updateFileList('convert')" />
+                </div>
+                <div id="convert-file-info" class="mt-4 hidden">
+                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-4 h-4 text-slate-500 dark:text-slate-400"></i>
                         </div>
+                        <span id="convert-filename" class="text-sm font-medium flex-1 truncate dark:text-slate-200"></span>
+                        <button type="button" onclick="clearConvertFile()" class="text-slate-400 hover:text-red-500 transition-colors">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
                     </div>
-                    
-                    <button type="submit" 
-                            class="w-full mt-6 bg-[#DA291C] hover:bg-[#b01e14] dark:bg-red-600 dark:hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                            id="convert-btn" disabled>
-                        <i data-lucide="file-output" class="w-5 h-5"></i>
-                        Convert to PDF
+                </div>
+                <button type="submit" id="convert-btn" disabled class="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-purple-900/20">
+                    Convert File
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DOCUMENT EDITOR (Google Docs Style) -->
+    <div class="relative">
+        <!-- Floating Toolbar (Sticky within the editor container) -->
+        <div class="sticky top-0 z-40 mx-auto max-w-6xl mb-6 transition-all">
+            <div class="glass-card rounded-xl p-2 shadow-xl border border-white/20 dark:border-slate-700/50 flex items-center gap-2 overflow-x-auto no-scrollbar bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+                
+                <!-- History -->
+                <div class="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                    <button onclick="document.execCommand('undo')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Undo">
+                        <i data-lucide="undo" class="w-4 h-4"></i>
                     </button>
-                </form>
+                    <button onclick="document.execCommand('redo')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Redo">
+                        <i data-lucide="redo" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Formatting -->
+                <div class="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                    <select onchange="applyFormat('fontName', this.value)" class="bg-transparent text-sm font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-1 px-2">
+                        <option value="Arial">Arial</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                    </select>
+
+                    <select onchange="applyFormat('fontSize', this.value)" class="bg-transparent text-sm font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-1 px-2">
+                        <option value="1">8pt</option>
+                        <option value="2">10pt</option>
+                        <option value="3" selected>11pt</option>
+                        <option value="4">12pt</option>
+                        <option value="5">14pt</option>
+                        <option value="6">18pt</option>
+                        <option value="7">24pt</option>
+                        <option value="7">36pt</option>
+                    </select>
+
+                    <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                    <!-- Font Color -->
+                    <div class="relative group flex items-center justify-center" title="Text Color">
+                        <label for="foreColorPicker" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors flex items-center gap-1">
+                            <i data-lucide="baseline" class="w-4 h-4 text-slate-700 dark:text-slate-300"></i>
+                            <div id="colorIndicator" class="w-3 h-3 rounded-full bg-black border border-slate-200 dark:border-slate-600"></div>
+                        </label>
+                        <input type="color" id="foreColorPicker" onchange="applyFormat('foreColor', this.value); document.getElementById('colorIndicator').style.backgroundColor=this.value;" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer" value="#000000">
+                    </div>
+
+                    <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                    <button onclick="applyFormat('bold')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Bold">
+                        <i data-lucide="bold" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="applyFormat('italic')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Italic">
+                        <i data-lucide="italic" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="applyFormat('underline')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Underline">
+                        <i data-lucide="underline" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Alignment -->
+                <div class="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700">
+                    <button onclick="applyFormat('justifyLeft')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
+                        <i data-lucide="align-left" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="applyFormat('justifyCenter')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
+                        <i data-lucide="align-center" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="applyFormat('justifyRight')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors">
+                        <i data-lucide="align-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Insert (Removed) -->
+                <!-- <div class="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700"> ... </div> -->
+
+                <!-- Orientation Controls -->
+                <div class="flex items-center gap-1 px-2">
+                    <button onclick="setOrientation('portrait')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Portrait" id="btn-portrait-icon">
+                        <i data-lucide="file" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="setOrientation('landscape')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors" title="Landscape" id="btn-landscape-icon">
+                        <i data-lucide="file-minus" class="w-4 h-4 transform rotate-90"></i>
+                    </button>
+                </div>
+                
+                <!-- Zoom (Removed) -->
+                <div class="flex items-center gap-3 pl-2 ml-auto">
+                    <!-- Zoom Slider Removed -->
+
+                    <button onclick="exportToPDF()" class="bg-[#004B87] hover:bg-[#003d6e] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export
+                    </button>
+                </div>
             </div>
         </div>
 
-        @* Text Exporter Card *@
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 hover:shadow-md hover:border-purple-500/30 dark:hover:border-purple-500 transition-all duration-200">
-            @* Colored Accent Bar *@
-            <div class="h-1.5 bg-purple-600 dark:bg-purple-500 rounded-t-xl"></div>
-            
-            <div class="p-6 h-full flex flex-col">
-                @* Header with Icon Badge *@
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="pen-tool" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
-                    </div>
-                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Text Exporter</h2>
+        <!-- Editor Container (The Desk) -->
+        <div class="bg-slate-100 dark:bg-slate-900 rounded-2xl p-8 min-h-[calc(100vh-200px)] overflow-auto custom-scrollbar border border-slate-200 dark:border-slate-800 relative group" id="editorContainer">
+            <!-- Pages Container -->
+            <div id="pagesContainer">
+                <div class="editor-page" contenteditable="true" id="page-1">
+                    <p>Start typing your document here...</p>
                 </div>
+            </div>
+
+
+            <!-- Image Resize Overlay (Independent of Document Flow) -->
+            <div id="imageControls" class="absolute hidden border-2 border-[#004B87] pointer-events-none z-50">
+                <!-- Handles -->
+                <div class="pointer-events-auto absolute -top-1.5 -left-1.5 w-3 h-3 bg-[#004B87] border border-white cursor-nwse-resize" onmousedown="initOverlayResize(event, 'nw')"></div>
+                <div class="pointer-events-auto absolute -top-1.5 -right-1.5 w-3 h-3 bg-[#004B87] border border-white cursor-nesw-resize" onmousedown="initOverlayResize(event, 'ne')"></div>
+                <div class="pointer-events-auto absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-[#004B87] border border-white cursor-nesw-resize" onmousedown="initOverlayResize(event, 'sw')"></div>
+                <div class="pointer-events-auto absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-[#004B87] border border-white cursor-nwse-resize" onmousedown="initOverlayResize(event, 'se')"></div>
                 
-                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Type or paste text to export as a file</p>
-                
-                <form id="export-form" method="post" class="flex-1 flex flex-col">
-                    @Html.AntiForgeryToken()
-                    
-                    <textarea name="content" 
-                        class="w-full flex-1 min-h-[200px] resize-y p-4 text-sm bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-purple-500 dark:focus:border-purple-500 outline-none shadow-inner"
-                        placeholder="Type your content here..."
-                        required></textarea>
-                    
-                    <div class="grid grid-cols-2 gap-3 mt-6">
-                        <button type="submit" asp-action="ExportTextToTxt"
-                                class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
-                            <i data-lucide="file-text" class="w-4 h-4"></i>
-                            Export .txt
-                        </button>
-                        
-                        <button type="submit" asp-action="ExportTextToPdf"
-                                class="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
-                            <i data-lucide="file-output" class="w-4 h-4"></i>
-                            Export .pdf
-                        </button>
-                    </div>
-                </form>
+                <!-- Delete Button -->
+                <button onclick="deleteSelectedImage()" class="pointer-events-auto absolute -top-8 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-colors" title="Delete Image">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
         </div>
+        
+        <!-- Orientation Toggle (Floating - Removed, moved to toolbar) -->
+        <!-- Removed duplicate orientation controls -->
     </div>
 </div>
 
-@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        function updateFileList(type) {
-            if (type === 'merge') {
-                const input = document.getElementById('merge-files');
-                const container = document.getElementById('merge-files-container');
-                const listEl = document.getElementById('merge-file-list');
-                const btn = document.getElementById('merge-btn');
+        let lastEditorRange = null;
+        const pagesContainer = document.getElementById('pagesContainer');
+        const editorContainer = document.getElementById('editorContainer');
+        
+        // ------------------------------------------------------------------
+        // PAGINATION LOGIC
+        // ------------------------------------------------------------------
+        
+        // Check for overflow on input
+        pagesContainer.addEventListener('input', (e) => {
+            const page = e.target.closest('.editor-page');
+            if (page) {
+                requestAnimationFrame(() => window.checkPageOverflow(page));
+            }
+        });
+
+        window.getOrCreateNextPage = function(currentPage) {
+            let nextBreak = currentPage.nextElementSibling;
+            let next;
+            
+            if (nextBreak && nextBreak.classList.contains('page-break')) {
+                next = nextBreak.nextElementSibling;
+            } else {
+                // Insert break and new page
+                nextBreak = document.createElement('div');
+                nextBreak.className = 'page-break';
+                next = document.createElement('div');
+                next.className = 'editor-page';
+                next.contentEditable = true;
+                next.id = 'page-' + (document.querySelectorAll('.editor-page').length + 1);
                 
-                if (input.files.length > 0) {
-                    container.innerHTML = '';
-                    for (let i = 0; i < input.files.length; i++) {
-                        const file = input.files[i];
-                        const fileEl = document.createElement('div');
-                        fileEl.className = 'flex items-center gap-2 text-sm bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700';
-                        fileEl.innerHTML = `
-                            <i data-lucide="file" class="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0"></i>
-                            <span class="flex-1 text-slate-700 dark:text-slate-300 font-medium truncate">${file.name}</span>
-                            <span class="text-xs text-slate-500 dark:text-slate-400">${(file.size / 1024).toFixed(1)} KB</span>
-                        `;
-                        container.appendChild(fileEl);
+                currentPage.parentNode.insertBefore(nextBreak, currentPage.nextSibling);
+                currentPage.parentNode.insertBefore(next, nextBreak.nextSibling);
+            }
+            return next;
+        };
+
+        window.moveContentToNextPage = function(sourcePage, targetPage) {
+            let iterations = 0;
+            // Move nodes from the bottom until sourcePage no longer overflows
+            while (sourcePage.scrollHeight > sourcePage.clientHeight && iterations < 200) {
+                const lastChild = sourcePage.lastChild;
+                if (!lastChild) break;
+                
+                if (targetPage.firstChild) {
+                    targetPage.insertBefore(lastChild, targetPage.firstChild);
+                } else {
+                    targetPage.appendChild(lastChild);
+                }
+                iterations++;
+            }
+            
+            // Recurse if needed
+            if (targetPage.scrollHeight > targetPage.clientHeight) {
+                const nextNext = window.getOrCreateNextPage(targetPage);
+                window.moveContentToNextPage(targetPage, nextNext);
+            }
+        };
+
+        window.checkPageOverflow = function(page) {
+            // Check scrollHeight vs clientHeight (11in - padding)
+            // Actually clientHeight is 1056px now because of border-box
+            if (page.scrollHeight > page.clientHeight) {
+                const nextPage = window.getOrCreateNextPage(page);
+                window.moveContentToNextPage(page, nextPage);
+            }
+        };
+
+        function getActivePage() {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+                let node = sel.anchorNode;
+                return node.nodeType === 1 && node.classList.contains('editor-page') 
+                    ? node 
+                    : node.parentElement.closest('.editor-page');
+            }
+            return null;
+        }
+
+        function applyFormat(command, value = null) {
+            document.execCommand(command, false, value);
+            // Keep focus
+            const page = getActivePage();
+            if (page) page.focus();
+        }
+        
+        function saveSelection() {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) lastEditorRange = sel.getRangeAt(0).cloneRange();
+        }
+        
+        pagesContainer.addEventListener('keyup', saveSelection);
+        pagesContainer.addEventListener('mouseup', saveSelection);
+        pagesContainer.addEventListener('blur', saveSelection);
+
+        // Handle Backspace for Merging
+        pagesContainer.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace') {
+                const page = getActivePage();
+                if (!page) return;
+
+                const sel = window.getSelection();
+                if (sel.rangeCount > 0) {
+                    const range = sel.getRangeAt(0);
+                    
+                    // Check if we are at the very beginning of the page
+                    // This is slightly complex: startOffset 0 of the first text node in the first element
+                    if (window.isAtStartOfPage(page, range)) {
+                        const prevPage = page.previousElementSibling;
+                        if (prevPage && prevPage.classList.contains('editor-page')) {
+                            e.preventDefault();
+                            window.mergePages(prevPage, page);
+                        }
                     }
-                    listEl.classList.remove('hidden');
-                    btn.disabled = input.files.length < 2;
-                    lucide.createIcons();
-                } else {
-                    listEl.classList.add('hidden');
-                    btn.disabled = true;
                 }
-            } else if (type === 'convert') {
-                const input = document.getElementById('convert-file');
-                const infoEl = document.getElementById('convert-file-info');
-                const filenameEl = document.getElementById('convert-filename');
-                const btn = document.getElementById('convert-btn');
+            }
+        });
+
+        window.isAtStartOfPage = function(page, range) {
+            // Simplified check: is the cursor at the very beginning of the page's first child?
+            if (range.startOffset !== 0) return false;
+            
+            let firstChild = page.firstChild;
+            // Skip empty text nodes
+            while (firstChild && firstChild.nodeType === 3 && firstChild.textContent.length === 0) {
+                firstChild = firstChild.nextSibling;
+            }
+            
+            if (!firstChild) return true; // Empty page
+            
+            // If the start container is the first child (or deeply within it at offset 0)
+            let container = range.startContainer;
+            while (container && container !== page) {
+                if (container.previousSibling) return false;
+                container = container.parentNode;
+            }
+            return true;
+        };
+
+        window.mergePages = function(prevPage, currentPage) {
+            // Move all content from currentPage to the end of prevPage
+            const children = Array.from(currentPage.childNodes);
+            
+            // Move cursor to the end of prevPage before merging
+            const range = document.createRange();
+            const sel = window.getSelection();
+            
+            if (prevPage.lastChild) {
+                range.selectNodeContents(prevPage.lastChild);
+                range.collapse(false);
+            } else {
+                range.selectNodeContents(prevPage);
+                range.collapse(false);
+            }
+            
+            children.forEach(child => prevPage.appendChild(child));
+            
+            // Focus and restore selection at the merge point
+            sel.removeAllRanges();
+            sel.addRange(range);
+            prevPage.focus();
+            
+            // Remove the now empty current page
+            currentPage.remove();
+            
+            // Clean up empty trailing pages if any
+            window.cleanupEmptyPages();
+        };
+
+        window.cleanupEmptyPages = function() {
+            const pages = document.querySelectorAll('.editor-page');
+            for (let i = pages.length - 1; i > 0; i--) {
+                const page = pages[i];
+                // If page is empty (no visible content)
+                if (page.innerText.trim() === '' && page.querySelectorAll('img').length === 0) {
+                    page.remove();
+                } else {
+                    // Stop at the first non-empty page from the bottom
+                    break;
+                }
+            }
+        };
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.editor-image-wrapper') && !e.target.closest('.resize-handle') && !e.target.closest('.delete-btn')) {
+                deselectAllImages();
+            }
+        });
+
+        function deselectAllImages() {
+            if (selectedImg) {
+                selectedImg = null;
+                hideOverlay();
+            }
+        }
+
+        // Initial Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            // Re-attach listeners to existing images if any (e.g. from saved content)
+            document.querySelectorAll('.editor-page img').forEach(img => {
+                makeImageInteractable(img);
+            });
+        });
+
+        // ------------------------------------------------------------------
+        // OVERLAY-BASED IMAGE HANDLING (Native Drag Compatible)
+        // ------------------------------------------------------------------
+        
+        let selectedImg = null;
+        let controlOverlay = document.getElementById('imageControls');
+
+        function insertImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgHtml = `<img src="${e.target.result}" class="editor-image" style="max-width: 100%; height: auto;" draggable="true" />`;
                 
-                if (input.files.length > 0) {
-                    const file = input.files[0];
-                    filenameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-                    infoEl.classList.remove('hidden');
-                    btn.disabled = false;
-                    lucide.createIcons();
-                } else {
-                    infoEl.classList.add('hidden');
-                    btn.disabled = true;
+                // Use insertHTML to ensure Undo support
+                const page = getActivePage();
+                if (page) page.focus();
+                else document.querySelector('.editor-page').focus();
+                
+                // Restore selection if lost
+                if (lastEditorRange) {
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(lastEditorRange);
                 }
+                
+                if (!document.execCommand('insertHTML', false, imgHtml)) {
+                    // Fallback
+                    // canvas.innerHTML += imgHtml; // Removed to avoid breaking multi-page
+                }
+                
+                // Find the inserted image to attach listeners
+                // We assume it's the one at the cursor or last inserted
+                // A safe bet is to re-attach to all images (idempotent)
+                setTimeout(() => {
+                    document.querySelectorAll('.editor-page img').forEach(img => {
+                         makeImageInteractable(img);
+                    });
+                    
+                    // Try to select the new image (heuristic: it's likely the last one or the one under cursor)
+                    // For now, we rely on user clicking it, or simple heuristic
+                }, 100);
+            };
+            reader.readAsDataURL(file);
+            input.value = '';
+        }
+
+        function makeImageInteractable(img) {
+             // Remove old listeners to avoid duplicates
+             const newImg = img.cloneNode(true);
+             img.parentNode.replaceChild(newImg, img);
+             
+             newImg.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectImage(newImg);
+             });
+             
+             newImg.addEventListener('dragstart', hideOverlay);
+        }
+        
+        // Re-attach listeners on load
+        document.addEventListener('DOMContentLoaded', () => {
+             document.querySelectorAll('.editor-page img').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Don't let editor click handler clear selection
+                    selectImage(img);
+                });
+            });
+        });
+
+        // Update Overlay Position
+        function updateOverlay() {
+            if (!selectedImg || !controlOverlay) return;
+            
+            // Get positions relative to container
+            const imgRect = selectedImg.getBoundingClientRect();
+            const containerRect = editorContainer.getBoundingClientRect();
+            
+            // Calculate relative position accounting for scroll
+            const top = imgRect.top - containerRect.top + editorContainer.scrollTop;
+            const left = imgRect.left - containerRect.left + editorContainer.scrollLeft;
+            
+            controlOverlay.style.top = top + 'px';
+            controlOverlay.style.left = left + 'px';
+            controlOverlay.style.width = imgRect.width + 'px';
+            controlOverlay.style.height = imgRect.height + 'px';
+            controlOverlay.classList.remove('hidden');
+        }
+
+        function selectImage(img) {
+            selectedImg = img;
+            updateOverlay();
+            
+            // Native selection to enable drag
+            try {
+                const range = document.createRange();
+                range.selectNode(img);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch (e) {
+                console.error("Selection failed", e);
+            }
+            
+            // Listeners to keep overlay synced
+            editorContainer.addEventListener('scroll', updateOverlay);
+            window.addEventListener('resize', updateOverlay);
+            document.addEventListener('click', handleOutsideClick);
+            
+            // Hide overlay during drag
+            img.addEventListener('dragstart', hideOverlay);
+            
+            // Disable native FF handles if possible
+             try { document.execCommand('enableObjectResizing', false, 'false'); } catch(e){}
+        }
+
+        function deselectAllImages() {
+            selectedImg = null;
+            if (controlOverlay) controlOverlay.classList.add('hidden');
+            
+            editorContainer.removeEventListener('scroll', updateOverlay);
+            window.removeEventListener('resize', updateOverlay);
+            document.removeEventListener('click', handleOutsideClick);
+        }
+
+        function hideOverlay() {
+            if (controlOverlay) controlOverlay.classList.add('hidden');
+        }
+
+        function handleOutsideClick(e) {
+            // If click is outside image and outside overlay controls
+            if (selectedImg && !selectedImg.contains(e.target) && !controlOverlay.contains(e.target)) {
+                deselectAllImages();
             }
         }
         
-        function clearConvertFile() {
-            const input = document.getElementById('convert-file');
-            const infoEl = document.getElementById('convert-file-info');
-            const btn = document.getElementById('convert-btn');
-            
-            input.value = '';
-            infoEl.classList.add('hidden');
-            btn.disabled = true;
+        function deleteSelectedImage() {
+            if (selectedImg) {
+                selectedImg.remove();
+                deselectAllImages();
+            }
         }
-        
-        // Initialize lucide icons after page load
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
+
+        // Resizing Logic with Overlay
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        let resizeCorner = '';
+
+        function initOverlayResize(e, corner) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            isResizing = true;
+            resizeCorner = corner;
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = selectedImg.offsetWidth;
+            startHeight = selectedImg.offsetHeight;
+            
+            document.addEventListener('mousemove', doOverlayResize);
+            document.addEventListener('mouseup', stopOverlayResize);
+        }
+
+        function doOverlayResize(e) {
+            if (!isResizing || !selectedImg) return;
+            e.preventDefault();
+            
+            const dx = e.clientX - startX;
+            let newWidth = startWidth;
+            
+            // Allow width change (height auto maintains aspect)
+            if (resizeCorner.includes('e')) newWidth += dx;
+            if (resizeCorner.includes('w')) newWidth -= dx;
+            
+            if (newWidth > 30) {
+                selectedImg.style.width = newWidth + 'px';
+                updateOverlay(); // Sync overlay immediately
+            }
+        }
+
+        function stopOverlayResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', doOverlayResize);
+            document.removeEventListener('mouseup', stopOverlayResize);
+        }
+
+        /*
+        function setZoom(val) {
+            const scale = val / 100;
+            canvas.style.transform = `scale(${scale})`;
+            document.getElementById('zoomValue').innerText = val + '%';
+        }
+        */
+
+        function setOrientation(mode) {
+            const portraitBtn = document.getElementById('btn-portrait-icon');
+            const landscapeBtn = document.getElementById('btn-landscape-icon');
+            const pages = document.querySelectorAll('.editor-page');
+
+            // Reset styles
+            const activeClass = "p-2 rounded-lg transition-colors text-[#004B87] bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30";
+            const inactiveClass = "p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors";
+            
+            pages.forEach(p => {
+                 if (mode === 'landscape') {
+                    p.style.width = '11in';
+                    p.style.height = '8.5in';
+                } else {
+                    p.style.width = '8.5in'; // Letter
+                    p.style.height = '11in';
+                }
+            });
+
+            if (mode === 'landscape') {
+                landscapeBtn.className = activeClass;
+                portraitBtn.className = inactiveClass;
+            } else {
+                portraitBtn.className = activeClass;
+                landscapeBtn.className = inactiveClass;
+            }
+
+            // Re-check pagination for all pages as dimensions changed
+            pages.forEach(p => window.checkPageOverflow(p));
+        }
+
+        function exportToPDF() {
+            const element = document.getElementById('pagesContainer');
+            // Check orientation of first page
+            const firstPage = document.querySelector('.editor-page');
+            const isLandscape = firstPage && firstPage.style.width === '11in';
+            
+            const opt = {
+                margin: 0.5,
+                filename: 'document.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'letter', orientation: isLandscape ? 'landscape' : 'portrait' }
+            };
+            
+            // Show loading
+            const btn = document.querySelector('button[onclick="exportToPDF()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Exporting...`;
+            btn.disabled = true;
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // Helper functions for initial merge/convert cards
+        function updateFileList(type) {
+            const input = document.getElementById(type === 'merge' ? 'merge-files' : 'convert-file');
+            const btn = document.getElementById(type === 'merge' ? 'merge-btn' : 'convert-btn');
+            
+            if (type === 'merge') {
+                const container = document.getElementById('merge-files-container');
+                container.innerHTML = '';
+                if (input.files.length > 0) {
+                    Array.from(input.files).forEach(f => {
+                        const d = document.createElement('div');
+                        d.className = "flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-xs border border-slate-100 dark:border-slate-700";
+                        d.innerHTML = `<i data-lucide="file" class="w-3 h-3 text-slate-400"></i> <span class="truncate text-slate-700 dark:text-slate-300">${f.name}</span>`;
+                        container.appendChild(d);
+                    });
+                    document.getElementById('merge-file-list').classList.remove('hidden');
+                    btn.disabled = input.files.length < 2;
+                } else {
+                    document.getElementById('merge-file-list').classList.add('hidden');
+                    btn.disabled = true;
+                }
+            } else {
+                if (input.files[0]) {
+                    document.getElementById('convert-filename').innerText = input.files[0].name;
+                    document.getElementById('convert-file-info').classList.remove('hidden');
+                    btn.disabled = false;
+                } else {
+                    document.getElementById('convert-file-info').classList.add('hidden');
+                    btn.disabled = true;
+                }
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function clearConvertFile() {
+            document.getElementById('convert-file').value = '';
+            updateFileList('convert');
+        }
+
     </script>
 }
