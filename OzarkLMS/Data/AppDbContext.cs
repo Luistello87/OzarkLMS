@@ -86,6 +86,10 @@ namespace OzarkLMS.Data
                 .HasForeignKey(cv => cv.CommentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Global Query Filter: Soft Delete for Users
+            modelBuilder.Entity<User>()
+                .HasQueryFilter(u => !u.IsDeleted);
+
             // Seed generic data if needed here, or just basic config
             base.OnModelCreating(modelBuilder);
             

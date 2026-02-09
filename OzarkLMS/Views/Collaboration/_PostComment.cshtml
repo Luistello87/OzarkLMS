@@ -34,19 +34,21 @@
         <!-- Comment Header -->
         <div class="flex items-center gap-2 mb-1">
             <!-- Avatar -->
-            @if(Model.User != null && !string.IsNullOrEmpty(Model.User.ProfilePictureUrl))
-            {
-                <img src="@Model.User.ProfilePictureUrl" class="w-6 h-6 rounded-full object-cover" alt="Avatar" />
-            }
-            else
-            {
-                <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500">
-                    @((Model.User?.Username ?? "?").Substring(0,1).ToUpper())
-                </div>
-            }
+            <a asp-controller="Account" asp-action="Profile" asp-route-userId="@Model.UserId" class="cursor-pointer hover:opacity-80 transition-opacity">
+                @if(Model.User != null && !string.IsNullOrEmpty(Model.User.ProfilePictureUrl))
+                {
+                    <img src="@Model.User.ProfilePictureUrl" class="w-6 h-6 rounded-full object-cover" alt="Avatar" />
+                }
+                else
+                {
+                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500">
+                        @((Model.User?.Username ?? "?").Substring(0,1).ToUpper())
+                    </div>
+                }
+            </a>
             
             <!-- Username & Timestamp -->
-            <span class="font-semibold text-sm text-slate-800 dark:text-slate-200">@(Model.User?.Username ?? "Unknown")</span>
+            <a asp-controller="Account" asp-action="Profile" asp-route-userId="@Model.UserId" class="font-semibold text-sm text-slate-800 dark:text-slate-200 hover:underline hover:text-blue-600 transition-colors">@(Model.User?.Username ?? "Unknown")</a>
             <span class="text-xs text-slate-500">@Model.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm")</span>
         </div>
 

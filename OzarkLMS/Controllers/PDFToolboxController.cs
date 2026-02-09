@@ -260,6 +260,85 @@ namespace OzarkLMS.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ExportTextToTxt(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                TempData["Error"] = "Cannot export empty content.";
+                return RedirectToAction("Index");
+            }
+
+            var fileName = $"exported_text_{Guid.NewGuid()}.txt";
+            var filePath = Path.Combine(_tempFolder, fileName);
+            
+            System.IO.File.WriteAllText(filePath, content);
+
+            TempData["Success"] = "Text exported to TXT successfully! Click below to download.";
+            TempData["DownloadFile"] = fileName;
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ExportTextToPdf(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                TempData["Error"] = "Cannot export empty content.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var fileName = $"exported_text_{Guid.NewGuid()}.pdf";
+                var filePath = Path.Combine(_tempFolder, fileName);
+
+                QuestPDF.Fluent.Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(2, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Arial"));
+
+                        page.Header()
+                            .Text("Exported Text")
+                            .SemiBold().FontSize(14).FontColor(Colors.Purple.Darken2);
+
+                        page.Content()
+                            .PaddingVertical(1, Unit.Centimetre)
+                            .Column(col =>
+                            {
+                                col.Item().Text(content);
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Page ");
+                                x.CurrentPageNumber();
+                                x.Span(" of ");
+                                x.TotalPages();
+                            });
+                    });
+                }).GeneratePdf(filePath);
+
+                TempData["Success"] = "Text exported to PDF successfully! Click below to download.";
+                TempData["DownloadFile"] = fileName;
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error exporting PDF: {ex.Message}";
+            }
+
+            return RedirectToAction("Index");
+        }
+
         public IActionResult DownloadFile(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))

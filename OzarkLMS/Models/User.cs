@@ -23,6 +23,9 @@ namespace OzarkLMS.Models
         [MaxLength(150)]
         public string? Bio { get; set; }
 
+        // Soft Delete
+        public bool IsDeleted { get; set; } = false;
+
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         
         [InverseProperty("Follower")]

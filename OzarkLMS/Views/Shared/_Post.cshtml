@@ -20,19 +20,21 @@
 <div id="post-@Model.Id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
     <!-- Post Header -->
     <div class="p-6 pb-2 flex items-center justify-between">
-        <div class="flex items-center cursor-pointer" onclick="window.location.href='/Account/Profile?userId=@Model.UserId'">
-            @if(!string.IsNullOrEmpty(Model.User.ProfilePictureUrl))
-            {
-                <img src="@Model.User.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover mr-3 border border-gray-100 dark:border-slate-600" />
-            }
-            else
-            {
-                <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300 mr-3">
-                    @(Model.User.Username.Substring(0,1).ToUpper())
-                </div>
-            }
+        <div class="flex items-center">
+            <a asp-controller="Account" asp-action="Profile" asp-route-userId="@Model.UserId" class="cursor-pointer hover:opacity-80 transition-opacity">
+                @if(!string.IsNullOrEmpty(Model.User.ProfilePictureUrl))
+                {
+                    <img src="@Model.User.ProfilePictureUrl" class="w-10 h-10 rounded-full object-cover mr-3 border border-gray-100 dark:border-slate-600" />
+                }
+                else
+                {
+                    <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-300 mr-3">
+                        @(Model.User.Username.Substring(0,1).ToUpper())
+                    </div>
+                }
+            </a>
             <div>
-                <p class="font-bold text-slate-800 dark:text-white hover:underline">@Model.User.Username</p>
+                <a asp-controller="Account" asp-action="Profile" asp-route-userId="@Model.UserId" class="font-bold text-slate-800 dark:text-white hover:underline transition-colors">@Model.User.Username</a>
                 <p class="text-xs text-slate-500">
                     @Model.User.Role &bull; @Model.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm")
                 </p>

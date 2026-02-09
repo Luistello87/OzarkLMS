@@ -34,9 +34,19 @@ namespace OzarkLMS.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == model.Username && u.Password == model.Password);
+                var user = await _context.Users
+                    .IgnoreQueryFilters() // Need to check IsDeleted explicitly
+                    .FirstOrDefaultAsync(u => u.Username == model.Username && u.Password == model.Password);
+                    
                 if (user != null)
                 {
+                    // Prevent deleted users from logging in
+                    if (user.IsDeleted)
+                    {
+                        ModelState.AddModelError(string.Empty, "This account has been deactivated.");
+                        return View(model);
+                    }
+
                     var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.Username),

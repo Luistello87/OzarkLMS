@@ -21,7 +21,14 @@
                     <a asp-action="DownloadFile" asp-route-fileName="@TempData["DownloadFile"]" 
                        class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm">
                         <i data-lucide="download" class="w-4 h-4"></i>
-                        Download PDF
+                        @if (TempData["DownloadFile"]?.ToString()?.EndsWith(".txt") == true)
+                        {
+                            <text>Download Text File</text>
+                        }
+                        else
+                        {
+                            <text>Download PDF</text>
+                        }
                     </a>
                 }
             </div>
@@ -122,6 +129,47 @@
                         <i data-lucide="file-output" class="w-5 h-5"></i>
                         Convert to PDF
                     </button>
+                </form>
+            </div>
+        </div>
+
+        @* Text Exporter Card *@
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 hover:shadow-md hover:border-purple-500/30 dark:hover:border-purple-500 transition-all duration-200">
+            @* Colored Accent Bar *@
+            <div class="h-1.5 bg-purple-600 dark:bg-purple-500 rounded-t-xl"></div>
+            
+            <div class="p-6 h-full flex flex-col">
+                @* Header with Icon Badge *@
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="pen-tool" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Text Exporter</h2>
+                </div>
+                
+                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Type or paste text to export as a file</p>
+                
+                <form id="export-form" method="post" class="flex-1 flex flex-col">
+                    @Html.AntiForgeryToken()
+                    
+                    <textarea name="content" 
+                        class="w-full flex-1 min-h-[200px] resize-y p-4 text-sm bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-purple-500 dark:focus:border-purple-500 outline-none shadow-inner"
+                        placeholder="Type your content here..."
+                        required></textarea>
+                    
+                    <div class="grid grid-cols-2 gap-3 mt-6">
+                        <button type="submit" asp-action="ExportTextToTxt"
+                                class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                            Export .txt
+                        </button>
+                        
+                        <button type="submit" asp-action="ExportTextToPdf"
+                                class="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
+                            <i data-lucide="file-output" class="w-4 h-4"></i>
+                            Export .pdf
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
