@@ -107,11 +107,23 @@
         const rows = 12;
         const totalCells = cols * rows;
         
-        // Exclude central zone for the login form (Vertical oriented for 12x12)
+        // Exclude central zone for the login form AND edges
         const excludedIndices = [];
+        
+        // Center Exclusion (Login Form area)
         for (let r = 2; r <= 9; r++) {
             for (let c = 3; c <= 8; c++) {
                 excludedIndices.push(r * cols + c);
+            }
+        }
+
+        // Edge Exclusion (Keep items away from screen borders)
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
+                    const idx = r * cols + c;
+                    if (!excludedIndices.includes(idx)) excludedIndices.push(idx);
+                }
             }
         }
         
@@ -120,9 +132,9 @@
             if(!excludedIndices.includes(i)) availableIndices.push(i);
         }
         
-        // Templates (Slightly smaller dimensions for better spacing)
+        // Templates (Larger dimensions as requested)
         const laptopSvg = (name, color, delay, duration) => `
-            <svg class="auth-bg-item dynamic-motion" width="70" height="50" viewBox="0 0 120 80" 
+            <svg class="auth-bg-item dynamic-motion" width="100" height="70" viewBox="0 0 120 80" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <rect x="10" y="5" width="100" height="60" rx="4" />
                 <path d="M 0 65 L 120 65 L 110 75 L 10 75 Z" />
@@ -136,7 +148,7 @@
             const viewBoxWidth = isWide ? 160 : 140; 
             
             return `
-            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth * 0.55}" height="55" viewBox="0 0 ${viewBoxWidth} 100" 
+            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth * 0.8}" height="80" viewBox="0 0 ${viewBoxWidth} 100" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <g transform="translate(10, 0)">
                     <rect x="0" y="0" width="${monitorWidth}" height="60" rx="2" stroke-width="1.5" />
@@ -160,7 +172,7 @@
         };
 
         const bookSvg = (delay, duration) => `
-            <svg class="auth-bg-item dynamic-motion" width="55" height="70" viewBox="0 0 100 120" 
+            <svg class="auth-bg-item dynamic-motion" width="80" height="100" viewBox="0 0 100 120" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <rect x="10" y="10" width="80" height="100" rx="2" />
                 <g class="book-cover">
@@ -175,8 +187,8 @@
         // Shuffle Array
         availableIndices.sort(() => Math.random() - 0.5);
         
-        // Spawn - Adjusted count for better density without clutter
-        const itemCount = 30;
+        // Spawn - Increased density slightly (+5-10%) and added disarray
+        const itemCount = 22;
         const cellsToUse = availableIndices.slice(0, itemCount); 
         
         cellsToUse.forEach(cellIndex => {
@@ -191,14 +203,21 @@
             const col = cellIndex % cols;
             const row = Math.floor(cellIndex / cols);
             
-            // Center within cell + slight jitter (max 4% to avoid crossing cell boundaries)
-            const left = (col * (100/cols)) + (100/(cols*2)) - 2 + Math.random() * 4;
-            const top = (row * (100/rows)) + (100/(rows*2)) - 2 + Math.random() * 4;
+            // Center within cell + LARGER jitter for "disarray"
+            // Increased range to +/- 6% (was +/- 2%) to break the grid look
+            const jitterX = (Math.random() * 12) - 6; 
+            const jitterY = (Math.random() * 12) - 6;
+            
+            const left = (col * (100/cols)) + (100/(cols*2)) + jitterX;
+            const top = (row * (100/rows)) + (100/(rows*2)) + jitterY;
+            
+            // Random Rotation for "disarray"
+            const rotation = (Math.random() * 30) - 15; // +/- 15 degrees
             
             containerDiv.style.position = 'absolute';
             containerDiv.style.left = left + '%';
             containerDiv.style.top = top + '%';
-            containerDiv.style.transform = 'translate(-50%, -50%)'; // Center item on its coordinates
+            containerDiv.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
             
             // Randomize timing
             const delay = Math.random() * 8; // Wider range for more varied start

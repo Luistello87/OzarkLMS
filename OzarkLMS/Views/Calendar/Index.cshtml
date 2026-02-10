@@ -14,45 +14,128 @@
 }
 
 <div class="p-8 max-w-[1400px] mx-auto min-h-screen">
-    <!-- Dynamic Banner -->
-    <div class="relative w-full h-48 md:h-64 rounded-3xl overflow-hidden mb-8 shadow-2xl group">
-        <!-- Animated Gradient Background -->
-        <div class="absolute inset-0 bg-gradient-to-br from-blue-700 via-violet-600 to-blue-500 bg-[length:200%_200%] animate-gradient-xy"></div>
+    <!-- Solar System Masterpiece Banner -->
+    <div class="relative w-full h-40 md:h-52 rounded-3xl overflow-hidden mb-8 shadow-2xl bg-black group selection:bg-cyan-500/30">
         
-        <!-- Artistic SVG Elements -->
-        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <!-- Deep Space Background & Stars -->
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-[#0B0B15] to-black">
+            <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjMwIiByPSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC41Ii8+PGNpcmNsZSBjeD0iNjAiIGN5PSI5MCIgcj0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMyIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjIwIiByPSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC40Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTUwIiByPSIwLjgiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjYiLz48L3N2Zz4=')] opacity-70 animate-twinkle-bg"></div>
+        </div>
+
+        <!-- Section 1: The Star (Sun) -->
+        <div class="absolute inset-0 w-full h-full" style="clip-path: polygon(0 0, 22% 0, 12% 100%, 0 100%);">
+            <div class="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-600 to-rose-900/50 mix-blend-screen"></div>
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <circle cx="0" cy="50" r="45" fill="url(#sun-core)" class="animate-pulse-glow" />
+                <path d="M0,50 Q25,20 50,50 Q25,80 0,50" fill="url(#flare-grad)" opacity="0.4" class="animate-sway origin-left" style="transform-origin: 0 50px; animation-duration: 5s"/>
+                <defs>
+                    <radialGradient id="sun-core" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" style="stop-color:#fff700;stop-opacity:1" />
+                        <stop offset="60%" style="stop-color:#ff8800;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff0000;stop-opacity:0" />
+                    </radialGradient>
+                    <linearGradient id="flare-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#ffaa00;stop-opacity:0.8" />
+                        <stop offset="100%" style="stop-color:#ff0000;stop-opacity:0" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- Section 2: The Living World (Earth) -->
+        <div class="absolute inset-0 w-full h-full" style="clip-path: polygon(22% 0, 42% 0, 32% 100%, 12% 100%);">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                <!-- Orbital Ring -->
+                <circle cx="50" cy="50" r="35" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" fill="none" class="animate-spin-slow-reverse" stroke-dasharray="2 4"/>
+                <!-- Earth -->
+                <g class="animate-float">
+                    <circle cx="50" cy="50" r="14" fill="#1d4ed8" /> <!-- Ocean -->
+                    <path d="M45,45 Q55,40 60,50 M38,50 Q45,60 55,55" stroke="#22c55e" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.8" /> <!-- Land -->
+                    <circle cx="50" cy="50" r="14" fill="url(#sphere-shadow)" opacity="0.5" />
+                </g>
+                <!-- Moon Orbit -->
+                <g class="animate-orbit origin-center-50">
+                    <circle cx="50" cy="15" r="3" fill="#e2e8f0" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Section 3: The Giant (Jupiter) -->
+        <div class="absolute inset-0 w-full h-full" style="clip-path: polygon(42% 0, 62% 0, 52% 100%, 32% 100%);">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                 <!-- Orbital Rings -->
+                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" fill="none" />
+                <g class="animate-float" style="animation-delay: -2s;">
+                    <circle cx="50" cy="50" r="28" fill="#d97706" />
+                    <!-- Storm Bands -->
+                    <path d="M22,42 H78" stroke="#78350f" stroke-width="4" stroke-opacity="0.4" />
+                    <path d="M22,58 H78" stroke="#92400e" stroke-width="5" stroke-opacity="0.5" />
+                    <circle cx="50" cy="50" r="28" fill="url(#sphere-shadow)" opacity="0.4" />
+                    <!-- Great Red Spot -->
+                    <ellipse cx="65" cy="60" rx="5" ry="3" fill="#7f1d1d" opacity="0.9" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Section 4: The Ringed Jewel (Saturn) -->
+        <div class="absolute inset-0 w-full h-full" style="clip-path: polygon(62% 0, 82% 0, 72% 100%, 52% 100%);">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                <g transform="translate(50,50) rotate(20) translate(-50,-50)">
+                    <!-- Rings Back -->
+                    <ellipse cx="50" cy="50" rx="36" ry="10" fill="none" stroke="#ca8a04" stroke-width="6" stroke-opacity="0.4" />
+                    <ellipse cx="50" cy="50" rx="32" ry="8" fill="none" stroke="#fef08a" stroke-width="1" stroke-opacity="0.3" />
+                    <!-- Planet -->
+                    <circle cx="50" cy="50" r="16" fill="#eab308" />
+                    <circle cx="50" cy="50" r="16" fill="url(#sphere-shadow)" opacity="0.3" />
+                    <!-- Rings Front -->
+                    <path d="M14,50 A36,10 0 0,0 86,50" fill="none" stroke="#fefce8" stroke-width="2" stroke-opacity="0.7" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Section 5: The Outer Limits (Neptune) -->
+        <div class="absolute inset-0 w-full h-full" style="clip-path: polygon(82% 0, 100% 0, 100% 100%, 72% 100%);">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                <circle cx="70" cy="30" r="10" fill="#0ea5e9" />
+                <circle cx="70" cy="30" r="10" fill="url(#sphere-shadow)" opacity="0.4" />
+            </svg>
+        </div>
+
+        <!-- Global Overlay: Meteors & Comets (Unclipped) -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 800 200" preserveAspectRatio="none">
             <defs>
-                <linearGradient id="grid-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:white;stop-opacity:0.05" />
-                    <stop offset="50%" style="stop-color:white;stop-opacity:0.2" />
-                    <stop offset="100%" style="stop-color:white;stop-opacity:0.05" />
+                <linearGradient id="comet-tail" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="white" stop-opacity="0" />
+                    <stop offset="100%" stop-color="white" stop-opacity="0.8" />
                 </linearGradient>
+                <radialGradient id="sphere-shadow" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="white" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="black" stop-opacity="0.6"/>
+                </radialGradient>
             </defs>
+            <!-- Shooting Stars connecting the cosmos -->
+            <path d="M-50,150 L100,50" stroke="url(#comet-tail)" stroke-width="1" stroke-linecap="round" class="animate-shoot-across" style="animation-duration: 7s;"/>
+            <path d="M200,-20 L400,100" stroke="url(#comet-tail)" stroke-width="1.5" stroke-linecap="round" class="animate-shoot-across" style="animation-duration: 5s; animation-delay: 2s;"/>
+            <path d="M700,-50 L900,80" stroke="url(#comet-tail)" stroke-width="1" stroke-linecap="round" class="animate-shoot-across" style="animation-duration: 8s; animation-delay: 1s;"/>
             
-            <!-- Abstract Time Flow (Curves) -->
-            <path d="M0,150 C150,250 350,50 500,150 C650,250 800,100 800,150" fill="none" stroke="url(#grid-grad)" stroke-width="2" class="animate-pulse-slow" style="animation-duration: 8s;" />
-            <path d="M0,160 C160,260 340,60 510,160 C660,260 810,110 810,160" fill="none" stroke="white" stroke-width="1" stroke-opacity="0.1" class="animate-pulse-slow" style="animation-delay: 1s; animation-duration: 10s;" />
-            <path d="M-50,140 C140,240 360,40 490,140 C640,240 850,90 850,140" fill="none" stroke="white" stroke-width="1" stroke-opacity="0.1" class="animate-pulse-slow" style="animation-delay: 2s; animation-duration: 12s;" />
-
-            <!-- Floating Geometric Elements (Time Blocks) -->
-            <rect x="650" y="50" width="60" height="60" rx="10" fill="white" fill-opacity="0.1" class="animate-float" style="animation-delay: 0s;" />
-            <rect x="100" y="200" width="40" height="40" rx="8" fill="white" fill-opacity="0.05" class="animate-float" style="animation-delay: 1.5s; animation-duration: 7s;" />
-            <circle cx="400" cy="80" r="4" fill="white" fill-opacity="0.4" class="animate-ping-slow" />
-            <circle cx="700" cy="220" r="3" fill="white" fill-opacity="0.3" class="animate-ping-slow" style="animation-delay: 2s;" />
-
-            <!-- Clock/Gear Abstractions -->
-            <circle cx="50" cy="50" r="100" stroke="white" stroke-opacity="0.05" stroke-width="20" stroke-dasharray="20 10" class="animate-spin-slow origin-[50px_50px]" />
-            <circle cx="750" cy="250" r="80" stroke="white" stroke-opacity="0.05" stroke-width="15" stroke-dasharray="15 15" class="animate-spin-slow-reverse origin-[750px_250px]" />
+            <!-- Distant Nebulas -->
+            <circle cx="600" cy="150" r="80" fill="#4c1d95" filter="blur(40px)" opacity="0.15" />
+            <circle cx="200" cy="50" r="60" fill="#0f766e" filter="blur(30px)" opacity="0.1" />
         </svg>
 
         <!-- Content Overlay -->
-        <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-10">
-            <h1 class="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight drop-shadow-lg translate-y-[10px] opacity-0 animate-[fadeInUp_0.8s_ease-out_forwards]">
-                Schedule
-            </h1>
-            <p class="text-blue-100 text-lg md:text-xl font-medium max-w-lg translate-y-[10px] opacity-0 animate-[fadeInUp_0.8s_0.2s_ease-out_forwards]">
-                Master your time. Conquer your courses.
-            </p>
+        <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-12 z-20 pointer-events-none">
+            <div class="bg-slate-950/60 backdrop-blur-md p-6 rounded-2xl inline-block max-w-fit border border-white/10 shadow-2xl relative overflow-hidden">
+                <!-- Subtle gradient glow -->
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-50"></div>
+                
+                <h1 class="text-3xl md:text-5xl font-bold text-white mb-2 tracking-normal drop-shadow-lg relative z-10">
+                    Schedule
+                </h1>
+                <p class="text-blue-100 text-base md:text-lg font-normal tracking-wide opacity-90 relative z-10">
+                    Organize your time, track your tasks, and deadlines.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -68,38 +151,47 @@
             </button>
         </div>
         
-        <button onclick="document.getElementById('addEventModal').showModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+        <button onclick="document.getElementById('addEventModal').showModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
             <i data-lucide="plus" class="w-5 h-5"></i>
             <span class="hidden sm:inline">Add Event</span>
         </button>
     </div>
 
     <style>
-        @@keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
+        .origin-center-50 { transform-box: fill-box; transform-origin: center; }
+        
+        @@keyframes orbit {
+            from { transform: rotate(0deg) translateX(35px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(35px) rotate(-360deg); }
         }
-        @@keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        @@keyframes shoot-across {
+            0% { transform: translate(-100px, -100px) scale(0.5); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translate(400px, 400px) scale(1); opacity: 0; }
+        }
+        @@keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 140, 0, 0.6)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 30px rgba(255, 200, 50, 0.9)); transform: scale(1.02); }
+        }
+        @@keyframes twinkle-bg {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
         }
         @@keyframes spin-slow-reverse {
             from { transform: rotate(360deg); }
             to { transform: rotate(0deg); }
         }
-        @@keyframes gradient-xy {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        @@keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
         }
-        @@keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        
+        .animate-orbit { animation: orbit 12s linear infinite; }
+        .animate-shoot-across { animation: shoot-across 8s linear infinite; }
+        .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+        .animate-twinkle-bg { animation: twinkle-bg 6s ease-in-out infinite; }
+        .animate-spin-slow-reverse { animation: spin-slow-reverse 30s linear infinite; }
         .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
-        .animate-spin-slow-reverse { animation: spin-slow-reverse 25s linear infinite; }
-        .animate-gradient-xy { animation: gradient-xy 15s ease infinite; }
-        .animate-ping-slow { animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
     </style>
 
     <!-- Calendar Grid -->
