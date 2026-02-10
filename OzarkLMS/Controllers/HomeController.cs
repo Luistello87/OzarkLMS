@@ -66,13 +66,20 @@ namespace OzarkLMS.Controllers
             // Fetch all assignments from all courses for the todo list
             var upcomingAssignments = await _context.Assignments.ToListAsync(); // Needs filtering if we had filtering logic
 
+            // Fetch personal calendar events
+            var calendarEvents = await _context.CalendarEvents
+                .Where(e => e.UserId == user.Id)
+                .OrderBy(e => e.Start)
+                .ToListAsync();
+
             var viewModel = new DashboardViewModel
             {
                 User = user,
                 Courses = courses,
                 UpcomingAssignments = upcomingAssignments,
                 StickyNotes = stickyNotes,
-                Announcements = announcements
+                Announcements = announcements,
+                CalendarEvents = calendarEvents
             };
 
             return View(viewModel);

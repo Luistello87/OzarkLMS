@@ -6,9 +6,9 @@
     /* Multi-page editor - each page is a distinct element */
     .editor-page {
         background-color: white;
-        width: 8.5in;
-        height: 11in; /* Professional Letter size */
-        padding: 1in;
+        width: 794px; /* A4 Width at 96 DPI */
+        height: 1123px; /* A4 Height at 96 DPI */
+        padding: 96px; /* 2.54cm Padding */
         margin: 0 auto; 
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         outline: none;
@@ -294,194 +294,133 @@
         // ROBUST PAGINATION LOGIC (NO FREEZE)
         // ------------------------------------------------------------------
         
+        // Constants (matching React logic) - A4 at 96 DPI
+        const PAGE_HEIGHT_PX = 1123;
+        const PAGE_PADDING_PX = 96;
+        const CONTENT_HEIGHT = PAGE_HEIGHT_PX - (PAGE_PADDING_PX * 2);
+
         // Input Listener
         pagesContainer.addEventListener('input', (e) => {
-            // Debounce slightly to allow the UI to update
             const page = e.target.closest('.editor-page');
             if (page) {
-                // Use a small timeout to let the browser paint the new character before we calculate layout
-                // This prevents some "cursor jumping" glitches
-                setTimeout(() => window.checkPageOverflow(page), 0);
+                // Check overflow with buffer (React logic: clientHeight + 5)
+                if (page.scrollHeight > page.clientHeight + 5) {
+                    window.handleOverflow(page);
+                }
             }
         });
 
-        window.getOrCreateNextPage = function(currentPage) {
-            let nextBreak = currentPage.nextElementSibling;
-            let next;
+        window.handleOverflow = function(page) {
+            // 1. Find the exact node causing the overflow
+            const children = Array.from(page.children);
+            if (children.length === 0) return;
+
+            let overflowNode = children[children.length - 1]; // Heuristic: last child
+
+            // 2. Determine Strategy: Move whole block OR Split block?
+            // If the node is really tall (longer than half a page) or it's the ONLY node, we MUST split it.
+            const mustSplit = (children.length === 1) || (overflowNode.offsetHeight > CONTENT_HEIGHT / 2);
             
-            if (nextBreak && nextBreak.classList.contains('page-break')) {
-                next = nextBreak.nextElementSibling;
+            let contentToMove = null; // Node or string to move
+            
+            if (mustSplit) {
+               // --- SPLIT LOGIC ---
+               // Verify it's text-based
+               if (overflowNode.nodeType === 1 && overflowNode.tagName === 'P') {
+                   const text = overflowNode.innerText;
+                   const words = text.split(' ');
+                   
+                   // Split at ~75%
+                   const splitIndex = Math.floor(words.length * 0.75);
+                   
+                   if (splitIndex > 0 && splitIndex < words.length) {
+                       const keepWords = words.slice(0, splitIndex).join(' ');
+                       const moveWords = words.slice(splitIndex).join(' ');
+                       
+                       overflowNode.innerText = keepWords; 
+                       
+                       // Create new P for next page
+                       const newP = document.createElement('p');
+                       newP.innerText = moveWords;
+                       contentToMove = newP;
+                   } else {
+                       // Fallback: move whole
+                       contentToMove = overflowNode;
+                   }
+               } else {
+                   // Fallback for complex nodes: just move it
+                   contentToMove = overflowNode;
+               }
             } else {
-                nextBreak = document.createElement('div');
-                nextBreak.className = 'page-break';
-                next = document.createElement('div');
-                next.className = 'editor-page';
-                next.contentEditable = true;
-                next.id = 'page-' + (document.querySelectorAll('.editor-page').length + 1);
+               // --- MOVE WHOLE BLOCK LOGIC ---
+               contentToMove = overflowNode;
+            }
+
+            if (contentToMove) {
+                const nextPage = window.getOrCreateNextPage(page);
                 
-                // Copy styles if needed? No, CSS handles it.
+                // Prepend to next page
+                if (nextPage.firstChild) {
+                    nextPage.insertBefore(contentToMove, nextPage.firstChild);
+                } else {
+                    nextPage.appendChild(contentToMove);
+                }
                 
+                // Cursor Management
+                setTimeout(() => {
+                    nextPage.focus();
+                    // Place cursor at end of moved content
+                    const sel = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(contentToMove);
+                    range.collapse(false); // End
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    
+                    // Recursive check for next page overflow
+                    if (nextPage.scrollHeight > nextPage.clientHeight + 5) {
+                        window.handleOverflow(nextPage);
+                    }
+                }, 10);
+            }
+        };
+
+        window.getOrCreateNextPage = function(currentPage) {
+            let next = currentPage.nextElementSibling;
+            
+            // If the next immediate sibling is a page break, the page is AFTER it
+            if (next && next.classList.contains('page-break')) {
+                next = next.nextElementSibling;
+            }
+            
+            // If we found an existing editor page, return it
+            if (next && next.classList.contains('editor-page')) {
+                return next;
+            }
+            
+            // Otherwise, create a new break + page
+            const nextBreak = document.createElement('div');
+            nextBreak.className = 'page-break';
+            
+            next = document.createElement('div');
+            next.className = 'editor-page';
+            next.contentEditable = true;
+            next.id = 'page-' + (document.querySelectorAll('.editor-page').length + 1);
+            
+            // Insert AFTER current page
+            if (currentPage.nextSibling) {
                 currentPage.parentNode.insertBefore(nextBreak, currentPage.nextSibling);
                 currentPage.parentNode.insertBefore(next, nextBreak.nextSibling);
+            } else {
+                currentPage.parentNode.appendChild(nextBreak);
+                currentPage.parentNode.appendChild(next);
             }
+            
             return next;
         };
-
-        window.checkPageOverflow = function(page) {
-            // Safety break counter to prevent ANY possibility of infinite UI freeze
-            let safetyCounter = 0;
-            const MAX_ITERATIONS = 50; 
-
-            // While content exceeds page height
-            while (page.scrollHeight > page.clientHeight && safetyCounter < MAX_ITERATIONS) {
-                safetyCounter++;
-                
-                // Get the last node causing overflow
-                const lastChild = page.lastChild;
-                if (!lastChild) break; 
-
-                const nextPage = window.getOrCreateNextPage(page);
-
-                // Strategy:
-                // 1. If 'lastChild' is a text node, strict split is needed.
-                // 2. If 'lastChild' is an Element, check if we should move it entirely or drill down.
-                
-                // CASE 1: Text Node
-                if (lastChild.nodeType === 3) {
-                    splitTextNodeToNextPage(lastChild, page, nextPage);
-                } 
-                // CASE 2: Element Node (P, DIV, etc.)
-                else if (lastChild.nodeType === 1) {
-                    // If it's the *only* child, moving it entirely won't help (infinite loop). 
-                    // We MUST drill down and split its contents.
-                    if (page.childNodes.length === 1) {
-                        splitElementToNextPage(lastChild, page, nextPage);
-                    } else {
-                        // It has siblings before it. Try moving the whole element first.
-                        moveNodeToNextPage(lastChild, nextPage);
-                    }
-                }
-            }
-            
-            // Ripple effect: Check if the next page now overflows
-            const nextLink = page.nextElementSibling?.nextElementSibling; // skip page-break
-            if (nextLink && nextLink.classList.contains('editor-page')) {
-                // Throttle the ripple to avoid blocking typing
-                if (nextLink.scrollHeight > nextLink.clientHeight) {
-                     window.checkPageOverflow(nextLink);
-                }
-            }
-        };
-
-        function moveNodeToNextPage(node, nextPage) {
-            if (nextPage.firstChild) {
-                nextPage.insertBefore(node, nextPage.firstChild);
-            } else {
-                nextPage.appendChild(node);
-            }
-        }
-
-        function splitTextNodeToNextPage(textNode, sourcePage, targetPage) {
-            const text = textNode.textContent;
-            const words = text.split(/(\s+)/); // Split keeping whitespace
-            
-            if (words.length <= 1) {
-                // Can't split a single word easily without breaking it? 
-                // For now, move the whole word. 
-                // (In a full word processor we'd split the word, but here let's stick to word wrap logic)
-                moveNodeToNextPage(textNode, targetPage);
-                return;
-            }
-
-            // Create a new text node for the target page
-            const newTextNode = document.createTextNode("");
-            moveNodeToNextPage(newTextNode, targetPage);
-
-            // Move words from end to start until source fits
-            // Optimization: Move big chunks? No, typing is usually one char at a time.
-            // But PASTING might differ. Let's do word by word from end.
-            
-            let movedContent = "";
-            let remainingContent = text;
-            
-            // We loop while source overflows. 
-            // NOTE: updating DOM in a loop causes reflow. 
-            // Faster approach: Binary search fit? 
-            // For now, simpler robust approach:
-            
-            while (sourcePage.scrollHeight > sourcePage.clientHeight && words.length > 0) {
-                const word = words.pop();
-                if (word === undefined) break;
-
-                // Move word to next page buffer
-                movedContent = word + movedContent;
-                newTextNode.textContent = movedContent;
-                
-                // Update source
-                remainingContent = words.join('');
-                textNode.textContent = remainingContent;
-            }
-            
-            // Clean up empty source node
-            if (textNode.textContent.length === 0) {
-                textNode.remove();
-            }
-            
-             // Restore focus if we were editing this node
-            const sel = window.getSelection();
-            if (sel.rangeCount > 0) {
-                 // Check if our cursor was in the moved part
-                 // Ideally we'd map the offset. This is complex. 
-                 // Simple behavior: If cursor is lost, focus the end of new node.
-            }
-        }
-
-        function splitElementToNextPage(element, sourcePage, targetPage) {
-            // We need to move the LAST child of this element to the next page
-            // But we need a wrapper in the next page to hold it.
-            
-            // Create "continuation" element in target page
-            let continuation = targetPage.firstChild;
-            
-            // Check if we can merge into an existing generic container or need a new clone
-            // If the first child of target is same tag and class? 
-            let needsNewWrapper = true;
-            
-            if (continuation && continuation.tagName === element.tagName && continuation.className === element.className) {
-                needsNewWrapper = false;
-            }
-            
-            if (needsNewWrapper) {
-                continuation = element.cloneNode(false); // Shallow clone (attributes, tag)
-                continuation.innerHTML = '';
-                moveNodeToNextPage(continuation, targetPage);
-            }
-
-            // Now move last child of 'element' to 'continuation'
-            // We recurse the overflow logic on the element level
-            
-            while (sourcePage.scrollHeight > sourcePage.clientHeight) {
-                const child = element.lastChild;
-                if (!child) break;
-
-                // Edge case: Element has only 1 child and itself is causing overflow?
-                // Recurse down.
-                if (element.childNodes.length === 1) {
-                     if (child.nodeType === 3) {
-                         splitTextNodeToNextPage(child, sourcePage, continuation); // Note: we pass 'sourcePage' for height check context
-                     } else {
-                         splitElementToNextPage(child, sourcePage, continuation);
-                     }
-                     // If element became empty, remove it
-                     if (element.childNodes.length === 0) element.remove();
-                     break; 
-                } else {
-                    // Element has multiple children, move the last one to continuation
-                    if (continuation.firstChild) continuation.insertBefore(child, continuation.firstChild);
-                    else continuation.appendChild(child);
-                }
-            }
-        }
+        
+        // Removed old checkPageOverflow and split helpers as they are replaced by handleOverflow logic.
+        window.checkPageOverflow = function() {};
 
         // ------------------------------------------------------------------
         // CURSOR & SELECTION PRESERVATION
@@ -861,11 +800,12 @@
             const isLandscape = firstPage && firstPage.style.width === '11in';
             
             const opt = {
-                margin: 0.5,
+                margin: 0, // Zero margin because our pages already have padding/margins defined in CSS
                 filename: 'document.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: isLandscape ? 'landscape' : 'portrait' }
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] } // Respect our CSS page breaks
             };
             
             // Show loading
