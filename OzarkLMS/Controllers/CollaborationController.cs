@@ -15,11 +15,13 @@ namespace OzarkLMS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<VoteHub> _voteHub;
+        private readonly IWebHostEnvironment _environment;
 
-        public CollaborationController(AppDbContext context, IHubContext<VoteHub> voteHub)
+        public CollaborationController(AppDbContext context, IHubContext<VoteHub> voteHub, IWebHostEnvironment environment)
         {
             _context = context;
             _voteHub = voteHub;
+            _environment = environment;
         }
 
         private int GetCurrentUserId()
@@ -419,7 +421,7 @@ namespace OzarkLMS.Controllers
             // Handle Image
             if (media != null && media.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(media.FileName);
                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
@@ -433,7 +435,7 @@ namespace OzarkLMS.Controllers
             // For now let's just use 'attachment' arg if provided
             if (attachment != null && attachment.Length > 0)
             {
-                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                 var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(attachment.FileName);
                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
@@ -472,7 +474,7 @@ namespace OzarkLMS.Controllers
 
             if (photo != null && photo.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
@@ -580,7 +582,7 @@ namespace OzarkLMS.Controllers
 
             if (file != null && file.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
@@ -811,7 +813,7 @@ namespace OzarkLMS.Controllers
 
             if (file != null && file.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
@@ -931,7 +933,7 @@ namespace OzarkLMS.Controllers
 
             if (photo != null && photo.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))

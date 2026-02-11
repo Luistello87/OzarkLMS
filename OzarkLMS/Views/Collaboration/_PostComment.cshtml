@@ -47,7 +47,7 @@
             <a asp-controller="Account" asp-action="Profile" asp-route-userId="@Model.UserId" class="cursor-pointer group/avatar">
                 @if(Model.User != null && !string.IsNullOrEmpty(Model.User.ProfilePictureUrl))
                 {
-                    <img src="@Model.User.ProfilePictureUrl" class="w-7 h-7 rounded-lg object-cover shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover/avatar:ring-[#004B87] transition-all" alt="Avatar" />
+                    <img src="@(Model.User.ProfilePictureUrl + (Model.User.ProfilePictureUrl.Contains("?") ? "&" : "?") + "v=" + DateTime.UtcNow.Ticks)" class="w-7 h-7 rounded-lg object-cover shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover/avatar:ring-[#004B87] transition-all" alt="Avatar" />
                 }
                 else
                 {

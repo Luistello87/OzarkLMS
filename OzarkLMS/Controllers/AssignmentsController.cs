@@ -10,10 +10,12 @@ namespace OzarkLMS.Controllers
     public class AssignmentsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public AssignmentsController(AppDbContext context)
+        public AssignmentsController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: Assignments/Create?courseId=5&type=quiz
@@ -92,7 +94,7 @@ namespace OzarkLMS.Controllers
                 // Handle Attachment
                 if (attachment != null && attachment.Length > 0)
                 {
-                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                    var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                     if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
                     var fileName = Guid.NewGuid() + Path.GetExtension(attachment.FileName);
@@ -264,7 +266,7 @@ namespace OzarkLMS.Controllers
             // Handle Multiple File Uploads
             if (files != null && files.Count > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
                 foreach (var file in files)

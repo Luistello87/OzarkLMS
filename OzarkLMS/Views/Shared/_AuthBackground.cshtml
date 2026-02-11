@@ -203,16 +203,16 @@
             const col = cellIndex % cols;
             const row = Math.floor(cellIndex / cols);
             
-            // Center within cell + LARGER jitter for "disarray"
-            // Increased range to +/- 6% (was +/- 2%) to break the grid look
-            const jitterX = (Math.random() * 12) - 6; 
-            const jitterY = (Math.random() * 12) - 6;
+            // Center within cell + REDUCED jitter for "organized" look
+            // Decreased range to +/- 2% to keep strict grid alignment
+            const jitterX = (Math.random() * 4) - 2; 
+            const jitterY = (Math.random() * 4) - 2;
             
             const left = (col * (100/cols)) + (100/(cols*2)) + jitterX;
             const top = (row * (100/rows)) + (100/(rows*2)) + jitterY;
             
-            // Random Rotation for "disarray"
-            const rotation = (Math.random() * 30) - 15; // +/- 15 degrees
+            // Reduced Rotation for "organized" look
+            const rotation = (Math.random() * 10) - 5; // +/- 5 degrees
             
             containerDiv.style.position = 'absolute';
             containerDiv.style.left = left + '%';

@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ISelfTestService, SelfTestService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddDbContext<OzarkLMS.Data.AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

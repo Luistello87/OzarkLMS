@@ -10,10 +10,12 @@ namespace OzarkLMS.Controllers
     public class ModulesController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public ModulesController(AppDbContext context)
+        public ModulesController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: Modules/Create?courseId=5
@@ -128,7 +130,7 @@ namespace OzarkLMS.Controllers
 
         private async Task AddFileItem(int moduleId, IFormFile file, string title, string type, string displayMode)
         {
-            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+            var uploads = Path.Combine(_environment.WebRootPath, "uploads");
             if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
             var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);

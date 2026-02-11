@@ -12,10 +12,14 @@ namespace OzarkLMS.Controllers
     public class AccountController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AccountController(AppDbContext context)
+        public AccountController(AppDbContext context, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory)
         {
             _context = context;
+            _environment = environment;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet]
@@ -253,35 +257,169 @@ namespace OzarkLMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateProfilePicture(IFormFile? file, string? imageUrl)
+        public async Task<IActionResult> UpdateUserSettings(UpdateUserSettingsViewModel model)
         {
-             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
-             if (userIdClaim == null) return RedirectToAction("Login");
-             var userId = int.Parse(userIdClaim.Value);
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+            var userId = int.Parse(userIdClaim.Value);
 
-             var user = await _context.Users.FindAsync(userId);
-             if (user == null) return NotFound();
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) {
+                return NotFound();
+            }
 
-             if (file != null && file.Length > 0)
-             {
-                  var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-                  if(!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+            // Check if user is trying to change username or password
+            bool changingUsername = !string.IsNullOrWhiteSpace(model.NewUsername) && model.NewUsername != user.Username;
+            bool changingPassword = !string.IsNullOrWhiteSpace(model.NewPassword);
 
-                  var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-                  var filePath = Path.Combine(uploads, fileName);
-                  using (var stream = new FileStream(filePath, FileMode.Create))
-                  {
-                      await file.CopyToAsync(stream);
-                  }
-                  user.ProfilePictureUrl = "/uploads/" + fileName;
-             }
-             else if (!string.IsNullOrEmpty(imageUrl))
-             {
-                 user.ProfilePictureUrl = imageUrl;
-             }
+            // Validate current password if changing username or password
+            if (changingUsername || changingPassword)
+            {
+                if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+                {
+                    TempData["Error"] = "Current password is required to change username or password.";
+                    return RedirectToAction(nameof(Profile));
+                }
 
-             await _context.SaveChangesAsync();
-             return RedirectToAction(nameof(Profile));
+                if (user.Password != model.CurrentPassword)
+                {
+                    TempData["Error"] = "Current password is incorrect.";
+                    return RedirectToAction(nameof(Profile));
+                }
+            }
+
+            // Update Username
+            if (changingUsername)
+            {
+                // Check if username is already taken
+                var existingUser = await _context.Users
+                    .AnyAsync(u => u.Username == model.NewUsername && u.Id != userId);
+                
+                if (existingUser)
+                {
+                    TempData["Error"] = "Username is already taken.";
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                user.Username = model.NewUsername;
+            }
+
+            // Update Password
+            if (changingPassword)
+            {
+                if (model.NewPassword != model.ConfirmNewPassword)
+                {
+                    TempData["Error"] = "New password and confirmation do not match.";
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                user.Password = model.NewPassword;
+            }
+
+            if (model.ProfilePictureFile != null && model.ProfilePictureFile.Length > 0)
+            {
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(model.ProfilePictureFile.FileName);
+                var filePath = Path.Combine(uploads, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.ProfilePictureFile.CopyToAsync(stream);
+                }
+                user.ProfilePictureUrl = "/uploads/" + fileName;
+            }
+            else if (!string.IsNullOrEmpty(model.ProfilePictureUrl))
+            {
+                try
+                {
+                    var client = _httpClientFactory.CreateClient();
+                    var response = await client.GetAsync(model.ProfilePictureUrl);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var contentType = response.Content.Headers.ContentType?.MediaType;
+                        if (contentType != null && contentType.StartsWith("image/"))
+                        {
+                            var uploads = Path.Combine(_environment.WebRootPath, "uploads");
+                            if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+
+                            // Detect extension from content type or fallback to original URL
+                            string extension = ".jpg"; // fallback
+                            if (contentType == "image/png") extension = ".png";
+                            else if (contentType == "image/gif") extension = ".gif";
+                            else if (contentType == "image/webp") extension = ".webp";
+                            else if (contentType == "image/jpeg") extension = ".jpg";
+                            else {
+                                var uri = new Uri(model.ProfilePictureUrl);
+                                var ext = Path.GetExtension(uri.AbsolutePath);
+                                if (!string.IsNullOrEmpty(ext)) extension = ext;
+                            }
+
+                            var fileName = Guid.NewGuid() + extension;
+                            var filePath = Path.Combine(uploads, fileName);
+                            
+                            var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                            await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+                            
+                            user.ProfilePictureUrl = "/uploads/" + fileName;
+                        }
+                        else 
+                        {
+                            // If it's not a direct image, we'll try to use it as is but warn for broken images
+                            // In a more advanced version, we could scrape the page for an og:image tag
+                            user.ProfilePictureUrl = model.ProfilePictureUrl;
+                        }
+                    }
+                    else 
+                    {
+                        user.ProfilePictureUrl = model.ProfilePictureUrl;
+                    }
+                }
+                catch
+                {
+                    // If download fails, fallback to storing the URL as is
+                    user.ProfilePictureUrl = model.ProfilePictureUrl;
+                }
+            }
+            else {
+                // No picture update detected, keep existing or null
+            }
+
+            try {
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            } catch (Exception ex) {
+                TempData["Error"] = "Error saving settings: " + ex.Message;
+                return RedirectToAction(nameof(Profile));
+            }
+            
+            // If username changed, update authentication claims
+            if (changingUsername)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim("UserId", user.Id.ToString())
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties { IsPersistent = true };
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, 
+                    new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                TempData["Success"] = "Your settings have been updated successfully!";
+            }
+            else if (changingPassword || model.ProfilePictureFile != null || !string.IsNullOrEmpty(model.ProfilePictureUrl))
+            {
+                TempData["Success"] = "Your settings have been updated successfully!";
+            }
+
+            return RedirectToAction(nameof(Profile));
         }
 
         public IActionResult AccessDenied()
