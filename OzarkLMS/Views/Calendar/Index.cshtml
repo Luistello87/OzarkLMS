@@ -175,10 +175,15 @@
             </button>
         </div>
         
-        <div class="flex items-center gap-3">
-            <button onclick="showEventsList()" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-bold text-sm shadow-sm border border-slate-200 dark:border-slate-700 transition-all hover:scale-105 active:scale-95">
-                View Events
-            </button>
+        <div class="flex items-center gap-4">
+            <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <button onclick="switchView('calendar')" id="tabBtn-calendar" class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700">
+                    Calendar
+                </button>
+                <button onclick="switchView('list')" id="tabBtn-list" class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    View Events
+                </button>
+            </div>
             <button onclick="document.getElementById('addEventModal').showModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
                 <i data-lucide="plus" class="w-5 h-5"></i>
                 <span class="hidden sm:inline">Add Event</span>
@@ -258,8 +263,8 @@
         .animate-sway { animation: sway 8s ease-in-out infinite; }
     </style>
 
-    <!-- Calendar Grid -->
-    <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden">
+    <!-- Calendar Grid View -->
+    <div id="calendarView" class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden">
         <!-- Weekday Headers -->
         <div class="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             @foreach(var day in new[]{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"})
@@ -271,6 +276,13 @@
         <!-- Days Grid -->
         <div id="calendarGrid" class="grid grid-cols-7 auto-rows-fr min-h-[600px] bg-slate-100 dark:bg-slate-800 gap-px border-b border-slate-100 dark:border-slate-800">
             <!-- JS will populate this -->
+        </div>
+    </div>
+
+    <!-- List View -->
+    <div id="listView" class="hidden space-y-4">
+        <div id="eventsListContent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Populated by JS -->
         </div>
     </div>
 </div>
@@ -310,34 +322,7 @@
     </div>
 </dialog>
 
-<!-- Events List Modal -->
-<dialog id="eventsListModal" class="backdrop:backdrop-blur-sm backdrop:bg-slate-900/20 rounded-2xl shadow-2xl p-0 w-full max-w-2xl bg-transparent open:animate-in open:fade-in open:zoom-in-95 closed:animate-out closed:fade-out closed:zoom-out-95">
-    <div class="bg-white dark:bg-slate-900 p-8 border border-slate-100 dark:border-slate-800">
-        <div class="flex items-center justify-between mb-8">
-            <h3 class="text-2xl font-bold text-slate-800 dark:text-white">All Events</h3>
-            <button onclick="document.getElementById('eventsListModal').close()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 transition-colors">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-        </div>
-        
-        <div id="eventsListContent" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-            <!-- Populated by JS -->
-        </div>
-
-        <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <button onclick="document.getElementById('eventsListModal').close()" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-2.5 rounded-xl font-bold text-sm transition-all">
-                Close
-            </button>
-        </div>
-    </div>
 </dialog>
-
-<style>
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; }
-</style>
 
 <!-- Delete Confirmation Modal -->
 <dialog id="deleteModal" class="backdrop:backdrop-blur-sm backdrop:bg-slate-900/20 rounded-2xl shadow-2xl p-0 w-full max-w-sm bg-transparent open:animate-in open:fade-in open:zoom-in-95 closed:animate-out closed:fade-out closed:zoom-out-95">
@@ -471,44 +456,87 @@
         renderCalendar();
     });
 
-    function showEventsList() {
+    function switchView(viewName, updateHash = true) {
+        const calView = document.getElementById('calendarView');
+        const listView = document.getElementById('listView');
+        const calBtn = document.getElementById('tabBtn-calendar');
+        const listBtn = document.getElementById('tabBtn-list');
+        const monthControls = document.querySelector('.flex.items-center.gap-4').firstElementChild;
+
+        if (viewName === 'calendar') {
+            calView.classList.remove('hidden');
+            listView.classList.add('hidden');
+            monthControls.style.opacity = '1';
+            monthControls.style.pointerEvents = 'auto';
+
+            calBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700';
+            listBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
+            
+            if (updateHash) {
+                // Clear hash gracefully
+                history.pushState("", document.title, window.location.pathname + window.location.search);
+            }
+        } else {
+            calView.classList.add('hidden');
+            listView.classList.remove('hidden');
+            monthControls.style.opacity = '0.3';
+            monthControls.style.pointerEvents = 'none';
+
+            listBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700';
+            calBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
+            
+            if (updateHash) window.location.hash = 'list';
+            renderListView();
+        }
+    }
+
+    function renderListView() {
         const listContent = document.getElementById('eventsListContent');
         listContent.innerHTML = '';
         
         if (events.length === 0) {
-            listContent.innerHTML = '<p class="text-slate-500 text-center py-8">No events scheduled yet.</p>';
+            listContent.innerHTML = '<div class="col-span-full py-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800"><p class="text-slate-400 font-medium text-lg">No events scheduled yet.</p></div>';
         } else {
-            // Sort events by date
             const sortedEvents = [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
             
             sortedEvents.forEach(evt => {
                 const startDate = new Date(evt.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-                const endDate = evt.end ? new Date(evt.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'No end date';
+                const endDate = evt.end ? new Date(evt.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Ongoing/No end';
                 
                 const item = document.createElement('div');
-                item.className = 'p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 transition-all hover:border-blue-200 dark:hover:border-blue-900/30';
+                item.className = 'p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 transition-all hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none hover:border-blue-200 dark:hover:border-blue-900/30 group';
                 item.innerHTML = `
-                    <div class="flex flex-col gap-2">
-                        <h4 class="text-lg font-bold text-slate-800 dark:text-white">${evt.title}</h4>
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-1 text-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="text-slate-400 font-medium">Starts</span>
-                                <span class="text-slate-600 dark:text-slate-400 tabular-nums">${startDate}</span>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-start justify-between">
+                            <h4 class="text-xl font-bold text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">${evt.title}</h4>
+                            <button onclick="deleteEvent(event, ${evt.id})" class="text-slate-300 hover:text-red-500 transition-colors">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Start Time</span>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">${startDate}</span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-slate-400 font-medium">Ends</span>
-                                <span class="text-slate-600 dark:text-slate-400 tabular-nums">${endDate}</span>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">End Time</span>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">${endDate}</span>
                             </div>
                         </div>
                     </div>
                 `;
                 listContent.appendChild(item);
             });
+            // Re-initialize icons in the list
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
-        
-        document.getElementById('eventsListModal').showModal();
     }
 
     // Initial Render
     renderCalendar();
+
+    // Deep link / Persistence check
+    if (window.location.hash === '#list') {
+        switchView('list', false);
+    }
 </script>
