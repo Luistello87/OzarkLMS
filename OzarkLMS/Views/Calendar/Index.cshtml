@@ -314,7 +314,7 @@
             </button>
         </div>
         
-        <form asp-action="Create" method="post" class="space-y-4">
+        <form asp-action="Create" method="post" class="space-y-4" onsubmit="preparePersistence()">
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label>
                 <input name="title" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white transition-all" placeholder="e.g. Final Exam" required />
@@ -358,7 +358,7 @@
 </dialog>
 
 <!-- Delete Confirmation Form (Hidden, triggered by JS) -->
-<form id="deleteForm" asp-action="Delete" method="post" class="hidden">
+<form id="deleteForm" asp-action="Delete" method="post" class="hidden" onsubmit="preparePersistence()">
     <input type="hidden" id="deleteEventId" name="id" />
 </form>
 
@@ -463,6 +463,13 @@
         document.getElementById('deleteForm').submit();
     }
 
+    function preparePersistence() {
+        const listView = document.getElementById('listView');
+        if (listView && !listView.classList.contains('hidden')) {
+            localStorage.setItem('persistCalendarView', 'list');
+        }
+    }
+
     document.getElementById('prevMonthBtn').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         renderCalendar();
@@ -562,7 +569,11 @@
     renderCalendar();
 
     // Deep link / Persistence check
-    if (window.location.hash === '#list') {
+    const persistedView = localStorage.getItem('persistCalendarView');
+    if (persistedView === 'list') {
+        switchView('list', false);
+        localStorage.removeItem('persistCalendarView');
+    } else if (window.location.hash === '#list') {
         switchView('list', false);
     }
 </script>
