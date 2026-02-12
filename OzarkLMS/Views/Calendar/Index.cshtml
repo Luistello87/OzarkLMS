@@ -166,13 +166,30 @@
     <!-- Controls Toolbar -->
     <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 mb-8">
         <div class="flex items-center gap-4">
-            <button id="prevMonthBtn" class="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-600 dark:text-slate-400 group">
-                <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"></i>
-            </button>
-            <h2 id="currentMonthDisplay" class="text-2xl font-bold w-48 text-center text-slate-800 dark:text-white tabular-nums"></h2>
-            <button id="nextMonthBtn" class="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-600 dark:text-slate-400 group">
-                <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
-            </button>
+            <!-- Month Controls (Default) -->
+            <div id="monthControls" class="flex items-center gap-4">
+                <button id="prevMonthBtn" class="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-600 dark:text-slate-400 group">
+                    <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-1 transition-transform"></i>
+                </button>
+                <h2 id="currentMonthDisplay" class="text-2xl font-bold w-48 text-center text-slate-800 dark:text-white tabular-nums"></h2>
+                <button id="nextMonthBtn" class="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-600 dark:text-slate-400 group">
+                    <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+
+            <!-- Filter Controls (Hidden by default) -->
+            <div id="filterControls" class="hidden flex items-center gap-3">
+                <div class="relative inline-block text-left">
+                    <select id="eventFilter" onchange="renderListView(this.value)" class="appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-6 py-2.5 pr-12 font-bold text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer">
+                        <option value="newest">Most Recently Added</option>
+                        <option value="oldest">Least Recently Added</option>
+                        <option value="alpha">Alphabetically</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                        <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="flex items-center gap-4">
@@ -461,13 +478,14 @@
         const listView = document.getElementById('listView');
         const calBtn = document.getElementById('tabBtn-calendar');
         const listBtn = document.getElementById('tabBtn-list');
-        const monthControls = document.querySelector('.flex.items-center.gap-4').firstElementChild;
+        const monthControls = document.getElementById('monthControls');
+        const filterControls = document.getElementById('filterControls');
 
         if (viewName === 'calendar') {
             calView.classList.remove('hidden');
             listView.classList.add('hidden');
-            monthControls.style.opacity = '1';
-            monthControls.style.pointerEvents = 'auto';
+            monthControls.classList.remove('hidden');
+            filterControls.classList.add('hidden');
 
             calBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700';
             listBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
@@ -479,25 +497,33 @@
         } else {
             calView.classList.add('hidden');
             listView.classList.remove('hidden');
-            monthControls.style.opacity = '0.3';
-            monthControls.style.pointerEvents = 'none';
+            monthControls.classList.add('hidden');
+            filterControls.classList.remove('hidden');
 
             listBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700';
             calBtn.className = 'px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200';
             
             if (updateHash) window.location.hash = 'list';
-            renderListView();
+            renderListView(document.getElementById('eventFilter')?.value || 'newest');
         }
     }
 
-    function renderListView() {
+    function renderListView(sortBy = 'newest') {
         const listContent = document.getElementById('eventsListContent');
         listContent.innerHTML = '';
         
         if (events.length === 0) {
             listContent.innerHTML = '<div class="col-span-full py-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800"><p class="text-slate-400 font-medium text-lg">No events scheduled yet.</p></div>';
         } else {
-            const sortedEvents = [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
+            let sortedEvents = [...events];
+            
+            if (sortBy === 'newest') {
+                sortedEvents.sort((a, b) => b.id - a.id);
+            } else if (sortBy === 'oldest') {
+                sortedEvents.sort((a, b) => a.id - b.id);
+            } else if (sortBy === 'alpha') {
+                sortedEvents.sort((a, b) => a.title.localeCompare(b.title));
+            }
             
             sortedEvents.forEach(evt => {
                 const startDate = new Date(evt.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
