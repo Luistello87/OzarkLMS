@@ -41,7 +41,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<OzarkLMS.Data.AppDbContext>();
-        // OzarkLMS.Data.DbInitializer.Initialize(context);
+        OzarkLMS.Data.DbInitializer.Initialize(context);
         
         // Backfill Vote Counts (One-time fix for existing data)
         context.Database.ExecuteSqlRaw(

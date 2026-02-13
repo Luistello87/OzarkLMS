@@ -408,7 +408,7 @@ namespace OzarkLMS.Controllers
         // POST: /Collaboration/CreatePost
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreatePost(string content, IFormFile? media, IFormFile? attachment)
+        public async Task<IActionResult> CreatePost(string? content, IFormFile? media, IFormFile? attachment)
         {
             if (string.IsNullOrWhiteSpace(content) && media == null && attachment == null) 
                 return RedirectToAction(nameof(Index));
@@ -1313,45 +1313,68 @@ namespace OzarkLMS.Controllers
             return Json(new { success = true });
         }
 
-        // GET: /Collaboration/SearchGlobal
         [HttpGet]
         public async Task<IActionResult> SearchGlobal(string query)
         {
-            if (string.IsNullOrWhiteSpace(query)) return Json(new List<object>());
+            try 
+            {
+                if (string.IsNullOrWhiteSpace(query))
+                    return Json(new List<object>());
 
-            var userId = GetCurrentUserId();
+                int currentUserId = GetCurrentUserId();
+                var searchTerm = $"%{query.Trim()}%";
 
-            // Search Users (exclude self)
-            var users = await _context.Users
-                .Where(u => u.Id != userId && u.Username.ToLower().Contains(query.ToLower()))
-                .Select(u => new
-                {
-                    type = "user",
-                    id = u.Id,
-                    name = u.Username,
-                    photo = u.ProfilePictureUrl
-                })
-                .Take(5)
-                .ToListAsync();
+                // Users search
+                var users = await _context.Users
+                    .IgnoreQueryFilters()
+                    .Where(u => u.Id != currentUserId && 
+                                u.Username != null && 
+                                EF.Functions.ILike(u.Username, searchTerm))
+                    .Select(u => new { type = "user", id = u.Id, name = u.Username, photo = u.ProfilePictureUrl })
+                    .OrderBy(u => u.name)
+                    .Take(10)
+                    .ToListAsync();
 
-            var groups = await _context.ChatGroups
-                .Where(g => g.Name.ToLower().Contains(query.ToLower()))
-                .Select(g => new
-                {
-                    type = "group",
-                    id = g.Id,
-                    name = g.Name,
-                    photo = g.GroupPhotoUrl
-                })
-                .Take(5)
-                .ToListAsync();
+                // Groups search
+                var groups = await _context.ChatGroups
+                    .Where(g => g.Name != null && EF.Functions.ILike(g.Name, searchTerm))
+                    .Select(g => new { type = "group", id = g.Id, name = g.Name, photo = g.GroupPhotoUrl })
+                    .OrderBy(g => g.name)
+                    .Take(10)
+                    .ToListAsync();
 
-            // Merge users and groups
-            var results = new List<object>();
-            results.AddRange(users);
-            results.AddRange(groups);
+                var results = new List<object>();
+                results.AddRange(users);
+                results.AddRange(groups);
+                return Json(results);
+            }
+            catch (Exception)
+            {
+                // Return empty list on error to keep frontend stable
+                return Json(new List<object>());
+            }
+        }
 
-            return Json(results);
+        [HttpGet]
+        public async Task<IActionResult> SearchDiagnostic()
+        {
+            try {
+                var userCount = await _context.Users.CountAsync();
+                var groupCount = await _context.ChatGroups.CountAsync();
+                var sampleUser = await _context.Users.Select(u => u.Username).FirstOrDefaultAsync();
+                var sampleGroup = await _context.ChatGroups.Select(g => g.Name).FirstOrDefaultAsync();
+                
+                return Json(new { 
+                    status = "OK", 
+                    userCount, 
+                    groupCount, 
+                    sampleUser, 
+                    sampleGroup,
+                    db = "Connected" 
+                });
+            } catch (Exception ex) {
+                return Json(new { status = "ERROR", message = ex.Message, stack = ex.StackTrace });
+            }
         }
     }
 }

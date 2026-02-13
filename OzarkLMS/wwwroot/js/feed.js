@@ -846,3 +846,84 @@ function handleDeepLink() {
 
 document.addEventListener("DOMContentLoaded", handleDeepLink);
 window.addEventListener("hashchange", handleDeepLink);
+
+// --- Ozark Student Hub Search Suggestions ---
+let _searchTimer;
+window.searchUsersGlobal = function (query, element) {
+    console.log("OZARK_SEARCH: Input detected:", query);
+    const input = element || document.getElementById('globalUserSearch');
+    if (!input) return;
+
+    // Ensure portal exists
+    let portal = document.getElementById('globalSearchResultsPortal');
+    if (!portal) {
+        portal = document.createElement('div');
+        portal.id = 'globalSearchResultsPortal';
+        portal.className = "fixed bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden hidden z-[99999]";
+        document.body.appendChild(portal);
+    }
+
+    const icon = input.parentElement.querySelector('i');
+
+    if (!query || query.trim().length < 1) {
+        portal.classList.add('hidden');
+        if (icon) icon.classList.remove('animate-spin', 'text-blue-500');
+        return;
+    }
+
+    // Position
+    const rect = input.getBoundingClientRect();
+    portal.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+    portal.style.left = (rect.left + window.scrollX) + 'px';
+    portal.style.width = rect.width + 'px';
+
+    // Show loading
+    if (icon) icon.classList.add('animate-spin', 'text-blue-500');
+    portal.innerHTML = '<div class="p-6 text-center text-slate-400 text-sm">Searching...</div>';
+    portal.classList.remove('hidden');
+
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+        console.log("OZARK_SEARCH: Fetching results for:", query);
+        fetch(`/Collaboration/SearchGlobal?query=${encodeURIComponent(query.trim())}`)
+            .then(r => r.json())
+            .then(data => {
+                console.log("OZARK_SEARCH: Data received:", data);
+                if (icon) icon.classList.remove('animate-spin', 'text-blue-500');
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    portal.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">No results found</div>';
+                    return;
+                }
+
+                portal.innerHTML = data.map(item => `
+                    <div class="flex items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-0 group" 
+                             onclick="window.location.href='${item.type === 'user' ? '/Account/Profile?userId=' + item.id : '/Collaboration/Details/' + item.id}'">
+                        <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 flex-shrink-0 flex items-center justify-center text-lg font-bold text-slate-400">
+                            ${item.photo ? `<img src="${item.photo}" class="w-full h-full object-cover">` : (item.name || '?')[0]}
+                        </div>
+                        <div class="ml-3 flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">${item.name}</p>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">${item.type}</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                `).join('');
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            })
+            .catch(err => {
+                console.error("OZARK_SEARCH: Fetch failed:", err);
+                if (icon) icon.classList.remove('animate-spin', 'text-blue-500');
+                portal.innerHTML = '<div class="p-8 text-center text-red-400 text-sm">Search temporary unavailable</div>';
+            });
+    }, 300);
+}
+
+// Global listeners
+document.addEventListener('mousedown', e => {
+    const p = document.getElementById('globalSearchResultsPortal');
+    if (p && !p.contains(e.target) && !e.target.closest('#globalUserSearch')) {
+        p.classList.add('hidden');
+    }
+});
