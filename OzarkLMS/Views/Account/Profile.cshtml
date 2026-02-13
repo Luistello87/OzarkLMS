@@ -117,6 +117,9 @@
         <button id="tab-recent" onclick="switchTab('recent')" class="px-6 py-3 text-sm font-bold text-[#004B87] dark:text-blue-400 border-b-2 border-[#004B87] dark:border-blue-400 transition-colors">
             Recent Activity
         </button>
+        <button id="tab-shared" onclick="switchTab('shared')" class="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent transition-colors">
+            Shared Posts
+        </button>
         <button id="tab-academic" onclick="switchTab('academic')" class="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent transition-colors">
             Academic Activities
         </button>
@@ -136,6 +139,34 @@
                 @foreach(var post in Model.Posts)
                 {
                     <partial name="_Post" model="post" />
+                }
+            </div>
+        }
+    </div>
+<div id="content-shared" class="mb-10 hidden">
+        @if(!Model.SharedPosts.Any())
+        {
+             <div class="text-center py-12 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">
+                 <p class="text-slate-500 dark:text-slate-400">No shared posts yet.</p>
+             </div>
+        }
+        else
+        {
+            <div class="space-y-6">
+                @foreach(var shared in Model.SharedPosts)
+                {
+                    <div class="relative group/shared">
+                        @if(ViewBag.CurrentUserId == Model.User.Id)
+                        {
+                            <form asp-controller="Account" asp-action="RemoveSharedPost" method="post" class="absolute top-4 right-4 z-10 opacity-0 group-hover/shared:opacity-100 transition-opacity">
+                                <input type="hidden" name="sharedPostId" value="@shared.Id" />
+                                <button type="submit" class="p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all border border-slate-200 dark:border-slate-700 shadow-sm" title="Remove Shared Post">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        }
+                        <partial name="_Post" model="shared.Post" />
+                    </div>
                 }
             </div>
         }
@@ -312,37 +343,40 @@
     function switchTab(tab) {
         // Tabs
         const tabRecent = document.getElementById('tab-recent');
+        const tabShared = document.getElementById('tab-shared');
         const tabAcademic = document.getElementById('tab-academic');
         
         // Content
         const contentRecent = document.getElementById('content-recent');
+        const contentShared = document.getElementById('content-shared');
         const contentAcademic = document.getElementById('content-academic');
         
+        // Reset all
+        [tabRecent, tabShared, tabAcademic].forEach(t => {
+            if(t) {
+                t.classList.add('text-slate-500', 'dark:text-slate-400', 'border-transparent');
+                t.classList.remove('text-[#004B87]', 'dark:text-blue-400', 'border-[#004B87]', 'dark:border-blue-400');
+            }
+        });
+        [contentRecent, contentShared, contentAcademic].forEach(c => {
+            if(c) c.classList.add('hidden');
+        });
+
         if (tab === 'recent') {
-            // Show Recent
             contentRecent.classList.remove('hidden');
-            contentAcademic.classList.add('hidden');
-            
-            // Style Active Tab
             tabRecent.classList.add('text-[#004B87]', 'dark:text-blue-400', 'border-[#004B87]', 'dark:border-blue-400');
             tabRecent.classList.remove('text-slate-500', 'dark:text-slate-400', 'border-transparent');
-            
-            // Style Inactive Tab
-            tabAcademic.classList.add('text-slate-500', 'dark:text-slate-400', 'border-transparent');
-            tabAcademic.classList.remove('text-[#004B87]', 'dark:text-blue-400', 'border-[#004B87]', 'dark:border-blue-400');
+        } else if (tab === 'shared') {
+            contentShared.classList.remove('hidden');
+            tabShared.classList.add('text-[#004B87]', 'dark:text-blue-400', 'border-[#004B87]', 'dark:border-blue-400');
+            tabShared.classList.remove('text-slate-500', 'dark:text-slate-400', 'border-transparent');
         } else {
-            // Show Academic
-            contentRecent.classList.add('hidden');
             contentAcademic.classList.remove('hidden');
-            
-            // Style Active Tab
             tabAcademic.classList.add('text-[#004B87]', 'dark:text-blue-400', 'border-[#004B87]', 'dark:border-blue-400');
             tabAcademic.classList.remove('text-slate-500', 'dark:text-slate-400', 'border-transparent');
-            
-            // Style Inactive Tab
-            tabRecent.classList.add('text-slate-500', 'dark:text-slate-400', 'border-transparent');
-            tabRecent.classList.remove('text-[#004B87]', 'dark:text-blue-400', 'border-[#004B87]', 'dark:border-blue-400');
         }
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Auto-show modal if there is feedback
@@ -470,4 +504,4 @@
 
 <!-- Scripts for Feed Interactions -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
-<script src="~/js/feed.js"></script>
+<script src="~/js/feed.js" asp-append-version="true"></script>

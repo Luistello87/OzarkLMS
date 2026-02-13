@@ -351,6 +351,36 @@ namespace OzarkLMS.Controllers
             }
             return NotFound();
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin, instructor")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var assignment = await _context.Assignments.FindAsync(id);
+            if (assignment == null) return NotFound();
+
+            // RBAC Check
+            if (User.IsInRole("instructor"))
+            {
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null) return Forbid();
+                var userId = int.Parse(userIdClaim.Value);
+                if (assignment.CourseId != 0) // Should check instructor of the course
+                {
+                    var course = await _context.Courses.FindAsync(assignment.CourseId);
+                    if (course == null || course.InstructorId != userId) return Forbid();
+                }
+            }
+
+            var courseId = assignment.CourseId;
+            var tab = assignment.Type == "quiz" ? "quizzes" : "assignments";
+            
+            _context.Assignments.Remove(assignment);
+            await _context.SaveChangesAsync();
+            
+            return RedirectToAction("Details", "Courses", new { id = courseId, tab = tab });
+        }
+
         private async Task NotifyStudents(int courseId, string title, string message, string? actionUrl = null)
         {
             var enrollments = await _context.Enrollments

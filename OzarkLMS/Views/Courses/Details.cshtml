@@ -62,6 +62,11 @@
                     </a>
                 </li>
                 <li>
+                    <a href="?tab=meetings" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "meetings" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm")">
+                        <i data-lucide="video" class="w-4 h-4 mr-3"></i> Meetings
+                    </a>
+                </li>
+                <li>
                     <a href="?tab=grades" class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all @(activeTab == "grades" ? "bg-[#004B87] dark:bg-blue-700 text-white shadow-md" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm")">
                         <i data-lucide="bar-chart-2" class="w-4 h-4 mr-3"></i> Grades
                     </a>
@@ -96,6 +101,9 @@
                                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                                         {
                                             <a asp-controller="Modules" asp-action="AddItem" asp-route-moduleId="@module.Id" class="text-xs text-[#004B87] dark:text-blue-400 font-bold hover:underline">+ Add Item</a>
+                                            <button type="button" onclick="openDeletionModal('@Url.Action("Delete", "Modules", new { id = module.Id })', 'Delete Module', 'Are you sure you want to delete this module? All items within it will also be removed.')" class="text-slate-400 hover:text-red-500 transition-colors">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
                                         }
                                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                                     </div>
@@ -127,6 +135,15 @@
                                                     else
                                                     {
                                                         <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300">@item.Title</span>
+                                                    }
+
+                                                    @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                                                    {
+                                                        <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-2">
+                                                            <button type="button" onclick="openDeletionModal('@Url.Action("DeleteItem", "Modules", new { id = item.Id })', 'Delete Item', 'Are you sure you want to delete this module item?')" class="text-slate-400 hover:text-red-500 transition-colors">
+                                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                            </button>
+                                                        </div>
                                                     }
                                                 </div>
                                             }
@@ -254,6 +271,9 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <a asp-controller="Assignments" asp-action="Submissions" asp-route-id="@item.Id" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Grade</a>
                                                 <a asp-controller="Assignments" asp-action="Edit" asp-route-id="@item.Id" class="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200">Edit</a>
+                                                <button type="button" onclick="openDeletionModal('@Url.Action("Delete", "Assignments", new { id = item.Id })', 'Delete Assignment', 'Are you sure you want to delete this assignment? This will also remove all student submissions.')" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                                </button>
                                             </td>
                                         }
                                     </tr>
@@ -372,6 +392,9 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <a asp-controller="Assignments" asp-action="Submissions" asp-route-id="@item.Id" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Grade</a>
                                                 <a asp-controller="Assignments" asp-action="Edit" asp-route-id="@item.Id" class="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200">Edit</a>
+                                                <button type="button" onclick="openDeletionModal('@Url.Action("Delete", "Assignments", new { id = item.Id })', 'Delete Quiz', 'Are you sure you want to delete this quiz? This will also remove all student attempts.')" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                                </button>
                                             </td>
                                         }
                                     </tr>
@@ -388,6 +411,103 @@
                         </table>
                      </div>
                  </div>
+            }
+            else if (activeTab == "meetings")
+            {
+                <div class="space-y-6">
+                    <div class="pb-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-white">Course Meetings</h2>
+                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                        {
+                            <div class="flex space-x-2">
+                                <a href="https://meet.google.com/new" target="_blank" class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center transition-all">
+                                    <i data-lucide="link" class="w-4 h-4 mr-2"></i> Get Meeting Link
+                                </a>
+                                <button onclick="document.getElementById('addMeetingForm').classList.toggle('hidden')" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#003d6e] dark:hover:bg-blue-700 flex items-center transition-all">
+                                    <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Add Meeting
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                    {
+                        <div id="addMeetingForm" class="hidden bg-gray-50 dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-700 mb-8 animation-slide-in">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Add New Meeting</h3>
+                            <form asp-action="AddMeeting" method="post" class="space-y-4">
+                                <input type="hidden" name="courseId" value="@Model.Id" />
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="col-span-1 md:col-span-2">
+                                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Meeting Name</label>
+                                        <input type="text" name="name" required class="w-full px-4 py-2 rounded-lg border dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-[#004B87] outline-none" placeholder="Online Class - Week 5" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Start Time</label>
+                                        <input type="datetime-local" name="startTime" required class="w-full px-4 py-2 rounded-lg border dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-[#004B87] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">End Time</label>
+                                        <input type="datetime-local" name="endTime" required class="w-full px-4 py-2 rounded-lg border dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-[#004B87] outline-none" />
+                                    </div>
+                                    <div class="col-span-1 md:col-span-2">
+                                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Meeting URL</label>
+                                        <input type="url" name="url" required class="w-full px-4 py-2 rounded-lg border dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-[#004B87] outline-none" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
+                                    </div>
+                                </div>
+                                <div class="flex justify-end pt-2 space-x-2">
+                                    <button type="button" onclick="document.getElementById('addMeetingForm').classList.add('hidden')" class="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 px-6 py-2 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-slate-600 transition-all">Cancel</button>
+                                    <button type="submit" class="bg-[#004B87] dark:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-[#003d6e] transition-all">Save Meeting</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+
+                    <div class="grid grid-cols-1 gap-4">
+                        @if(Model.Meetings != null && Model.Meetings.Any())
+                        {
+                            foreach(var meeting in Model.Meetings.OrderByDescending(m => m.StartTime))
+                            {
+                                <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between hover:shadow-md transition-all">
+                                    <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                                        <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[#004B87] dark:text-blue-300 flex items-center justify-center">
+                                            <i data-lucide="video" class="w-6 h-6"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 dark:text-white">@meeting.Name</h4>
+                                            <div class="flex items-center text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                <i data-lucide="calendar" class="w-3 h-3 mr-1"></i>
+                                                <span>@meeting.StartTime.ToString("MMM dd, yyyy")</span>
+                                                <span class="mx-2">•</span>
+                                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                                <span>@meeting.StartTime.ToString("h:mm tt") - @meeting.EndTime.ToString("h:mm tt")</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 w-full md:w-auto">
+                                        <a href="@meeting.Url" target="_blank" class="flex-1 md:flex-none bg-[#004B87] dark:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold text-center hover:bg-[#003d6e] dark:hover:bg-blue-800 transition-all shadow-sm">
+                                            Join
+                                        </a>
+                                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                                        {
+                                            <button type="button" onclick="openDeleteMeetingModal(@meeting.Id)" class="p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Delete Meeting">
+                                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-20 border-2 border-dashed border-gray-100 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-800/30">
+                                <div class="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                                    <i data-lucide="video-off" class="w-8 h-8"></i>
+                                </div>
+                                <p class="text-slate-400 dark:text-slate-500 font-medium">No meetings scheduled for this course yet.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
             }
             else
             {
@@ -490,3 +610,100 @@
         </main>
     </div>
 </div>
+
+<!-- Meeting Delete Confirmation Modal -->
+<div id="deleteMeetingModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="closeDeleteMeetingModal()"></div>
+    
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:border-slate-700">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2" id="modal-title">Delete Meeting</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            Are you sure you want to delete this meeting? This action cannot be undone.
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <form asp-action="DeleteMeeting" method="post" class="w-full sm:w-auto sm:ml-3">
+                        <input type="hidden" id="deleteMeetingId" name="id" value="" />
+                        <input type="hidden" name="courseId" value="@Model.Id" />
+                        <button type="submit" class="inline-flex w-full justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-500 sm:w-auto transition-colors">
+                            Delete Meeting
+                        </button>
+                    </form>
+                    <button type="button" onclick="closeDeleteMeetingModal()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-slate-900 dark:text-slate-300 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 sm:mt-0 sm:w-auto transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unified Deletion Confirmation Modal -->
+<div id="deletionConfirmationModal" class="fixed inset-0 z-[60] hidden" aria-labelledby="deletion-modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="closeDeletionModal()"></div>
+    
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:border-slate-700">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2" id="deletion-modal-title">Delete Content</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" id="deletion-modal-message">
+                            Are you sure you want to delete this content? This action cannot be undone.
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <form id="deletionConfirmationForm" method="post" class="w-full sm:w-auto sm:ml-3">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="inline-flex w-full justify-center rounded-xl bg-red-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-500 sm:w-auto transition-colors">
+                            Delete
+                        </button>
+                    </form>
+                    <button type="button" onclick="closeDeletionModal()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white dark:bg-slate-800 px-6 py-2 text-sm font-bold text-slate-900 dark:text-slate-300 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 sm:mt-0 sm:w-auto transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openDeleteMeetingModal(id) {
+        document.getElementById('deleteMeetingId').value = id;
+        document.getElementById('deleteMeetingModal').classList.remove('hidden');
+    }
+
+    function closeDeleteMeetingModal() {
+        document.getElementById('deleteMeetingModal').classList.add('hidden');
+    }
+
+    function openDeletionModal(url, title, message) {
+        const modal = document.getElementById('deletionConfirmationModal');
+        const form = document.getElementById('deletionConfirmationForm');
+        const titleElem = document.getElementById('deletion-modal-title');
+        const messageElem = document.getElementById('deletion-modal-message');
+
+        form.action = url;
+        titleElem.textContent = title;
+        messageElem.textContent = message;
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeDeletionModal() {
+        document.getElementById('deletionConfirmationModal').classList.add('hidden');
+    }
+</script>

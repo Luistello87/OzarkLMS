@@ -408,7 +408,7 @@
     </div>
 
     <!-- Shared Feed Logic -->
-    <script src="~/js/feed.js"></script>
+    <script src="~/js/feed.js" asp-append-version="true"></script>
     
     <script>
     // --- Global Search & Chat Logic ---
@@ -491,5 +491,51 @@
             chatItem.classList.remove('bg-blue-50/40', 'dark:bg-blue-800/20');
         }
     }
+
+    // --- SignalR Connection for Real-time Chat List Updates ---
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/voteHub")
+        .build();
+
+    connection.on("ReceiveChatUpdate", function (chatId, isPrivate, timestamp) {
+        // Find the chat item in the list
+        const chatListContainer = document.querySelector('.custom-scrollbar');
+        if (!chatListContainer) return;
+
+        const chatLinks = chatListContainer.querySelectorAll('a');
+        let targetLink = null;
+
+        chatLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            const expectedPath = isPrivate ? `/Collaboration/PrivateDetails/${chatId}` : `/Collaboration/Details/${chatId}`;
+            if (href && href.includes(expectedPath)) {
+                targetLink = link;
+            }
+        });
+
+        if (targetLink) {
+            // Move to top of list with animation
+            targetLink.style.transition = 'all 0.3s ease';
+            targetLink.style.transform = 'translateX(-10px)';
+            
+            setTimeout(() => {
+                chatListContainer.insertBefore(targetLink, chatListContainer.firstChild);
+                targetLink.style.transform = 'translateX(0)';
+                
+                // Update timestamp
+                const dateElement = targetLink.querySelector('.text-xs.text-slate-500');
+                if (dateElement && timestamp) {
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const isToday = date.toDateString() === now.toDateString();
+                    dateElement.childNodes[0].textContent = isToday 
+                        ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                }
+            }, 300);
+        }
+    });
+
+    connection.start().catch(err => console.error('SignalR connection error:', err));
     </script>
 </div>

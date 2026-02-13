@@ -39,5 +39,10 @@ namespace OzarkLMS.Hubs
         {
             await Clients.All.SendAsync("ReceivePostDeleted", postId);
         }
+
+        public async Task SendChatUpdate(int chatId, bool isPrivate, string timestamp, List<int> recipientUserIds)
+        {
+            await Clients.All.SendAsync("ReceiveChatUpdate", chatId, isPrivate, timestamp);
+        }
     }
 }

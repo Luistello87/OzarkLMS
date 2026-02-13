@@ -20,6 +20,7 @@ namespace OzarkLMS.Data
         public DbSet<ChatGroup> ChatGroups { get; set; }
         public DbSet<ChatGroupMember> ChatGroupMembers { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<Meeting> Meetings { get; set; }
         
         public DbSet<PrivateChat> PrivateChats { get; set; }
         public DbSet<PrivateMessage> PrivateMessages { get; set; }
@@ -35,6 +36,7 @@ namespace OzarkLMS.Data
         public DbSet<PostVote> PostVotes { get; set; }
         public DbSet<PostComment> PostComments { get; set; }
         public DbSet<PostCommentVote> PostCommentVotes { get; set; }
+        public DbSet<SharedPost> SharedPosts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -89,6 +91,7 @@ namespace OzarkLMS.Data
             // Global Query Filter: Soft Delete for Users
             modelBuilder.Entity<User>()
                 .HasQueryFilter(u => !u.IsDeleted);
+
 
             // Seed generic data if needed here, or just basic config
             base.OnModelCreating(modelBuilder);

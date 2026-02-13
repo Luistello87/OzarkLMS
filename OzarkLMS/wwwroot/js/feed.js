@@ -582,14 +582,188 @@ function submitComment(postId, parentId = null) {
 }
 
 function sharePost(postId) {
-    const url = `${window.location.origin}/Collaboration#post-${postId}`;
-    navigator.clipboard.writeText(url).then(() => {
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50 animate-bounce';
-        toast.innerText = 'Link copied to clipboard!';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+    const btn = document.getElementById(`share-btn-${postId}`);
+    if (!btn) return;
+
+    // Check if share box already exists
+    let shareBox = document.getElementById(`share-box-${postId}`);
+    if (shareBox) {
+        shareBox.classList.toggle('hidden');
+        return;
+    }
+
+    // Create Share Menu (now with two options)
+    shareBox = document.createElement('div');
+    shareBox.id = `share-box-${postId}`;
+    shareBox.className = 'absolute bottom-12 right-0 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150';
+
+    // Opt 1: Share on Feed
+    const feedBtn = document.createElement('button');
+    feedBtn.className = 'w-full text-left px-3 py-2.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-200 text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2';
+    feedBtn.innerHTML = '<i data-lucide="rss" class="w-3.5 h-3.5 text-emerald-500"></i> Confirm Share';
+    feedBtn.onclick = () => {
+        performShareOnFeed(postId);
+        shareBox.classList.add('hidden');
+    };
+
+    // Opt 2: Send to Chat
+    const chatBtn = document.createElement('button');
+    chatBtn.className = 'w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-200 text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 border-t border-slate-100 dark:border-slate-700 mt-1 pt-2';
+    chatBtn.innerHTML = '<i data-lucide="message-square" class="w-3.5 h-3.5 text-blue-500"></i> Send to Chat';
+    chatBtn.onclick = () => {
+        openChatSelector(postId);
+        shareBox.classList.add('hidden');
+    };
+
+    shareBox.appendChild(feedBtn);
+    shareBox.appendChild(chatBtn);
+
+    // Position relative to the button
+    const container = btn.parentElement;
+    container.style.position = 'relative';
+    container.appendChild(shareBox);
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Close on click outside
+    document.addEventListener('click', function closeBox(e) {
+        if (!shareBox.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            shareBox.classList.add('hidden');
+            document.removeEventListener('click', closeBox);
+        }
     });
+}
+
+function openChatSelector(postId) {
+    // Create Modal if not exists
+    let modal = document.getElementById('chat-selector-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'chat-selector-modal';
+        modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4 text-[#004B87] dark:text-blue-400"></i>
+                        Share to Chat
+                    </h3>
+                    <button onclick="document.getElementById('chat-selector-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div id="chat-list-container" class="max-h-80 overflow-y-auto custom-scrollbar space-y-2">
+                    <div class="py-10 text-center text-slate-400 italic text-sm">Loading chats...</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    modal.classList.remove('hidden');
+    const list = document.getElementById('chat-list-container');
+    list.innerHTML = '<div class="py-10 text-center text-slate-400 italic text-sm">Loading chats...</div>';
+
+    fetch('/Collaboration/GetUserChats')
+        .then(res => res.json())
+        .then(chats => {
+            list.innerHTML = '';
+            if (chats.length === 0) {
+                list.innerHTML = '<div class="py-10 text-center text-slate-400 text-sm">No active chats found.</div>';
+                return;
+            }
+
+            chats.forEach(chat => {
+                const item = document.createElement('button');
+                item.className = 'w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 text-left group';
+
+                const avatar = chat.photoUrl
+                    ? `<img src="${chat.photoUrl}" class="w-10 h-10 rounded-lg object-cover shadow-sm" />`
+                    : `<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold text-xs border border-slate-200 dark:border-slate-700">${chat.name[0].toUpperCase()}</div>`;
+
+                item.innerHTML = `
+                    ${avatar}
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">${chat.name}</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">${chat.isPrivate ? 'Private Chat' : 'Group Chat'}</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform"></i>
+                `;
+                item.onclick = () => performShareToChat(postId, chat.id, chat.isPrivate);
+                list.appendChild(item);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        })
+        .catch(err => {
+            console.error("Failed to load chats", err);
+            list.innerHTML = '<div class="py-10 text-center text-red-500 text-sm">Failed to load chats.</div>';
+        });
+}
+
+function performShareToChat(postId, chatId, isPrivate) {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    fetch('/Collaboration/ShareToChat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'RequestVerificationToken': token
+        },
+        body: `postId=${postId}&chatId=${chatId}&isPrivate=${isPrivate}`
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Post shared to chat!');
+                document.getElementById('chat-selector-modal').classList.add('hidden');
+            } else {
+                showToast(data.message || 'Error sharing post', 'error');
+            }
+        })
+        .catch(err => {
+            console.error("Share to chat failed", err);
+            showToast('Error sharing post', 'error');
+        });
+}
+
+function performShareOnFeed(postId) {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    fetch('/Collaboration/ShareOnFeed', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'RequestVerificationToken': token
+        },
+        body: `postId=${postId}`
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Shared to your feed!');
+                const box = document.getElementById(`share-box-${postId}`);
+                if (box) box.classList.add('hidden');
+            } else {
+                showToast(data.message || 'Error sharing post', 'error');
+            }
+        })
+        .catch(err => {
+            console.error("Share failed", err);
+            showToast('Error sharing post', 'error');
+        });
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-slate-800' : 'bg-red-600';
+    toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-2 rounded-lg shadow-lg text-sm z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300`;
+    toast.innerText = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
 }
 
 // --- POST MANAGEMENT ---

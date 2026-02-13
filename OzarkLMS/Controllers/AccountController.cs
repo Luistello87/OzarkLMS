@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OzarkLMS.Data;
@@ -23,6 +24,7 @@ namespace OzarkLMS.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Login()
         {
             if (User.Identity!.IsAuthenticated)
@@ -74,6 +76,7 @@ namespace OzarkLMS.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Register()
         {
             if (User.Identity!.IsAuthenticated)
@@ -84,6 +87,7 @@ namespace OzarkLMS.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
@@ -129,6 +133,33 @@ namespace OzarkLMS.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }
+
+
+        private async Task SignInUser(User user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("UserId", user.Id.ToString())
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties { IsPersistent = true };
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+        }
+
+        private IActionResult RedirectToLocal(string? returnUrl)
+        {
+            if (Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction("Index", "Home");
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> Profile()
@@ -180,6 +211,16 @@ namespace OzarkLMS.Controllers
                             .ThenInclude(r => r.Votes)
                 .Include(u => u.Followers)
                 .Include(u => u.Following)
+                .Include(u => u.SharedPosts)
+                    .ThenInclude(sp => sp.Post)
+                        .ThenInclude(p => p.User)
+                .Include(u => u.SharedPosts)
+                    .ThenInclude(sp => sp.Post)
+                        .ThenInclude(p => p.Votes)
+                .Include(u => u.SharedPosts)
+                    .ThenInclude(sp => sp.Post)
+                        .ThenInclude(p => p.Comments)
+                            .ThenInclude(c => c.User)
                 .FirstOrDefaultAsync(u => u.Id == targetUserId);
 
             if (user == null) return NotFound();
@@ -197,6 +238,7 @@ namespace OzarkLMS.Controllers
                 
                 // Social Hub
                 Posts = user.Posts.OrderByDescending(p => p.CreatedAt).ToList(),
+                SharedPosts = user.SharedPosts.OrderByDescending(sp => sp.SharedAt).ToList(),
                 FollowersCount = user.Followers.Count,
                 FollowingCount = user.Following.Count,
                 IsFollowing = await _context.Follows.AnyAsync(f => f.FollowerId == currentUserId && f.FollowingId == targetUserId)
@@ -418,6 +460,28 @@ namespace OzarkLMS.Controllers
             {
                 TempData["Success"] = "Your settings have been updated successfully!";
             }
+
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveSharedPost(int sharedPostId)
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim == null) return RedirectToAction("Login");
+            var userId = int.Parse(userIdClaim.Value);
+
+            var sharedPost = await _context.SharedPosts.FindAsync(sharedPostId);
+            if (sharedPost == null) return NotFound();
+
+            if (sharedPost.UserId != userId && !User.IsInRole("admin"))
+            {
+                return Forbid();
+            }
+
+            _context.SharedPosts.Remove(sharedPost);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Profile));
         }

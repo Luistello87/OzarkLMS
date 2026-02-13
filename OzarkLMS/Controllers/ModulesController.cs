@@ -161,6 +161,48 @@ namespace OzarkLMS.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var module = await _context.Modules.FindAsync(id);
+            if (module == null) return NotFound();
+
+            // RBAC Check
+            if (User.IsInRole("instructor"))
+            {
+                var course = await _context.Courses.FindAsync(module.CourseId);
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+                if (course == null || course.InstructorId != userId) return Forbid();
+            }
+
+            var courseId = module.CourseId;
+            _context.Modules.Remove(module);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Details", "Courses", new { id = courseId, tab = "home" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteItem(int id)
+        {
+            var item = await _context.ModuleItems.Include(i => i.Module).FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null) return NotFound();
+
+            // RBAC Check
+            if (User.IsInRole("instructor"))
+            {
+                var course = await _context.Courses.FindAsync(item.Module.CourseId);
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+                if (course == null || course.InstructorId != userId) return Forbid();
+            }
+
+            var courseId = item.Module.CourseId;
+            _context.ModuleItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Details", "Courses", new { id = courseId, tab = "home" });
+        }
+
         private async Task NotifyStudents(int courseId, string title, string message, string? actionUrl = null)
         {
             var enrollments = await _context.Enrollments

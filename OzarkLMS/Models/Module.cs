@@ -24,5 +24,6 @@ namespace OzarkLMS.Models
         public string? ContentUrl { get; set; } // Path to uploaded file (pdf/docx)
         public string Type { get; set; } = "page"; // page, file, quiz, assignment
         public string DisplayMode { get; set; } = "link"; // link, embed (for direct view)
+        public Module Module { get; set; } = null!; // Navigation property
     }
 }

@@ -637,6 +637,9 @@ namespace OzarkLMS.Controllers
             _context.Notifications.AddRange(notifications);
             await _context.SaveChangesAsync();
 
+            // Send SignalR notification for chat list reordering
+            await _voteHub.Clients.All.SendAsync("ReceiveChatUpdate", groupId, false, group.LastActivityDate.ToString("o"));
+
             return RedirectToAction(nameof(Details), new { id = groupId });
         }
 
@@ -677,6 +680,52 @@ namespace OzarkLMS.Controllers
             await _voteHub.Clients.All.SendAsync("ReceivePostEdited", postId, newContent);
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /Collaboration/ShareOnFeed
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ShareOnFeed(int postId)
+        {
+            var userId = GetCurrentUserId();
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return NotFound();
+
+            // Check if already shared
+            var existingShare = await _context.SharedPosts
+                .FirstOrDefaultAsync(sp => sp.UserId == userId && sp.PostId == postId);
+
+            if (existingShare != null)
+            {
+                return Json(new { success = false, message = "You already shared this post." });
+            }
+
+            var sharedPost = new SharedPost
+            {
+                UserId = userId,
+                PostId = postId,
+                SharedAt = DateTime.UtcNow
+            };
+
+            _context.SharedPosts.Add(sharedPost);
+            await _context.SaveChangesAsync();
+
+            // Optional: Notify Post owner
+            if (post.UserId != userId)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    RecipientId = post.UserId,
+                    SenderId = userId,
+                    Title = "Post Shared",
+                    Message = $"{User.Identity.Name} shared your post to their feed.",
+                    ActionUrl = $"/Account/Profile?userId={userId}",
+                    SentDate = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
         }
 
         // POST: /Collaboration/DeletePost
@@ -861,6 +910,9 @@ namespace OzarkLMS.Controllers
                 ActionUrl = $"/Collaboration/PrivateDetails/{chatId}"
             });
             await _context.SaveChangesAsync();
+
+            // Send SignalR notification for chat list reordering
+            await _voteHub.Clients.All.SendAsync("ReceiveChatUpdate", chatId, true, chat.LastActivityDate.ToString("o"));
 
             return RedirectToAction(nameof(PrivateDetails), new { id = chatId });
         }
@@ -1148,6 +1200,117 @@ namespace OzarkLMS.Controllers
                 .ToListAsync();
 
             return Json(users);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUserChats()
+        {
+            var userId = GetCurrentUserId();
+            
+            // Get Groups
+            var groups = await _context.ChatGroupMembers
+                .Where(m => m.UserId == userId)
+                .Select(m => new { 
+                    id = m.ChatGroupId, 
+                    name = m.ChatGroup.Name, 
+                    isPrivate = false, 
+                    photoUrl = m.ChatGroup.GroupPhotoUrl 
+                })
+                .ToListAsync();
+
+            // Get Private Chats
+            var privateChats = await _context.PrivateChats
+                .Include(c => c.User1)
+                .Include(c => c.User2)
+                .Where(c => c.User1Id == userId || c.User2Id == userId)
+                .Select(c => new {
+                    id = c.Id,
+                    name = c.User1Id == userId ? c.User2.Username : c.User1.Username,
+                    isPrivate = true,
+                    photoUrl = c.User1Id == userId ? c.User2.ProfilePictureUrl : c.User1.ProfilePictureUrl
+                })
+                .ToListAsync();
+
+            var allChats = groups.Cast<object>().Concat(privateChats.Cast<object>()).ToList();
+            return Json(allChats);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ShareToChat(int postId, int chatId, bool isPrivate)
+        {
+            var userId = GetCurrentUserId();
+            var post = await _context.Posts.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == postId);
+            if (post == null) return Json(new { success = false, message = "Post not found" });
+
+            string shareLink = $"{Request.Scheme}://{Request.Host}/Collaboration#post-{postId}";
+            string truncatedContent = post.Content.Length > 100 ? post.Content.Substring(0, 97) + "..." : post.Content;
+            string body = $"[POST_SHARE]|{post.User.Username}|{postId}|{truncatedContent}|{shareLink}";
+
+            if (isPrivate)
+            {
+                var chat = await _context.PrivateChats.FindAsync(chatId);
+                if (chat == null || (chat.User1Id != userId && chat.User2Id != userId)) return Forbid();
+
+                var msg = new PrivateMessage
+                {
+                    PrivateChatId = chatId,
+                    SenderId = userId,
+                    Message = body,
+                    SentDate = DateTime.UtcNow
+                };
+                _context.PrivateMessages.Add(msg);
+                chat.LastActivityDate = DateTime.UtcNow;
+
+                // Notification
+                var recipientId = chat.User1Id == userId ? chat.User2Id : chat.User1Id;
+                _context.Notifications.Add(new Notification {
+                    RecipientId = recipientId,
+                    SenderId = userId,
+                    Title = "Shared a post with you",
+                    Message = "Sent a post link in your private chat",
+                    SentDate = DateTime.UtcNow,
+                    ActionUrl = $"/Collaboration/PrivateDetails/{chatId}"
+                });
+            }
+            else
+            {
+                var group = await _context.ChatGroups.FindAsync(chatId);
+                if (group == null) return NotFound();
+                var isMember = await _context.ChatGroupMembers.AnyAsync(m => m.ChatGroupId == chatId && m.UserId == userId);
+                if (!isMember && !User.IsInRole("admin")) return Forbid();
+
+                var msg = new ChatMessage
+                {
+                    GroupId = chatId,
+                    SenderId = userId,
+                    Message = body,
+                    SentDate = DateTime.UtcNow
+                };
+                _context.ChatMessages.Add(msg);
+                group.LastActivityDate = DateTime.UtcNow;
+
+                // Notifications for members
+                var members = await _context.ChatGroupMembers
+                    .Where(m => m.ChatGroupId == chatId && m.UserId != userId)
+                    .Select(m => m.UserId)
+                    .ToListAsync();
+
+                foreach (var memberId in members)
+                {
+                    _context.Notifications.Add(new Notification {
+                        RecipientId = memberId,
+                        SenderId = userId,
+                        Title = $"Post shared in {group.Name}",
+                        Message = "Shared a post link in the group",
+                        SentDate = DateTime.UtcNow,
+                        ActionUrl = $"/Collaboration/Details/{chatId}"
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
         }
 
         // GET: /Collaboration/SearchGlobal
