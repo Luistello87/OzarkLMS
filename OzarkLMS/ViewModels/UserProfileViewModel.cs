@@ -17,6 +17,7 @@ namespace OzarkLMS.ViewModels
 
         // Social Hub Extensions
         public List<Post> Posts { get; set; } = new List<Post>();
+        public List<SharedPost> SharedPosts { get; set; } = new List<SharedPost>();
         public int FollowersCount { get; set; }
         public int FollowingCount { get; set; }
         public bool IsFollowing { get; set; } // For the viewer to know if they follow this profile

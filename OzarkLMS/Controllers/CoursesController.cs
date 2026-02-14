@@ -59,6 +59,7 @@ namespace OzarkLMS.Controllers
                 .Include(c => c.Modules)
                     .ThenInclude(m => m.Items)
                 .Include(c => c.Assignments)
+                .Include(c => c.Meetings)
                 .Include(c => c.Enrollments)
                     .ThenInclude(e => e.Student)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -305,6 +306,46 @@ namespace OzarkLMS.Controllers
             _context.Courses.Remove(course);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Courses/AddMeeting
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin, instructor")]
+        public async Task<IActionResult> AddMeeting(int courseId, string name, DateTime startTime, DateTime endTime, string url)
+        {
+            var meeting = new Meeting
+            {
+                CourseId = courseId,
+                Name = name,
+                StartTime = DateTime.SpecifyKind(startTime, DateTimeKind.Utc),
+                EndTime = DateTime.SpecifyKind(endTime, DateTimeKind.Utc),
+                Url = url
+            };
+
+            if (ModelState.IsValid)
+            {
+                _context.Meetings.Add(meeting);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Details), new { id = courseId, tab = "meetings" });
+        }
+
+        // POST: Courses/DeleteMeeting
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin, instructor")]
+        public async Task<IActionResult> DeleteMeeting(int id, int courseId)
+        {
+            var meeting = await _context.Meetings.FindAsync(id);
+            if (meeting != null)
+            {
+                _context.Meetings.Remove(meeting);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Details), new { id = courseId, tab = "meetings" });
         }
     }
 }

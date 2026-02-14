@@ -14,7 +14,7 @@ namespace OzarkLMS.Models
         public User User { get; set; }
 
         [MaxLength(500)]
-        public string Content { get; set; }
+        public string? Content { get; set; }
 
         public string? ImageUrl { get; set; }
         public string? AttachmentUrl { get; set; }

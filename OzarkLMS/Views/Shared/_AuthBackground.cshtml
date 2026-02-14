@@ -102,16 +102,28 @@
             "#EC4899"  // Pink
         ];
         
-        // Grid Configuration for Non-Overlap (8x8 for finer control)
-        const cols = 8;
-        const rows = 8;
+        // Grid Configuration for Non-Overlap (12x12 for finer control)
+        const cols = 12;
+        const rows = 12;
         const totalCells = cols * rows;
         
-        // Exclude central zone for the login form (Vertical oriented for 8x8)
+        // Exclude central zone for the login form AND edges
         const excludedIndices = [];
-        for (let r = 1; r <= 6; r++) {
-            for (let c = 2; c <= 5; c++) {
+        
+        // Center Exclusion (Login Form area)
+        for (let r = 2; r <= 9; r++) {
+            for (let c = 3; c <= 8; c++) {
                 excludedIndices.push(r * cols + c);
+            }
+        }
+
+        // Edge Exclusion (Keep items away from screen borders)
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
+                    const idx = r * cols + c;
+                    if (!excludedIndices.includes(idx)) excludedIndices.push(idx);
+                }
             }
         }
         
@@ -120,7 +132,7 @@
             if(!excludedIndices.includes(i)) availableIndices.push(i);
         }
         
-        // Templates (Slightly smaller dimensions for better spacing)
+        // Templates (Larger dimensions as requested)
         const laptopSvg = (name, color, delay, duration) => `
             <svg class="auth-bg-item dynamic-motion" width="100" height="70" viewBox="0 0 120 80" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
@@ -175,8 +187,8 @@
         // Shuffle Array
         availableIndices.sort(() => Math.random() - 0.5);
         
-        // Spawn - Adjusted count for better density without clutter
-        const itemCount = 16;
+        // Spawn - Increased density slightly (+5-10%) and added disarray
+        const itemCount = 22;
         const cellsToUse = availableIndices.slice(0, itemCount); 
         
         cellsToUse.forEach(cellIndex => {
@@ -191,14 +203,21 @@
             const col = cellIndex % cols;
             const row = Math.floor(cellIndex / cols);
             
-            // Center within cell + slight jitter (max 4% to avoid crossing cell boundaries)
-            const left = (col * (100/cols)) + (100/(cols*2)) - 2 + Math.random() * 4;
-            const top = (row * (100/rows)) + (100/(rows*2)) - 2 + Math.random() * 4;
+            // Center within cell + REDUCED jitter for "organized" look
+            // Decreased range to +/- 2% to keep strict grid alignment
+            const jitterX = (Math.random() * 4) - 2; 
+            const jitterY = (Math.random() * 4) - 2;
+            
+            const left = (col * (100/cols)) + (100/(cols*2)) + jitterX;
+            const top = (row * (100/rows)) + (100/(rows*2)) + jitterY;
+            
+            // Reduced Rotation for "organized" look
+            const rotation = (Math.random() * 10) - 5; // +/- 5 degrees
             
             containerDiv.style.position = 'absolute';
             containerDiv.style.left = left + '%';
             containerDiv.style.top = top + '%';
-            containerDiv.style.transform = 'translate(-50%, -50%)'; // Center item on its coordinates
+            containerDiv.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
             
             // Randomize timing
             const delay = Math.random() * 8; // Wider range for more varied start

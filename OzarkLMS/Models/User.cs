@@ -7,6 +7,7 @@ namespace OzarkLMS.Models
     {
         public int Id { get; set; }
 
+
         [Required]
         public string Username { get; set; } = string.Empty;
 
@@ -36,5 +37,6 @@ namespace OzarkLMS.Models
 
         public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
         public List<ChatGroupMember> ChatGroups { get; set; } = new List<ChatGroupMember>();
+        public ICollection<SharedPost> SharedPosts { get; set; } = new List<SharedPost>();
     }
 }

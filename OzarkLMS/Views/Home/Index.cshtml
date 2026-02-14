@@ -150,7 +150,16 @@
                         })
                     }));
 
+                    const calendarEvents = @Json.Serialize(Model.CalendarEvents.Select(e => new {
+                        id = e.Id,
+                        title = e.Title,
+                        start = e.Start.ToString("yyyy-MM-dd"),
+                        color = e.Color
+                    }));
+
                     const events = [];
+                    
+                    // Add Assignments
                     courses.forEach(c => {
                         if(c.assignments) {
                             c.assignments.forEach(a => {
@@ -163,6 +172,18 @@
                             });
                         }
                     });
+
+                    // Add Personal Events
+                    if (calendarEvents) {
+                        calendarEvents.forEach(e => {
+                            events.push({
+                                date: e.start,
+                                title: e.title,
+                                courseName: 'Personal Event',
+                                type: 'event'
+                            });
+                        });
+                    }
 
                     let currentDate = new Date();
                     const calendarRoot = document.getElementById('calendar-root');

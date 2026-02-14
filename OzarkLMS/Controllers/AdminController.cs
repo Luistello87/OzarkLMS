@@ -51,7 +51,7 @@ namespace OzarkLMS.Controllers
             if (ModelState.IsValid)
             {
                 // In a real app, check for duplicates and hash password
-                if (_context.Users.Any(u => u.Username == user.Username))
+                if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == user.Username))
                 {
                     ModelState.AddModelError("Username", "Username already exists");
                     return View(user);
@@ -69,7 +69,7 @@ namespace OzarkLMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateInstructor(string username, string password)
         {
-             if (await _context.Users.AnyAsync(u => u.Username == username))
+             if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == username))
              {
                  // In a real app we'd pass an error back, for now just redirect
                  return RedirectToAction(nameof(Dashboard));
@@ -121,7 +121,7 @@ namespace OzarkLMS.Controllers
             if (user == null) return RedirectToAction(nameof(Dashboard));
 
             // Check if username is taken by another user
-             if (await _context.Users.AnyAsync(u => u.Username == username && u.Id != id))
+             if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == username && u.Id != id))
              {
                  // In a real app, we'd pass an error. For now, just return.
                  return RedirectToAction(nameof(Dashboard));

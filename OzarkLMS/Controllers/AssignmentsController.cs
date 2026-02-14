@@ -10,10 +10,12 @@ namespace OzarkLMS.Controllers
     public class AssignmentsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public AssignmentsController(AppDbContext context)
+        public AssignmentsController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: Assignments/Create?courseId=5&type=quiz
@@ -92,7 +94,7 @@ namespace OzarkLMS.Controllers
                 // Handle Attachment
                 if (attachment != null && attachment.Length > 0)
                 {
-                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                    var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                     if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
                     var fileName = Guid.NewGuid() + Path.GetExtension(attachment.FileName);
@@ -264,7 +266,7 @@ namespace OzarkLMS.Controllers
             // Handle Multiple File Uploads
             if (files != null && files.Count > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
                 foreach (var file in files)
@@ -349,6 +351,36 @@ namespace OzarkLMS.Controllers
             }
             return NotFound();
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin, instructor")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var assignment = await _context.Assignments.FindAsync(id);
+            if (assignment == null) return NotFound();
+
+            // RBAC Check
+            if (User.IsInRole("instructor"))
+            {
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null) return Forbid();
+                var userId = int.Parse(userIdClaim.Value);
+                if (assignment.CourseId != 0) // Should check instructor of the course
+                {
+                    var course = await _context.Courses.FindAsync(assignment.CourseId);
+                    if (course == null || course.InstructorId != userId) return Forbid();
+                }
+            }
+
+            var courseId = assignment.CourseId;
+            var tab = assignment.Type == "quiz" ? "quizzes" : "assignments";
+            
+            _context.Assignments.Remove(assignment);
+            await _context.SaveChangesAsync();
+            
+            return RedirectToAction("Details", "Courses", new { id = courseId, tab = tab });
+        }
+
         private async Task NotifyStudents(int courseId, string title, string message, string? actionUrl = null)
         {
             var enrollments = await _context.Enrollments

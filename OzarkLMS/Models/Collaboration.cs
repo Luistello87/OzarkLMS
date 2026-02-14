@@ -49,7 +49,7 @@ namespace OzarkLMS.Models
         public int GroupId { get; set; }
         public int SenderId { get; set; }
         
-        public string Message { get; set; } = string.Empty;
+        public string? Message { get; set; } = string.Empty;
         public string? AttachmentUrl { get; set; }
         public string? AttachmentOriginalName { get; set; }
         public string? AttachmentContentType { get; set; }
@@ -88,7 +88,7 @@ namespace OzarkLMS.Models
         public int PrivateChatId { get; set; }
         public int SenderId { get; set; }
         
-        public string Message { get; set; } = string.Empty;
+        public string? Message { get; set; } = string.Empty;
         public string? AttachmentUrl { get; set; }
         public string? AttachmentOriginalName { get; set; }
         public string? AttachmentContentType { get; set; }

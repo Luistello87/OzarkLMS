@@ -25,5 +25,6 @@ namespace OzarkLMS.Models
         public List<Assignment> Assignments { get; set; } = new List<Assignment>();
         public List<Module> Modules { get; set; } = new List<Module>();
         public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+        public List<Meeting> Meetings { get; set; } = new List<Meeting>();
     }
 }
