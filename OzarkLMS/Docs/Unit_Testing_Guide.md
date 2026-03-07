@@ -62,3 +62,4 @@ Assert.Equal(100, createdAssignment.Points);
 
 ## Summary
 By rigorously applying the AAA pattern and isolating our controllers using Moq and In-Memory databases. This provides confidence that existing features remain functional as we continue to scale the OzarkLMS platform.
+
