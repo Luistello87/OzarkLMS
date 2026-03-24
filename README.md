@@ -1,6 +1,8 @@
 **Course Name:** System Development Project  
 **Course Code:** COMP2154  
+[Visit Ozark](https://ozarklms-crakb2dqdqb4crfn.canadacentral-01.azurewebsites.net)
 
+**Dev Note: When idol for 20 minutes or longer, the server will deactivate, however, upon detecting user activity will restart. The server takes 30-60 seconds to reboot, and will run smoothly afterwards.**
 ---
 
 ## 1. Cover Information
