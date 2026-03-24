@@ -5,7 +5,7 @@ namespace OzarkLMS.ViewModels
 {
     public class SocialHubViewModel
     {
-        public User CurrentUser { get; set; }
+        public User? CurrentUser { get; set; }
         
         // Feed
         public List<Post> Feed { get; set; } = new List<Post>();
