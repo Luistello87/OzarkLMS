@@ -4,9 +4,7 @@ using System.Collections.Generic;
 namespace OzarkLMS.ViewModels
 {
     public class SocialHubViewModel
-    {
-        public User CurrentUser { get; set; } = null!;
-        
+    {   
         // Feed
         public List<Post> Feed { get; set; } = new List<Post>();
         
