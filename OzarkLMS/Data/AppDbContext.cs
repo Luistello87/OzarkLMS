@@ -56,6 +56,9 @@ namespace OzarkLMS.Data
                 .HasForeignKey(f => f.FollowingId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Follow>()
+                .HasQueryFilter(f => !f.Follower.IsDeleted && !f.Following.IsDeleted);
+
             // Social Hub: Votes
             modelBuilder.Entity<PostVote>()
                 .HasKey(pv => new { pv.PostId, pv.UserId });
@@ -65,6 +68,9 @@ namespace OzarkLMS.Data
                 .WithMany(p => p.Votes)
                 .HasForeignKey(pv => pv.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PostVote>()
+                .HasQueryFilter(pv => !pv.User.IsDeleted);
 
             modelBuilder.Entity<PostComment>()
                 .HasOne(pc => pc.Post)
@@ -88,6 +94,9 @@ namespace OzarkLMS.Data
                 .HasForeignKey(cv => cv.CommentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<PostCommentVote>()
+                .HasQueryFilter(cv => !cv.User.IsDeleted);
+
             // Global Query Filter: Soft Delete for Users
             modelBuilder.Entity<User>()
                 .HasQueryFilter(u => !u.IsDeleted);
@@ -107,6 +116,19 @@ namespace OzarkLMS.Data
                 .HasOne(e => e.Course)
                 .WithMany(c => c.Enrollments)
                 .HasForeignKey(e => e.CourseId);
+
+            // Chat Replies
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(m => m.ParentMessage)
+                .WithMany()
+                .HasForeignKey(m => m.ParentMessageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<PrivateMessage>()
+                .HasOne(m => m.ParentMessage)
+                .WithMany()
+                .HasForeignKey(m => m.ParentMessageId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

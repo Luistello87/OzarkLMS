@@ -14,7 +14,7 @@ namespace OzarkLMS.Models
         public int? CourseId { get; set; } // Linked to course?
         public Course? Course { get; set; }
         
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
         public User? User { get; set; }
     }
 }

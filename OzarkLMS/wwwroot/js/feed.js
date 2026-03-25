@@ -678,14 +678,17 @@ function openChatSelector(postId) {
                 const item = document.createElement('button');
                 item.className = 'w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 text-left group';
 
+                const safeName = chat.name ? chat.name : 'Unknown';
+                const initial = safeName.length > 0 ? safeName[0].toUpperCase() : '?';
+
                 const avatar = chat.photoUrl
                     ? `<img src="${chat.photoUrl}" class="w-10 h-10 rounded-lg object-cover shadow-sm" />`
-                    : `<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold text-xs border border-slate-200 dark:border-slate-700">${chat.name[0].toUpperCase()}</div>`;
+                    : `<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 font-bold text-xs border border-slate-200 dark:border-slate-700">${initial}</div>`;
 
                 item.innerHTML = `
                     ${avatar}
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">${chat.name}</p>
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">${safeName}</p>
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">${chat.isPrivate ? 'Private Chat' : 'Group Chat'}</p>
                     </div>
                     <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform"></i>

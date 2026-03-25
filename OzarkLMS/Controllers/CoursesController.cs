@@ -253,7 +253,7 @@ namespace OzarkLMS.Controllers
             var viewModel = new CourseStudentsViewModel
             {
                 Course = course,
-                EnrolledStudents = course.Enrollments.Select(e => e.Student).ToList(),
+                EnrolledStudents = course.Enrollments.Select(e => e.Student).Where(s => s != null).ToList()!,
                 AvailableStudents = availableStudents
             };
 

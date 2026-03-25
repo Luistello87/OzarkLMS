@@ -1,9 +1,9 @@
 ﻿@model OzarkLMS.ViewModels.DashboardViewModel
 @using System.Security.Claims
 
-<div class="p-8 max-w-[1600px] mx-auto">
+<div class="p-4 md:p-8 max-w-[1600px] mx-auto">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 sm:gap-0">
         <div>
             <h1 class="text-3xl font-bold text-[#004B87] dark:text-white">Dashboard</h1>
             <p class="text-slate-500 dark:text-slate-400">Welcome back, @Model.User.Username</p>
@@ -81,13 +81,13 @@
 
             <!-- Sticky Notes Section -->
             <div>
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3 sm:gap-0">
                     <h2 class="text-xl font-bold text-slate-800 dark:text-white flex items-center">
                         <i data-lucide="sticky-note" class="w-5 h-5 mr-2 text-[#004B87] dark:text-white"></i> Sticky Notes
                     </h2>
-                    <form asp-action="AddStickyNote" method="post" class="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-slate-600 shadow-sm">
-                        <input name="content" class="bg-transparent px-3 py-1 text-sm focus:outline-none w-48 text-slate-700 dark:text-white placeholder-slate-400" placeholder="Quick note..." required autocomplete="off" />
-                        <select name="color" class="bg-transparent text-sm text-slate-500 dark:text-slate-300 outline-none cursor-pointer border-l border-gray-200 dark:border-slate-600 mx-2 px-2">
+                    <form asp-action="AddStickyNote" method="post" class="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-slate-600 shadow-sm w-full sm:w-auto">
+                        <input name="content" class="bg-transparent px-3 py-1 text-sm focus:outline-none flex-1 min-w-0 text-slate-700 dark:text-white placeholder-slate-400" placeholder="Quick note..." required autocomplete="off" />
+                        <select name="color" class="bg-transparent text-sm text-slate-500 dark:text-slate-300 outline-none cursor-pointer border-l border-gray-200 dark:border-slate-600 mx-2 px-2 flex-shrink-0">
                             <option value="bg-yellow-200 dark:bg-yellow-900/80 dark:text-yellow-100">Yellow</option>
                             <option value="bg-blue-200 dark:bg-blue-900/80 dark:text-blue-100">Blue</option>
                             <option value="bg-green-200 dark:bg-green-900/80 dark:text-green-100">Green</option>

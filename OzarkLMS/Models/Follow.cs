@@ -8,10 +8,10 @@ namespace OzarkLMS.Models
     {
         public int FollowerId { get; set; }
         [ForeignKey("FollowerId")]
-        public User Follower { get; set; }
+        public User Follower { get; set; } = null!;
 
         public int FollowingId { get; set; }
         [ForeignKey("FollowingId")]
-        public User Following { get; set; }
+        public User Following { get; set; } = null!;
     }
 }

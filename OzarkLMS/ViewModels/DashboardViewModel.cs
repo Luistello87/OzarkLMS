@@ -4,7 +4,6 @@ namespace OzarkLMS.ViewModels
 {
     public class DashboardViewModel
     {
-        public User? User { get; set; }
         public List<Course> Courses { get; set; } = new List<Course>();
         public List<Assignment> UpcomingAssignments { get; set; } = new List<Assignment>();
         public List<StickyNote> StickyNotes { get; set; } = new List<StickyNote>();

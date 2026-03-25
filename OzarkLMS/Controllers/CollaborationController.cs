@@ -15,12 +15,14 @@ namespace OzarkLMS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<VoteHub> _voteHub;
+        private readonly IHubContext<ChatHub> _chatHub;
         private readonly IWebHostEnvironment _environment;
 
-        public CollaborationController(AppDbContext context, IHubContext<VoteHub> voteHub, IWebHostEnvironment environment)
+        public CollaborationController(AppDbContext context, IHubContext<VoteHub> voteHub, IHubContext<ChatHub> chatHub, IWebHostEnvironment environment)
         {
             _context = context;
             _voteHub = voteHub;
+            _chatHub = chatHub;
             _environment = environment;
         }
 
@@ -42,11 +44,11 @@ namespace OzarkLMS.Controllers
                 .Where(f => f.FollowerId == userId)
                 .Select(f => f.FollowingId)
                 .ToListAsync();
-            
-            followingIds.Add(userId); 
+
+            followingIds.Add(userId);
 
             var feed = await _context.Posts
-                .Where(p => followingIds.Contains(p.UserId)) 
+                .Where(p => p.UserId.HasValue && followingIds.Contains(p.UserId.Value))
                 .Include(p => p.User)
                 .Include(p => p.Votes) // Important for voting status
                 .Include(p => p.Comments)
@@ -57,10 +59,10 @@ namespace OzarkLMS.Controllers
             // 2. Chat Groups
             var groups = await _context.ChatGroups
                 .Include(g => g.Members)
-                .Where(g => g.Members.Any(m => m.UserId == userId) || g.IsDefault) 
+                .Where(g => g.Members.Any(m => m.UserId == userId) || g.IsDefault)
                 .OrderByDescending(g => g.LastActivityDate)
                 .ToListAsync();
-                
+
             // 3. Private Chats
             var privateChats = await _context.PrivateChats
                 .Include(c => c.User1)
@@ -75,14 +77,14 @@ namespace OzarkLMS.Controllers
                 .ToListAsync();
 
             var groupUnread = new Dictionary<int, int>();
-            foreach(var g in groups)
+            foreach (var g in groups)
             {
                 int count = notifications.Count(n => n.ActionUrl == $"/Collaboration/Details/{g.Id}");
                 if (count > 0) groupUnread[g.Id] = count;
             }
 
             var privateUnread = new Dictionary<int, int>();
-            foreach(var c in privateChats)
+            foreach (var c in privateChats)
             {
                 int count = notifications.Count(n => n.ActionUrl == $"/Collaboration/PrivateDetails/{c.Id}");
                 if (count > 0) privateUnread[c.Id] = count;
@@ -95,7 +97,65 @@ namespace OzarkLMS.Controllers
                 ChatGroups = groups,
                 PrivateChats = privateChats,
                 GroupUnread = groupUnread,
-                PrivateUnread = privateUnread
+                PrivateUnread = privateUnread,
+                SuggestedUsers = await _context.Users.Where(u => !u.IsDeleted && u.Id != userId).ToListAsync(),
+                FollowingIds = followingIds
+            };
+
+            return View(viewModel);
+        }
+
+        // GET: /Collaboration/DMs
+        public async Task<IActionResult> DMs()
+        {
+            var userId = GetCurrentUserId();
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            // 1. Chat Groups
+            var groups = await _context.ChatGroups
+                .Include(g => g.Members)
+                .Where(g => g.Members.Any(m => m.UserId == userId) || g.IsDefault)
+                .OrderByDescending(g => g.LastActivityDate)
+                .ToListAsync();
+
+            // 2. Private Chats
+            var privateChats = await _context.PrivateChats
+                .Include(c => c.User1)
+                .Include(c => c.User2)
+                .Where(c => c.User1Id == userId || c.User2Id == userId)
+                .OrderByDescending(c => c.LastActivityDate)
+                .ToListAsync();
+
+            // 3. Unread Counts (via Notifications)
+            var notifications = await _context.Notifications
+                .Where(n => n.RecipientId == userId && !n.IsRead && n.ActionUrl.StartsWith("/Collaboration/"))
+                .ToListAsync();
+
+            var groupUnread = new Dictionary<int, int>();
+            foreach (var g in groups)
+            {
+                int count = notifications.Count(n => n.ActionUrl == $"/Collaboration/Details/{g.Id}");
+                if (count > 0) groupUnread[g.Id] = count;
+            }
+
+            var privateUnread = new Dictionary<int, int>();
+            foreach (var c in privateChats)
+            {
+                int count = notifications.Count(n => n.ActionUrl == $"/Collaboration/PrivateDetails/{c.Id}");
+                if (count > 0) privateUnread[c.Id] = count;
+            }
+
+            var viewModel = new SocialHubViewModel
+            {
+                CurrentUser = user,
+                Feed = new List<Post>(), // Only need chats here
+                ChatGroups = groups,
+                PrivateChats = privateChats,
+                GroupUnread = groupUnread,
+                PrivateUnread = privateUnread,
+                SuggestedUsers = await _context.Users.Where(u => !u.IsDeleted && u.Id != userId).ToListAsync(),
+                FollowingIds = await _context.Follows.Where(f => f.FollowerId == userId).Select(f => f.FollowingId).ToListAsync()
             };
 
             return View(viewModel);
@@ -141,13 +201,13 @@ namespace OzarkLMS.Controllers
                         userVote = value;
                         existingVote.Value = value;
 
-                        if (value == 1) 
+                        if (value == 1)
                         {
                             // Switching Down -> Up
                             upvoteChange = 1;
                             downvoteChange = -1;
                         }
-                        else 
+                        else
                         {
                             // Switching Up -> Down
                             upvoteChange = -1;
@@ -174,26 +234,26 @@ namespace OzarkLMS.Controllers
                 // Notification Logic (only for new upvotes)
                 if (value == 1 && existingVote == null && post.UserId != userId)
                 {
-                     bool alreadyNotified = await _context.Notifications.AnyAsync(n => 
-                            n.RecipientId == post.UserId && 
-                            n.SenderId == userId && 
-                            n.Title == "New Upvote" && 
-                            n.ActionUrl.Contains($"#post-{postId}") &&
-                            n.SentDate > DateTime.UtcNow.AddMinutes(-10));
+                    bool alreadyNotified = await _context.Notifications.AnyAsync(n =>
+                           n.RecipientId == post.UserId &&
+                           n.SenderId == userId &&
+                           n.Title == "New Upvote" &&
+                           n.ActionUrl.Contains($"#post-{postId}") &&
+                           n.SentDate > DateTime.UtcNow.AddMinutes(-10));
 
-                        if (!alreadyNotified)
+                    if (!alreadyNotified)
+                    {
+                        _context.Notifications.Add(new Notification
                         {
-                            _context.Notifications.Add(new Notification
-                            {
-                                RecipientId = post.UserId,
-                                SenderId = userId,
-                                Title = "New Upvote",
-                                Message = $"{User.Identity.Name} upvoted your post.",
-                                ActionUrl = $"/Collaboration#post-{postId}",
-                                SentDate = DateTime.UtcNow
-                            });
-                             await _context.SaveChangesAsync();
-                        }
+                            RecipientId = post.UserId,
+                            SenderId = userId,
+                            Title = "New Upvote",
+                            Message = $"{User.Identity.Name} upvoted your post.",
+                            ActionUrl = $"/Collaboration#post-{postId}",
+                            SentDate = DateTime.UtcNow
+                        });
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 await transaction.CommitAsync();
@@ -252,7 +312,7 @@ namespace OzarkLMS.Controllers
                 if (parent != null && parent.UserId != userId && (post == null || parent.UserId != post.UserId)) // Avoid double notify if post owner == comment owner
                 {
                     // Notify Parent Comment Owner
-                     _context.Notifications.Add(new Notification
+                    _context.Notifications.Add(new Notification
                     {
                         RecipientId = parent.UserId,
                         SenderId = userId,
@@ -267,12 +327,13 @@ namespace OzarkLMS.Controllers
             await _context.SaveChangesAsync();
 
             var user = await _context.Users.FindAsync(userId);
-            
-            var commentData = new { 
-                success = true, 
-                user = user.Username, 
-                avatar = user.ProfilePictureUrl, 
-                content = comment.Content, 
+
+            var commentData = new
+            {
+                success = true,
+                user = user?.Username ?? "Unknown",
+                avatar = user?.ProfilePictureUrl,
+                content = comment.Content,
                 date = comment.CreatedAt.ToLocalTime().ToString("MMM dd HH:mm"),
                 parentId = parentCommentId,
                 id = comment.Id
@@ -322,12 +383,12 @@ namespace OzarkLMS.Controllers
                         userVote = value;
                         existingVote.Value = value;
 
-                        if (value == 1) 
+                        if (value == 1)
                         {
                             upvoteChange = 1;
                             downvoteChange = -1;
                         }
-                        else 
+                        else
                         {
                             upvoteChange = -1;
                             downvoteChange = 1;
@@ -372,15 +433,15 @@ namespace OzarkLMS.Controllers
             if (string.IsNullOrWhiteSpace(content)) return BadRequest();
             var userId = GetCurrentUserId();
             var comment = await _context.PostComments.FindAsync(commentId);
-            
+
             if (comment == null) return NotFound();
             if (comment.UserId != userId) return Forbid();
 
             comment.Content = content;
             // comment.LastEditedDate = DateTime.UtcNow; // If model supported it
             await _context.SaveChangesAsync();
-            
-            
+
+
             await _voteHub.Clients.All.SendAsync("ReceiveCommentEdited", commentId, comment.Content);
 
             return Json(new { success = true, content = comment.Content });
@@ -393,13 +454,13 @@ namespace OzarkLMS.Controllers
         {
             var userId = GetCurrentUserId();
             var comment = await _context.PostComments.FindAsync(commentId);
-            
+
             if (comment == null) return NotFound();
             if (comment.UserId != userId && !User.IsInRole("admin")) return Forbid();
 
             _context.PostComments.Remove(comment);
             await _context.SaveChangesAsync();
-            
+
             await _voteHub.Clients.All.SendAsync("ReceiveCommentDeleted", commentId, comment.PostId);
 
             return Json(new { success = true });
@@ -410,7 +471,7 @@ namespace OzarkLMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreatePost(string? content, IFormFile? media, IFormFile? attachment)
         {
-            if (string.IsNullOrWhiteSpace(content) && media == null && attachment == null) 
+            if (string.IsNullOrWhiteSpace(content) && media == null && attachment == null)
                 return RedirectToAction(nameof(Index));
 
             var userId = GetCurrentUserId();
@@ -435,7 +496,7 @@ namespace OzarkLMS.Controllers
             // For now let's just use 'attachment' arg if provided
             if (attachment != null && attachment.Length > 0)
             {
-                 var uploads = Path.Combine(_environment.WebRootPath, "uploads");
+                var uploads = Path.Combine(_environment.WebRootPath, "uploads");
                 if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(attachment.FileName);
                 await using (var stream = new FileStream(Path.Combine(uploads, fileName), FileMode.Create))
@@ -519,6 +580,9 @@ namespace OzarkLMS.Controllers
             var group = await _context.ChatGroups
                 .Include(g => g.Messages)
                     .ThenInclude(m => m.Sender)
+                .Include(g => g.Messages)
+                    .ThenInclude(m => m.ParentMessage)
+                        .ThenInclude(pm => pm.Sender)
                 .Include(g => g.Members)
                     .ThenInclude(m => m.User) // Include User info for members list
                 .FirstOrDefaultAsync(g => g.Id == id);
@@ -550,10 +614,10 @@ namespace OzarkLMS.Controllers
             var unreadNotes = await _context.Notifications
                 .Where(n => n.RecipientId == userId && !n.IsRead && n.ActionUrl == $"/Collaboration/Details/{id}")
                 .ToListAsync();
-            
+
             if (unreadNotes.Any())
             {
-                foreach(var note in unreadNotes) note.IsRead = true;
+                foreach (var note in unreadNotes) note.IsRead = true;
                 await _context.SaveChangesAsync();
             }
 
@@ -563,7 +627,7 @@ namespace OzarkLMS.Controllers
         // POST: /Collaboration/PostMessage
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PostMessage(int groupId, string? message, IFormFile? file)
+        public async Task<IActionResult> PostMessage(int groupId, string? message, IFormFile? file, int? parentMessageId = null)
         {
             if (string.IsNullOrWhiteSpace(message) && file == null) return RedirectToAction(nameof(Details), new { id = groupId });
 
@@ -607,7 +671,8 @@ namespace OzarkLMS.Controllers
                 AttachmentOriginalName = originalName,
                 AttachmentContentType = contentType,
                 AttachmentSize = size,
-                SentDate = DateTime.UtcNow
+                SentDate = DateTime.UtcNow,
+                ParentMessageId = parentMessageId
             };
 
             _context.ChatMessages.Add(chatMessage);
@@ -639,6 +704,46 @@ namespace OzarkLMS.Controllers
 
             // Send SignalR notification for chat list reordering
             await _voteHub.Clients.All.SendAsync("ReceiveChatUpdate", groupId, false, group.LastActivityDate.ToString("o"));
+
+            var senderUser = await _context.Users.FindAsync(userId);
+
+            object? parentData = null;
+            if (parentMessageId.HasValue)
+            {
+                var pm = await _context.ChatMessages.Include(m => m.Sender).FirstOrDefaultAsync(m => m.Id == parentMessageId);
+                if (pm != null)
+                {
+                    parentData = new
+                    {
+                        id = pm.Id,
+                        message = pm.Message,
+                        senderUsername = pm.Sender?.Username
+                    };
+                }
+            }
+
+            var messageData = new
+            {
+                id = chatMessage.Id,
+                groupId = groupId,
+                message = chatMessage.Message,
+                attachmentUrl = chatMessage.AttachmentUrl,
+                attachmentOriginalName = chatMessage.AttachmentOriginalName,
+                attachmentContentType = chatMessage.AttachmentContentType,
+                attachmentSize = chatMessage.AttachmentSize,
+                sentDate = chatMessage.SentDate.ToString("o"),
+                senderId = userId,
+                senderUsername = senderUser?.Username,
+                senderProfilePictureUrl = senderUser?.ProfilePictureUrl,
+                parentMessage = parentData
+            };
+
+            await _chatHub.Clients.Group($"group_{groupId}").SendAsync("ReceiveMessage", messageData);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Headers["Accept"].ToString().Contains("application/json"))
+            {
+                return Json(new { success = true, data = messageData });
+            }
 
             return RedirectToAction(nameof(Details), new { id = groupId });
         }
@@ -818,6 +923,9 @@ namespace OzarkLMS.Controllers
                 .Include(c => c.User2)
                 .Include(c => c.Messages)
                     .ThenInclude(m => m.Sender)
+                .Include(c => c.Messages)
+                    .ThenInclude(m => m.ParentMessage)
+                        .ThenInclude(pm => pm.Sender)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (chat == null) return NotFound();
@@ -832,10 +940,10 @@ namespace OzarkLMS.Controllers
             var unreadNotes = await _context.Notifications
                 .Where(n => n.RecipientId == userId && !n.IsRead && n.ActionUrl == $"/Collaboration/PrivateDetails/{id}")
                 .ToListAsync();
-            
+
             if (unreadNotes.Any())
             {
-                foreach(var note in unreadNotes) note.IsRead = true;
+                foreach (var note in unreadNotes) note.IsRead = true;
                 await _context.SaveChangesAsync();
             }
 
@@ -845,7 +953,7 @@ namespace OzarkLMS.Controllers
         // POST: /Collaboration/PostPrivateMessage
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PostPrivateMessage(int chatId, string? message, IFormFile? file)
+        public async Task<IActionResult> PostPrivateMessage(int chatId, string? message, IFormFile? file, int? parentMessageId = null)
         {
             if (string.IsNullOrWhiteSpace(message) && file == null) return RedirectToAction(nameof(PrivateDetails), new { id = chatId });
 
@@ -887,7 +995,8 @@ namespace OzarkLMS.Controllers
                 AttachmentOriginalName = originalName,
                 AttachmentContentType = contentType,
                 AttachmentSize = size,
-                SentDate = DateTime.UtcNow
+                SentDate = DateTime.UtcNow,
+                ParentMessageId = parentMessageId
             };
 
             _context.PrivateMessages.Add(privateMessage);
@@ -913,6 +1022,44 @@ namespace OzarkLMS.Controllers
 
             // Send SignalR notification for chat list reordering
             await _voteHub.Clients.All.SendAsync("ReceiveChatUpdate", chatId, true, chat.LastActivityDate.ToString("o"));
+
+            object? parentData = null;
+            if (parentMessageId.HasValue)
+            {
+                var pm = await _context.PrivateMessages.Include(m => m.Sender).FirstOrDefaultAsync(m => m.Id == parentMessageId);
+                if (pm != null)
+                {
+                    parentData = new
+                    {
+                        id = pm.Id,
+                        message = pm.Message,
+                        senderUsername = pm.Sender?.Username
+                    };
+                }
+            }
+
+            var messageData = new
+            {
+                chatId = chatId,
+                id = privateMessage.Id,
+                message = privateMessage.Message,
+                attachmentUrl = privateMessage.AttachmentUrl,
+                attachmentOriginalName = privateMessage.AttachmentOriginalName,
+                attachmentContentType = privateMessage.AttachmentContentType,
+                attachmentSize = privateMessage.AttachmentSize,
+                sentDate = privateMessage.SentDate.ToString("o"),
+                senderId = userId,
+                senderUsername = sender?.Username,
+                senderProfilePictureUrl = sender?.ProfilePictureUrl,
+                parentMessage = parentData
+            };
+
+            await _chatHub.Clients.Group($"private_{chatId}").SendAsync("ReceiveMessage", messageData);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Headers["Accept"].ToString().Contains("application/json"))
+            {
+                return Json(new { success = true, data = messageData });
+            }
 
             return RedirectToAction(nameof(PrivateDetails), new { id = chatId });
         }
@@ -1206,15 +1353,16 @@ namespace OzarkLMS.Controllers
         public async Task<IActionResult> GetUserChats()
         {
             var userId = GetCurrentUserId();
-            
+
             // Get Groups
             var groups = await _context.ChatGroupMembers
                 .Where(m => m.UserId == userId)
-                .Select(m => new { 
-                    id = m.ChatGroupId, 
-                    name = m.ChatGroup.Name, 
-                    isPrivate = false, 
-                    photoUrl = m.ChatGroup.GroupPhotoUrl 
+                .Select(m => new
+                {
+                    id = m.ChatGroupId,
+                    name = m.ChatGroup.Name,
+                    isPrivate = false,
+                    photoUrl = m.ChatGroup.GroupPhotoUrl
                 })
                 .ToListAsync();
 
@@ -1223,7 +1371,8 @@ namespace OzarkLMS.Controllers
                 .Include(c => c.User1)
                 .Include(c => c.User2)
                 .Where(c => c.User1Id == userId || c.User2Id == userId)
-                .Select(c => new {
+                .Select(c => new
+                {
                     id = c.Id,
                     name = c.User1Id == userId ? c.User2.Username : c.User1.Username,
                     isPrivate = true,
@@ -1264,7 +1413,8 @@ namespace OzarkLMS.Controllers
 
                 // Notification
                 var recipientId = chat.User1Id == userId ? chat.User2Id : chat.User1Id;
-                _context.Notifications.Add(new Notification {
+                _context.Notifications.Add(new Notification
+                {
                     RecipientId = recipientId,
                     SenderId = userId,
                     Title = "Shared a post with you",
@@ -1298,7 +1448,8 @@ namespace OzarkLMS.Controllers
 
                 foreach (var memberId in members)
                 {
-                    _context.Notifications.Add(new Notification {
+                    _context.Notifications.Add(new Notification
+                    {
                         RecipientId = memberId,
                         SenderId = userId,
                         Title = $"Post shared in {group.Name}",
@@ -1316,7 +1467,7 @@ namespace OzarkLMS.Controllers
         [HttpGet]
         public async Task<IActionResult> SearchGlobal(string query)
         {
-            try 
+            try
             {
                 if (string.IsNullOrWhiteSpace(query))
                     return Json(new List<object>());
@@ -1327,8 +1478,8 @@ namespace OzarkLMS.Controllers
                 // Users search
                 var users = await _context.Users
                     .IgnoreQueryFilters()
-                    .Where(u => u.Id != currentUserId && 
-                                u.Username != null && 
+                    .Where(u => u.Id != currentUserId &&
+                                u.Username != null &&
                                 EF.Functions.ILike(u.Username, searchTerm))
                     .Select(u => new { type = "user", id = u.Id, name = u.Username, photo = u.ProfilePictureUrl })
                     .OrderBy(u => u.name)
@@ -1358,21 +1509,25 @@ namespace OzarkLMS.Controllers
         [HttpGet]
         public async Task<IActionResult> SearchDiagnostic()
         {
-            try {
+            try
+            {
                 var userCount = await _context.Users.CountAsync();
                 var groupCount = await _context.ChatGroups.CountAsync();
                 var sampleUser = await _context.Users.Select(u => u.Username).FirstOrDefaultAsync();
                 var sampleGroup = await _context.ChatGroups.Select(g => g.Name).FirstOrDefaultAsync();
-                
-                return Json(new { 
-                    status = "OK", 
-                    userCount, 
-                    groupCount, 
-                    sampleUser, 
+
+                return Json(new
+                {
+                    status = "OK",
+                    userCount,
+                    groupCount,
+                    sampleUser,
                     sampleGroup,
-                    db = "Connected" 
+                    db = "Connected"
                 });
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 return Json(new { status = "ERROR", message = ex.Message, stack = ex.StackTrace });
             }
         }
