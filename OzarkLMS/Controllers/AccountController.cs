@@ -228,13 +228,14 @@ namespace OzarkLMS.Controllers
             var viewModel = new UserProfileViewModel
             {
                 User = user,
-                EnrolledCourses = user.Enrollments.Select(e => e.Course).ToList(),
+                EnrolledCourses = user.Enrollments.Select(e => e.Course).Where(c => c != null).ToList()!,
                 TaughtCourses = await _context.Courses.Where(c => c.InstructorId == targetUserId).ToListAsync(),
                 ChatGroups = await _context.ChatGroupMembers
                     .Where(m => m.UserId == targetUserId)
                     .Select(m => m.ChatGroup)
-                    .OrderByDescending(g => g.IsDefault)
-                    .ToListAsync(),
+                    .Where(g => g != null)
+                    .OrderByDescending(g => g!.IsDefault)
+                    .ToListAsync()!,
                 
                 // Social Hub
                 Posts = user.Posts.OrderByDescending(p => p.CreatedAt).ToList(),
@@ -442,8 +443,8 @@ namespace OzarkLMS.Controllers
 
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim(ClaimTypes.Name, user.Username ?? ""),
+                    new Claim(ClaimTypes.Role, user.Role ?? ""),
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim("UserId", user.Id.ToString())
                 };

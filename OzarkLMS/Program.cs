@@ -41,15 +41,19 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<OzarkLMS.Data.AppDbContext>();
-        OzarkLMS.Data.DbInitializer.Initialize(context);
         
+        // Force migrations to run automatically on startup
+        context.Database.Migrate();
+        
+        OzarkLMS.Data.DbInitializer.Initialize(context);
+
         // Backfill Vote Counts (One-time fix for existing data)
         context.Database.ExecuteSqlRaw(
             "UPDATE \"Posts\" p " +
             "SET \"UpvoteCount\" = (SELECT COUNT(*) FROM \"PostVotes\" pv WHERE pv.\"PostId\" = p.\"Id\" AND pv.\"Value\" = 1), " +
             "    \"DownvoteCount\" = (SELECT COUNT(*) FROM \"PostVotes\" pv WHERE pv.\"PostId\" = p.\"Id\" AND pv.\"Value\" = -1)");
 
-        
+
         // Create Meetings table if it doesn't exist
         context.Database.ExecuteSqlRaw(@"
             CREATE TABLE IF NOT EXISTS ""Meetings"" (
@@ -92,7 +96,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-app.UseStaticFiles(); 
+app.UseStaticFiles();
 app.UseCookiePolicy();
 app.UseRouting();
 
@@ -104,5 +108,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapHub<OzarkLMS.Hubs.VoteHub>("/voteHub");
+app.MapHub<OzarkLMS.Hubs.ChatHub>("/chatHub");
 
 app.Run();
