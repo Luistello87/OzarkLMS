@@ -96,42 +96,40 @@
         <div class="lg:col-span-2 space-y-6">
             
             <!-- Hero Header -->
-            <div class="relative overflow-hidden rounded-2xl bg-[#004B87] hover:bg-[#004B87]/90 transition-all p-8 shadow-xl group">
+            <div class="relative overflow-hidden rounded-2xl bg-[#004B87] hover:bg-[#004B87]/90 transition-all p-5 sm:p-8 shadow-xl group">
                 <!-- Login Screen Art Background -->
                 <!-- Removed opacity-20 from container to allow full brightness glow -->
-                <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                <div class="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
                     <!-- Rotated Laptop -->
-                    <svg class="absolute -right-8 -bottom-12 transform -rotate-12 transition-transform group-hover:scale-105 duration-700 animate-led-pulse" width="240" height="160" viewBox="0 0 120 80" style="stroke: white; fill: none; stroke-width: 1.5; opacity: 0.2;">
+                    <svg class="absolute -right-8 -bottom-12 sm:right-0 sm:bottom-0 transform -rotate-12 transition-transform group-hover:scale-105 duration-700 animate-led-pulse w-32 h-20 sm:w-60 sm:h-40" viewBox="0 0 120 80" style="stroke: white; fill: none; stroke-width: 1.5; opacity: 0.2;">
                         <rect x="10" y="5" width="100" height="60" rx="4" />
                         <path d="M 0 65 L 120 65 L 110 75 L 10 75 Z" />
                         <!-- Text: Blood Orange Fill (#d94f0e), Red Stroke (Inherited from animation). -->
                         <text x="60" y="40" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="14" stroke-width="0.8" stroke="currentColor" fill="#d94f0e" opacity="0.8" style="stroke: inherit;">Ozark</text>
                     </svg>
                     <!-- Floating Book -->
-                    <svg class="absolute left-10 -top-8 transform rotate-6 animate-led-pulse" width="100" height="120" viewBox="0 0 100 120" style="stroke: white; fill: none; stroke-width: 1.5; opacity: 0.2;">
+                    <svg class="absolute hidden sm:block -left-4 -top-8 sm:left-10 sm:-top-8 transform rotate-6 animate-led-pulse w-14 h-16 sm:w-[100px] sm:h-[120px]" viewBox="0 0 100 120" style="stroke: white; fill: none; stroke-width: 1.5; opacity: 0.2;">
                          <rect x="10" y="10" width="80" height="100" rx="2" />
                          <line x1="15" y1="10" x2="15" y2="110" />
                          <path d="M 15 110 Q 50 115 90 110" stroke-linecap="round" />
                     </svg>
                     <!-- Another small laptop -->
-                    <svg class="absolute left-1/3 top-1/2 transform rotate-45 animate-led-pulse" width="80" height="50" viewBox="0 0 120 80" style="stroke: white; fill: none; stroke-width: 1.5; opacity: 0.2;">
+                    <svg class="absolute left-1/4 top-1/2 transform rotate-45 animate-led-pulse w-12 h-8 sm:w-20 sm:h-12" viewBox="0 0 120 80" style="stroke: white; fill: none; stroke-width: 1.5; opacity: 0.2;">
                         <rect x="10" y="5" width="100" height="60" rx="4" />
                         <path d="M 0 65 L 120 65 L 110 75 L 10 75 Z" />
                     </svg>
                 </div>
 
-                <div class="relative z-10 flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                <div class="relative z-10 flex items-center justify-between gap-2">
+                    <div class="flex-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2 flex items-center gap-3">
                             Student Hub
                         </h1>
-                        <p class="text-blue-100 text-sm">Connect, share, and collaborate with your peers</p>
+                        <p class="text-blue-100 text-xs sm:text-sm line-clamp-2 sm:line-clamp-none">Connect, share, and collaborate with your peers</p>
                     </div>
-                    <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" 
-                            class="lg:hidden bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        New
-                    </button>
+                    <div class="flex flex-col sm:flex-row gap-2 shrink-0">
+                        <!-- Mobile New button removed per user request -->
+                    </div>
                 </div>
             </div>
 
@@ -195,6 +193,50 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Suggested Users Section -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between px-1">
+                    <h2 class="text-lg font-bold text-[#004B87] dark:text-blue-400">Discover Peers</h2>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Suggested for you</span>
+                </div>
+                
+                <div class="flex overflow-x-auto pb-4 gap-4 custom-scrollbar snap-x">
+                    @foreach(var user in Model.SuggestedUsers)
+                    {
+                        var isFollowing = Model.FollowingIds.Contains(user.Id);
+                        <div class="flex-none w-40 glass-card rounded-2xl p-4 flex flex-col items-center text-center hover-lift snap-start border border-slate-200/50 dark:border-slate-700/50">
+                            <a href="/Account/Profile?userId=@user.Id" class="relative group mb-3">
+                                @if(!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                                {
+                                    <img src="@user.ProfilePictureUrl" class="w-16 h-16 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-md ring-2 ring-[#004B87]/10 group-hover:ring-[#004B87]/30 transition-all" />
+                                }
+                                else
+                                {
+                                    <div class="w-16 h-16 rounded-2xl bg-[#004B87] flex items-center justify-center text-2xl font-bold text-white shadow-md ring-2 ring-[#004B87]/10 group-hover:ring-[#004B87]/30 transition-all">
+                                        @(user.Username.Substring(0,1).ToUpper())
+                                    </div>
+                                }
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm"></div>
+                            </a>
+                            
+                            <a href="/Account/Profile?userId=@user.Id" class="text-sm font-bold text-slate-800 dark:text-white truncate w-full hover:text-[#004B87] dark:hover:text-blue-400 transition-colors">
+                                @user.Username
+                            </a>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider mb-3">
+                                @user.Role
+                            </p>
+                            
+                            <form asp-controller="Account" asp-action="ToggleFollow" method="post" class="w-full">
+                                <input type="hidden" name="targetUserId" value="@user.Id" />
+                                <button type="submit" class="w-full py-1.5 rounded-lg text-xs font-bold transition-all @(isFollowing ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" : "bg-[#004B87] dark:bg-blue-600 text-white hover:bg-[#003d6d] dark:hover:bg-blue-700 shadow-sm")">
+                                    @(isFollowing ? "Unfollow" : "Follow")
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
 
             <!-- News Feed -->
             <div class="space-y-6">
@@ -216,12 +258,13 @@
             </div>
         </div>
 
-        <!-- SIDEBAR (Chats) -->
-        <div class="lg:col-span-1">
-            <div class="sticky top-4 space-y-6">
+        <!-- SIDEBAR (Chats) for Desktop -->
+        
+        <div id="chat-sidebar" class="hidden lg:flex lg:col-span-1 flex-col h-auto bg-transparent z-auto shadow-none border-none p-0">
+            <div class="sticky top-4 space-y-6 flex-1 overflow-visible">
                 
                 <!-- Sidebar Header -->
-                <div class="glass-card rounded-2xl p-5 relative z-20">
+                <div class="glass-card rounded-2xl p-5 relative z-20 shrink-0">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
                             <span class="w-8 h-8 rounded-lg bg-[#004B87] flex items-center justify-center">
@@ -230,12 +273,13 @@
                             Chats
                         </h2>
                         
-                        <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" 
-                                class="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl font-semibold transition-all shadow-sm flex items-center gap-1">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            New
-                        </button>
-                    </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')" 
+                                    class="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-semibold transition-all shadow-sm flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                New
+                            </button>
+                        </div>
                     
                     <!-- Global User Search -->
                     <div class="relative w-full z-[60]">
@@ -274,8 +318,8 @@
                 </div>
 
                 <!-- Chat List -->
-                <div class="glass-card rounded-2xl overflow-hidden relative z-10">
-                    <div class="max-h-[calc(100vh-380px)] overflow-y-auto custom-scrollbar">
+                <div class="glass-card rounded-2xl overflow-hidden relative z-10 flex-1 flex flex-col">
+                    <div class="flex-1 overflow-y-auto custom-scrollbar lg:max-h-[calc(100dvh-380px)]">
                         @{
                             var mixedList = new List<dynamic>();
                             foreach(var g in Model.ChatGroups) 

@@ -1,21 +1,26 @@
 
-# .NET Core
+# .NET Build Artifacts
 bin/
 obj/
-project.lock.json
-project.fragment.lock.json
-artifacts/
+publish/
+publish_clean/
+site.zip
+*.PublishSettings
 
-# Visual Studio Code
-.vscode/
-
-# OS X
-.DS_Store
-
-# User-specific files
+# Sensitive Configuration (Database Credentials)
+appsettings.json
+appsettings.Development.json
 *.user
 *.suo
 *.userprefs
 
-# Uploads
+# IDE & OS
+.vscode/
+.DS_Store
+
+# Project Specific
 OzarkLMS/wwwroot/uploads/
+tmp/
+project.lock.json
+project.fragment.lock.json
+artifacts/

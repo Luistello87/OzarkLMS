@@ -106,14 +106,24 @@
         const cols = 12;
         const rows = 12;
         const totalCells = cols * rows;
+        const isMobile = window.innerWidth < 640;
         
         // Exclude central zone for the login form AND edges
         const excludedIndices = [];
         
         // Center Exclusion (Login Form area)
-        for (let r = 2; r <= 9; r++) {
-            for (let c = 3; c <= 8; c++) {
-                excludedIndices.push(r * cols + c);
+        if (isMobile) {
+            // Exclude a wider horizontal area on mobile since the card takes mostly the whole width 
+            for (let r = 2; r <= 9; r++) {
+                for (let c = 1; c <= 10; c++) {
+                    excludedIndices.push(r * cols + c);
+                }
+            }
+        } else {
+            for (let r = 2; r <= 9; r++) {
+                for (let c = 3; c <= 8; c++) {
+                    excludedIndices.push(r * cols + c);
+                }
             }
         }
 
@@ -132,23 +142,27 @@
             if(!excludedIndices.includes(i)) availableIndices.push(i);
         }
         
-        // Templates (Larger dimensions as requested)
-        const laptopSvg = (name, color, delay, duration) => `
-            <svg class="auth-bg-item dynamic-motion" width="100" height="70" viewBox="0 0 120 80" 
+        // Templates (Larger dimensions as requested, scaled if mobile)
+        const laptopSvg = (name, color, delay, duration, isMobile) => {
+            const scale = isMobile ? 0.45 : 1;
+            return `
+            <svg class="auth-bg-item dynamic-motion" width="${100 * scale}" height="${70 * scale}" viewBox="0 0 120 80" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <rect x="10" y="5" width="100" height="60" rx="4" />
                 <path d="M 0 65 L 120 65 L 110 75 L 10 75 Z" />
                 <text x="60" y="40" class="laptop-text" fill="${color}">${name}</text>
             </svg>
-        `;
+            `;
+        };
 
-        const desktopSvg = (type, name, color, delay, duration) => {
+        const desktopSvg = (type, name, color, delay, duration, isMobile) => {
             const isWide = type === 'wide';
             const monitorWidth = isWide ? 100 : 80;
             const viewBoxWidth = isWide ? 160 : 140; 
+            const scale = isMobile ? 0.45 : 1;
             
             return `
-            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth * 0.8}" height="80" viewBox="0 0 ${viewBoxWidth} 100" 
+            <svg class="auth-bg-item dynamic-motion" width="${viewBoxWidth * 0.8 * scale}" height="${80 * scale}" viewBox="0 0 ${viewBoxWidth} 100" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <g transform="translate(10, 0)">
                     <rect x="0" y="0" width="${monitorWidth}" height="60" rx="2" stroke-width="1.5" />
@@ -171,8 +185,10 @@
             `;
         };
 
-        const bookSvg = (delay, duration) => `
-            <svg class="auth-bg-item dynamic-motion" width="80" height="100" viewBox="0 0 100 120" 
+        const bookSvg = (delay, duration, isMobile) => {
+            const scale = isMobile ? 0.45 : 1;
+            return `
+            <svg class="auth-bg-item dynamic-motion" width="${80 * scale}" height="${100 * scale}" viewBox="0 0 100 120" 
                  style="animation-delay: -${delay}s; animation-duration: ${duration}s;">
                 <rect x="10" y="10" width="80" height="100" rx="2" />
                 <g class="book-cover">
@@ -182,7 +198,8 @@
                 </g>
                 <path d="M 15 110 Q 50 115 90 110" stroke-linecap="round" />
             </svg>
-        `;
+            `;
+        };
 
         // Shuffle Array
         availableIndices.sort(() => Math.random() - 0.5);
@@ -228,10 +245,10 @@
                 const initialColor = colors[Math.floor(Math.random() * colors.length)];
                 
                 if (type === 'laptop') {
-                    containerDiv.innerHTML = laptopSvg(initialName, initialColor, delay, duration);
+                    containerDiv.innerHTML = laptopSvg(initialName, initialColor, delay, duration, isMobile);
                 } else {
                     const desktopType = Math.random() > 0.5 ? 'wide' : 'normal';
-                    containerDiv.innerHTML = desktopSvg(desktopType, initialName, initialColor, delay, duration);
+                    containerDiv.innerHTML = desktopSvg(desktopType, initialName, initialColor, delay, duration, isMobile);
                 }
                 
                 const textEl = containerDiv.querySelector('.laptop-text');
@@ -246,7 +263,7 @@
                     }
                 }, 3000 + Math.random() * 2000); // Async updates
             } else {
-                containerDiv.innerHTML = bookSvg(delay, duration);
+                containerDiv.innerHTML = bookSvg(delay, duration, isMobile);
             }
             
             container.appendChild(containerDiv);

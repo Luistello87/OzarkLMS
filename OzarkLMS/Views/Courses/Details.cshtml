@@ -7,8 +7,8 @@
 
 <div class="flex flex-col h-full bg-[#FAFBFC] dark:bg-slate-950 transition-colors duration-300">
     <!-- Course Header -->
-    <div class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-8 py-6 mb-6 transition-colors">
-        <div class="flex items-center justify-between">
+    <div class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-4 md:px-8 py-4 md:py-6 mb-4 md:mb-6 transition-colors">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
             <div class="flex items-center">
                  <div class="w-12 h-12 rounded-lg bg-[#004B87] dark:bg-blue-600 text-white flex items-center justify-center text-2xl mr-4 shadow-sm">
                     @Model.Icon
@@ -22,7 +22,7 @@
                      </div>
                  </div>
             </div>
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-start sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-800">
                  @if(Model.Enrollments != null) // Ensure populated or handle null
                  {
                     // View logic for enrolled students could go here
@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <div class="flex flex-col md:flex-row flex-1 px-8 pb-8 max-w-[1400px] w-full mx-auto">
+    <div class="flex flex-col md:flex-row flex-1 px-4 md:px-8 pb-4 md:pb-8 max-w-[1400px] w-full mx-auto">
         <!-- Sidebar Navigation -->
         <nav class="w-full md:w-64 flex-shrink-0 md:mr-8 mb-6 md:mb-0">
             <ul class="space-y-1">
@@ -75,7 +75,7 @@
         </nav>
 
         <!-- Main Content Area -->
-        <main class="flex-1 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 min-h-[500px] p-8 transition-colors">
+        <main class="flex-1 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 min-h-[500px] p-4 md:p-8 transition-colors">
             
             @if(activeTab == "home")
             {
@@ -114,8 +114,13 @@
                                         <div class="px-5 py-3 border-l-4 border-transparent hover:border-[#004B87] dark:hover:border-blue-500 transition-colors bg-white dark:bg-slate-900">
                                             @if(item.DisplayMode == "embed" && !string.IsNullOrEmpty(item.ContentUrl))
                                             {
-                                                <div class="mb-2 flex items-center text-[#004B87] dark:text-blue-300 font-bold">
-                                                    <i data-lucide="file" class="w-4 h-4 mr-2"></i> @item.Title
+                                                <div class="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[#004B87] dark:text-blue-300 font-bold w-full">
+                                                    <div class="flex items-center">
+                                                        <i data-lucide="file" class="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400"></i> @item.Title
+                                                    </div>
+                                                    <a href="@item.ContentUrl" download target="_blank" class="sm:ml-auto inline-flex items-center justify-center px-4 sm:px-3 py-2 sm:py-1.5 text-sm sm:text-xs font-bold text-white bg-[#004B87] dark:bg-blue-600 hover:bg-[#003d6e] dark:hover:bg-blue-700 rounded-lg sm:rounded-md shadow-sm transition-colors w-full sm:w-auto">
+                                                        <i data-lucide="download" class="w-4 h-4 sm:w-3.5 sm:h-3.5 mr-2 sm:mr-1.5"></i> Download File
+                                                    </a>
                                                 </div>
                                                 <div class="w-full aspect-video rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-900">
                                                     <!-- Simple embed fallback for PDF/Images. For production, consider a PDF viewer lib -->
@@ -124,27 +129,36 @@
                                             }
                                             else
                                             {
-                                                <div class="flex items-center hover:bg-blue-50/50 dark:hover:bg-slate-700/50 -mx-5 px-5 py-2 transition-colors group cursor-pointer">
-                                                    <div class="text-slate-300 dark:text-slate-500 mr-4 group-hover:text-[#DA291C] dark:group-hover:text-red-400 transition-colors">
-                                                        <i data-lucide="@(item.Type == "file" ? "file" : (item.Type == "quiz" ? "help-circle" : "file-text"))" class="w-4 h-4"></i>
+                                                <div class="flex flex-col sm:flex-row sm:items-center hover:bg-blue-50/50 dark:hover:bg-slate-700/50 -mx-5 px-5 py-3 sm:py-2 transition-colors group cursor-pointer gap-2 sm:gap-0">
+                                                    <div class="flex items-center flex-1 min-w-0">
+                                                        <div class="text-slate-300 dark:text-slate-500 flex-shrink-0 mr-3 group-hover:text-[#DA291C] dark:group-hover:text-red-400 transition-colors">
+                                                            <i data-lucide="@(item.Type == "file" ? "file" : (item.Type == "quiz" ? "help-circle" : "file-text"))" class="w-4 h-4"></i>
+                                                        </div>
+                                                        @if(!string.IsNullOrEmpty(item.ContentUrl))
+                                                        {
+                                                            <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-[#004B87] dark:group-hover:text-blue-300 hover:underline truncate">@item.Title</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-[#004B87] dark:group-hover:text-blue-300 truncate">@item.Title</span>
+                                                        }
                                                     </div>
-                                                    @if(!string.IsNullOrEmpty(item.ContentUrl))
-                                                    {
-                                                        <a href="@item.ContentUrl" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300 hover:underline">@item.Title</a>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#004B87] dark:group-hover:text-blue-300">@item.Title</span>
-                                                    }
 
-                                                    @if (User.IsInRole("admin") || User.IsInRole("instructor"))
-                                                    {
-                                                        <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-2">
-                                                            <button type="button" onclick="openDeletionModal('@Url.Action("DeleteItem", "Modules", new { id = item.Id })', 'Delete Item', 'Are you sure you want to delete this module item?')" class="text-slate-400 hover:text-red-500 transition-colors">
+                                                    <div class="sm:ml-auto flex items-center gap-2 mt-2 sm:mt-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity w-full sm:w-auto">
+                                                        @if(!string.IsNullOrEmpty(item.ContentUrl))
+                                                        {
+                                                            <a href="@item.ContentUrl" download target="_blank" class="flex-1 sm:flex-none inline-flex items-center justify-center text-xs font-bold text-white bg-[#004B87] dark:bg-blue-600 hover:bg-[#003d6e] dark:hover:bg-blue-700 px-3 py-2 sm:py-1.5 rounded-lg sm:rounded-md shadow-sm transition-colors">
+                                                                <i data-lucide="download" class="w-3.5 h-3.5 mr-1.5"></i> Download
+                                                            </a>
+                                                        }
+
+                                                        @if (User.IsInRole("admin") || User.IsInRole("instructor"))
+                                                        {
+                                                            <button type="button" onclick="openDeletionModal('@Url.Action("DeleteItem", "Modules", new { id = item.Id })', 'Delete Item', 'Are you sure you want to delete this module item?')" class="flex-shrink-0 p-2 sm:p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg sm:rounded-md transition-colors" title="Delete">
                                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                             </button>
-                                                        </div>
-                                                    }
+                                                        }
+                                                    </div>
                                                 </div>
                                             }
                                         </div>
@@ -185,7 +199,7 @@
                         }
                      </div>
 
-                     <div class="overflow-hidden border border-gray-200 dark:border-slate-700 sm:rounded-lg">
+                     <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 sm:rounded-lg">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                             <thead class="bg-gray-50 dark:bg-slate-800">
                                 <tr>
@@ -306,7 +320,7 @@
                         }
                      </div>
 
-                     <div class="overflow-hidden border border-gray-200 dark:border-slate-700 sm:rounded-lg">
+                     <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 sm:rounded-lg">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                             <thead class="bg-gray-50 dark:bg-slate-800">
                                 <tr>
@@ -415,15 +429,15 @@
             else if (activeTab == "meetings")
             {
                 <div class="space-y-6">
-                    <div class="pb-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                    <div class="pb-4 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
                         <h2 class="text-xl font-bold text-slate-800 dark:text-white">Course Meetings</h2>
                         @if (User.IsInRole("admin") || User.IsInRole("instructor"))
                         {
-                            <div class="flex space-x-2">
-                                <a href="https://meet.google.com/new" target="_blank" class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center transition-all">
+                            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                                <a href="https://meet.google.com/new" target="_blank" class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center transition-all w-full sm:w-auto">
                                     <i data-lucide="link" class="w-4 h-4 mr-2"></i> Get Meeting Link
                                 </a>
-                                <button onclick="document.getElementById('addMeetingForm').classList.toggle('hidden')" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#003d6e] dark:hover:bg-blue-700 flex items-center transition-all">
+                                <button onclick="document.getElementById('addMeetingForm').classList.toggle('hidden')" class="bg-[#004B87] dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:bg-[#003d6e] dark:hover:bg-blue-700 flex items-center justify-center transition-all w-full sm:w-auto">
                                     <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Add Meeting
                                 </button>
                             </div>

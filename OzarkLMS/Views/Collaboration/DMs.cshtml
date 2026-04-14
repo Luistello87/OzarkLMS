@@ -1,0 +1,228 @@
+@model OzarkLMS.ViewModels.SocialHubViewModel
+
+<div class="max-w-2xl mx-auto py-8 px-4 text-slate-800 dark:text-slate-100 min-h-[100dvh]">
+    <!-- Mobile Header -->
+    <div class="flex items-center gap-3 mb-6">
+        <a asp-action="Index"
+               class="p-2 -ml-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 lg:hidden">
+            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-[#004B87] dark:text-blue-400 flex items-center gap-2">
+            Messages
+        </h1>
+        <div class="ml-auto">
+            <button onclick="document.getElementById('createGroupForm').classList.toggle('hidden')"
+                    class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/60 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                New Group
+            </button>
+        </div>
+    </div>
+
+    <!-- Global User Search -->
+    <div class="relative w-full z-[60] mb-6">
+        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input id="globalUserSearch"
+               class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#004B87] shadow-sm transition-all"
+               placeholder="Search students..." autocomplete="off" oninput="searchUsersGlobal(this.value, this)" />
+        <div id="globalSearchResultsPortal"
+             class="hidden absolute left-0 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+        </div>
+    </div>
+
+    <!-- Create Group Form (Hidden by default) -->
+    <div id="createGroupForm"
+         class="hidden bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-6 animate-in slide-in-from-top-2 duration-200">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-sm flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <i data-lucide="users" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+                </span>
+                New Group
+            </h3>
+            <button type="button" onclick="document.getElementById('createGroupForm').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <form asp-action="CreateGroup" method="post" enctype="multipart/form-data" class="space-y-3">
+            <input name="name"
+                   class="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 px-4 py-2.5 focus:ring-2 focus:ring-[#004B87] outline-none transition-all"
+                   required placeholder="Group name" />
+            <input name="description"
+                   class="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 px-4 py-2.5 focus:ring-2 focus:ring-[#004B87] outline-none transition-all"
+                   placeholder="Description (optional)" />
+            <button type="submit"
+                    class="w-full py-2.5 bg-[#004B87] hover:bg-[#003d6d] text-white text-sm font-semibold rounded-xl shadow-md transition-all">
+                Create Group
+            </button>
+        </form>
+    </div>
+
+    <!-- Chat List -->
+    <div
+        class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden relative z-10 flex flex-col">
+        <div class="flex-1">
+            @{
+                var mixedList = new List<dynamic>();
+                foreach (var g in Model.ChatGroups)
+                {
+                    int unread = Model.GroupUnread.ContainsKey(g.Id) ? Model.GroupUnread[g.Id] : 0;
+                    mixedList.Add(new
+                    {
+                        IsPrivate = false,
+                        Id = g.Id,
+                        Name = g.Name,
+                        Photo = g.GroupPhotoUrl,
+                        IsDefault =
+            g.IsDefault,
+                        Date = g.LastActivityDate,
+                        UnreadCount = unread,
+                        Members = g.Members
+                    });
+                }
+                foreach (var p in Model.PrivateChats)
+                {
+                    int unread = Model.PrivateUnread.ContainsKey(p.Id) ? Model.PrivateUnread[p.Id] : 0;
+                    var otherUser = p.User1Id == Model.CurrentUser.Id ? p.User2 : p.User1;
+                    var name = otherUser?.Username ?? "Unknown";
+                    var photo = otherUser?.ProfilePictureUrl;
+                    mixedList.Add(new
+                    {
+                        IsPrivate = true,
+                        Id = p.Id,
+                        Name = name,
+                        Photo = photo,
+                        IsDefault = false,
+                        Date =
+            p.LastActivityDate,
+                        UnreadCount = unread,
+                        Members = (ICollection<OzarkLMS.Models.ChatGroupMember>)null
+                    });
+                }
+                var sortedList = mixedList.OrderByDescending(x => x.UnreadCount > 0).ThenByDescending(x =>
+            x.IsDefault).ThenByDescending(x => x.Date).ToList();
+            }
+
+            @foreach (var item in sortedList)
+            {
+                <a asp-action="@(item.IsPrivate ? "PrivateDetails" : "Details")" asp-route-id="@item.Id" class="block"
+                       onclick="markChatAsRead(this)">
+                    <div
+                        class="chat-item flex items-center p-4 sm:px-6 border-b border-slate-100 dark:border-slate-700/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors @(item.UnreadCount > 0 ? "bg-blue-50/40 dark:bg-blue-800/20" : "")">
+                        <div class="relative flex-shrink-0 mr-4">
+                            @if (!string.IsNullOrEmpty(item.Photo))
+                            {
+                                <img src="@item.Photo"
+                                     class="w-12 h-12 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700" />
+                            }
+                            else
+                            {
+                                <div
+                                    class="w-12 h-12 rounded-full @(item.IsDefault ? "bg-[#004B87] text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300") flex items-center justify-center font-bold text-lg shadow-sm">
+                                    @(item.Name?.Length > 0 ? item.Name.Substring(0, 1).ToUpper() : "?")
+                                </div>
+                            }
+                            @if (item.IsDefault)
+                            {
+                                <div
+                                    class="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
+                                    <i data-lucide="crown" class="w-2.5 h-2.5 text-white"></i>
+                                </div>
+                            }
+                        </div>
+                        <div class="flex-1 min-w-0 py-1">
+                            <div class="flex justify-between items-center mb-0.5">
+                                <h4 class="font-semibold text-[15px] text-slate-800 dark:text-slate-200 truncate pr-2">
+                                    @item.Name</h4>
+                                    <span
+                                    class="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">@item.Date.ToLocalTime().ToString("MMM dd")</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="text-[13px] text-slate-500 dark:text-slate-400 truncate">
+                                        @if (!item.IsPrivate)
+                                        {
+                                            <span>@(item.Members?.Count ?? 0) members</span>
+                                        }
+                                        else
+                                        {
+
+                                            <span>Tap to chat</span>
+                                        }
+                                    </p>
+                                    @if (item.UnreadCount > 0)
+                                    {
+                                        <span
+                                        class="w-5 h-5 rounded-full bg-[#DA291C] flex items-center justify-center text-white text-[10px] font-bold shadow-sm ml-2">@item.UnreadCount</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                }
+            
+                @if (!sortedList.Any())
+                {
+                    <div class="p-12 text-center">
+                        <div
+                            class="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="message-square" class="w-8 h-8 text-blue-400"></i>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 font-medium">No active conversations</p>
+                        <p class="text-xs text-slate-400 mt-1">Start a new group or message someone!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            let _searchTimer;
+            function searchUsersGlobal(query, element) {
+                const input = element;
+                let portal = document.getElementById('globalSearchResultsPortal');
+        
+                if (!query || query.trim().length < 1) {
+                    portal.classList.add('hidden');
+                    return;
+                }
+
+                portal.innerHTML = '<div class="p-4 text-center text-slate-400 text-sm">Searching...</div>';
+                portal.classList.remove('hidden');
+
+                clearTimeout(_searchTimer);
+                _searchTimer = setTimeout(() => {
+                    fetch(`/Collaboration/SearchGlobal?query=${encodeURIComponent(query.trim())}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!Array.isArray(data) || data.length === 0) {
+                                portal.innerHTML = '<div class="p-4 text-center text-slate-400 text-sm">No results found</div>';
+                                return;
+                            }
+
+                            portal.innerHTML = data.map(item => `
+                                <div class="flex items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-0" 
+                                     onclick="window.location.href='${item.type === 'user' ? '/Account/Profile?userId=' + item.id : '/Collaboration/Details/' + item.id}'">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0 flex items-center justify-center text-sm font-bold text-slate-500">
+                                        ${item.photo ? `<img src="${item.photo}" class="w-full h-full object-cover">` : (item.name || '?')[0]}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${item.name}</p>
+                                    </div>
+                                </div>
+                            `).join('');
+                        });
+                }, 300);
+            }
+
+            document.addEventListener('mousedown', e => {
+                const p = document.getElementById('globalSearchResultsPortal');
+                if (p && !p.contains(e.target) && !e.target.closest('#globalUserSearch')) {
+                    p.classList.add('hidden');
+                }
+            });
+        </script>
+    }

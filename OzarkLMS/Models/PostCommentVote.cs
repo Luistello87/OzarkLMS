@@ -8,7 +8,7 @@ namespace OzarkLMS.Models
         public PostComment Comment { get; set; } = null!;
 
         public int UserId { get; set; }
-        public User User { get; set; } = null!;
+        public User? User { get; set; }
 
         public int Value { get; set; } // 1 for Upvote, -1 for Downvote
     }
