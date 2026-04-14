@@ -22,7 +22,7 @@ namespace OzarkLMS.Models
         public DateTime LastActivityDate { get; set; } = DateTime.UtcNow; // For sorting
 
         // Navigation
-        public User CreatedBy { get; set; }
+        public User CreatedBy { get; set; } = null!;
         public List<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
         public List<ChatGroupMember> Members { get; set; } = new List<ChatGroupMember>();
     }
@@ -38,8 +38,8 @@ namespace OzarkLMS.Models
         public string ViewMode { get; set; } = "List"; // "List" or "Grid"
 
         // Navigation
-        public ChatGroup ChatGroup { get; set; }
-        public User User { get; set; }
+        public ChatGroup ChatGroup { get; set; } = null!;
+        public User User { get; set; } = null!;
     }
 
     public class ChatMessage
@@ -62,8 +62,8 @@ namespace OzarkLMS.Models
         public DateTime? LastEditedDate { get; set; }
 
         // Navigation
-        public ChatGroup Group { get; set; }
-        public User Sender { get; set; }
+        public ChatGroup Group { get; set; } = null!;
+        public User Sender { get; set; } = null!;
     }
 
     public class PrivateChat
@@ -76,8 +76,8 @@ namespace OzarkLMS.Models
         public DateTime LastActivityDate { get; set; } = DateTime.UtcNow;
 
         // Navigation
-        public User User1 { get; set; }
-        public User User2 { get; set; }
+        public User User1 { get; set; } = null!;
+        public User User2 { get; set; } = null!;
         public List<PrivateMessage> Messages { get; set; } = new List<PrivateMessage>();
     }
 
@@ -100,7 +100,7 @@ namespace OzarkLMS.Models
         public DateTime? LastEditedDate { get; set; }
 
         // Navigation
-        public PrivateChat Chat { get; set; }
-        public User Sender { get; set; }
+        public PrivateChat Chat { get; set; } = null!;
+        public User Sender { get; set; } = null!;
     }
 }

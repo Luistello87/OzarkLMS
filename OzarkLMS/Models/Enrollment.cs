@@ -10,7 +10,7 @@ namespace OzarkLMS.Models
         public DateTime EnrolledDate { get; set; } = DateTime.UtcNow;
 
         // Navigation Properties
-        public Course Course { get; set; }
-        public User Student { get; set; }
+        public Course Course { get; set; } = null!;
+        public User Student { get; set; } = null!;
     }
 }

@@ -11,7 +11,7 @@ namespace OzarkLMS.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         [MaxLength(500)]
         public string? Content { get; set; }

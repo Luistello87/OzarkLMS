@@ -7,10 +7,10 @@ namespace OzarkLMS.Models
     public class PostVote
     {
         public int PostId { get; set; }
-        public Post Post { get; set; }
+        public Post Post { get; set; } = null!;
 
         public int UserId { get; set; }
-        public User User { get; set; }
+        public User User { get; set; } = null!;
 
         public int Value { get; set; } // 1 for Upvote, -1 for Downvote
     }

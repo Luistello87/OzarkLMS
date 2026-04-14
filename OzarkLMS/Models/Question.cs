@@ -9,7 +9,7 @@ namespace OzarkLMS.Models
         public Assignment? Assignment { get; set; }
         
         [Required]
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
         public int Points { get; set; } = 1;
         
         public List<QuestionOption> Options { get; set; } = new List<QuestionOption>();
@@ -22,7 +22,7 @@ namespace OzarkLMS.Models
         public Question? Question { get; set; }
         
         [Required]
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
         public bool IsCorrect { get; set; }
     }
 }
